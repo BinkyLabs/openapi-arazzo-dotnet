@@ -17,7 +17,7 @@ internal static partial class ArazzoV1Deserializer
             }
             o.In = _in;
         } },
-        { "value", (o, v) => o.Value = v.GetScalarValue() }
+        { "value", (o, v) => o.Value = v.CreateAny() }
     };
 
     public static readonly PatternFieldMap<ArazzoParameter> ParameterPatternFields = new()
