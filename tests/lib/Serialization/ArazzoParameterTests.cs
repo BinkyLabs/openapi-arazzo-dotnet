@@ -63,7 +63,7 @@ public class ArazzoParameterTests
 
         Assert.Equal("limit", parameter.Name);
         Assert.Equal(ParameterLocation.Query, parameter.In);
-        Assert.Equal("10", parameter.Value);
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse("\"10\""), parameter.Value), "Parameter value does not match expected value.");
         Assert.NotNull(parameter.Extensions);
         var extension = Assert.IsType<JsonNodeExtension>(parameter.Extensions!["x-flag"]);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("true"), extension.Node));

@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -21,7 +23,7 @@ public class ArazzoParameter : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the parameter value.
     /// </summary>
-    public string? Value { get; set; }
+    public JsonNode? Value { get; set; }
 
     /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
@@ -40,12 +42,12 @@ public class ArazzoParameter : IArazzoSerializable, IArazzoExtensible
             throw new ArgumentNullException(nameof(In));
         }
 
-        ArgumentException.ThrowIfNullOrEmpty(Value);
+        ArgumentNullException.ThrowIfNull(Value);
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty("name", Name);
         writer.WriteRequiredProperty("in", In.Value.GetDisplayName());
-        writer.WriteRequiredProperty("value", Value);
+        writer.WriteOptionalObject("value", Value, static (w, v) => w.WriteAny(v));
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();
     }
