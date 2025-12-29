@@ -33,10 +33,10 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     public void SerializeAsV1(IOpenApiWriter writer)
     {
         writer.WriteStartObject();
-        writer.WriteRequiredProperty("overlay", "1.0.1");
+        writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, "1.0.1");
         if (Info != null)
         {
-            writer.WriteRequiredObject("info", Info, (w, obj) => obj.SerializeAsV1(w));
+            writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, (w, obj) => obj.SerializeAsV1(w));
         }
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();

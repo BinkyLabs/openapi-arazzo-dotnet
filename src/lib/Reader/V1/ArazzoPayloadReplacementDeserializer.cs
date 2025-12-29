@@ -8,8 +8,8 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoPayloadReplacement> PayloadReplacementFixedFields = new()
     {
-        { "target", (o, v) => o.Target = v.GetScalarValue() },
-        { "value", (o, v) => o.Value = v.CreateAny() }
+        { ArazzoConstants.ArazzoPayloadReplacementTarget, (o, v) => o.Target = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoPayloadReplacementValue, (o, v) => o.Value = v.CreateAny() }
     };
 
     public static readonly PatternFieldMap<ArazzoPayloadReplacement> PayloadReplacementPatternFields = new()

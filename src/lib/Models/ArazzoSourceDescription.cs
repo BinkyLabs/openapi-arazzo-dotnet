@@ -37,11 +37,11 @@ public class ArazzoSourceDescription : IArazzoSerializable, IArazzoExtensible
         ArgumentException.ThrowIfNullOrEmpty(Name);
         ArgumentNullException.ThrowIfNull(Url);
         writer.WriteStartObject();
-        writer.WriteProperty("name", Name);
-        writer.WriteProperty("url", Url?.ToString());
+        writer.WriteProperty(ArazzoConstants.ArazzoSourceDescriptionName, Name);
+        writer.WriteProperty(ArazzoConstants.ArazzoSourceDescriptionUrl, Url?.ToString());
         if (Type.HasValue)
         {
-            writer.WriteProperty("type", Type.Value.GetDisplayName());
+            writer.WriteProperty(ArazzoConstants.ArazzoSourceDescriptionType, Type.Value.GetDisplayName());
         }
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();

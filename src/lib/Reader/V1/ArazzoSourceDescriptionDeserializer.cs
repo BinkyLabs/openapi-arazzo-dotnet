@@ -4,9 +4,9 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoSourceDescription> SourceDescriptionFixedFields = new()
     {
-        { "name", (o, v) => o.Name = v.GetScalarValue() },
-        { "url", (o, v) => o.Url = new Uri(v.GetScalarValue() ?? string.Empty) },
-        { "type", (o, v) => {
+        { ArazzoConstants.ArazzoSourceDescriptionName, (o, v) => o.Name = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoSourceDescriptionUrl, (o, v) => o.Url = new Uri(v.GetScalarValue() ?? string.Empty) },
+        { ArazzoConstants.ArazzoSourceDescriptionType, (o, v) => {
             if (!v.GetScalarValue().TryGetEnumFromDisplayName<ArazzoDescriptionType>(v.Context, out var type))
             {
                 return;

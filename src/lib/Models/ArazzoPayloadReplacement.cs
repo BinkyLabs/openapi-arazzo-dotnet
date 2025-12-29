@@ -35,8 +35,8 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
         ArgumentNullException.ThrowIfNull(Value);
 
         writer.WriteStartObject();
-        writer.WriteRequiredProperty("target", Target);
-        writer.WriteOptionalObject("value", Value, static (w, v) => w.WriteAny(v));
+        writer.WriteRequiredProperty(ArazzoConstants.ArazzoPayloadReplacementTarget, Target);
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoPayloadReplacementValue, Value, static (w, v) => w.WriteAny(v));
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();
     }

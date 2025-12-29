@@ -8,8 +8,8 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoParameter> ParameterFixedFields = new()
     {
-        { "name", (o, v) => o.Name = v.GetScalarValue() },
-        { "in", (o, v) =>
+        { ArazzoConstants.ArazzoParameterName, (o, v) => o.Name = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoParameterIn, (o, v) =>
         {
             if (!v.GetScalarValue().TryGetEnumFromDisplayName<ParameterLocation>(v.Context, out var _in))
             {
@@ -17,7 +17,7 @@ internal static partial class ArazzoV1Deserializer
             }
             o.In = _in;
         } },
-        { "value", (o, v) => o.Value = v.CreateAny() }
+        { ArazzoConstants.ArazzoParameterValue, (o, v) => o.Value = v.CreateAny() }
     };
 
     public static readonly PatternFieldMap<ArazzoParameter> ParameterPatternFields = new()

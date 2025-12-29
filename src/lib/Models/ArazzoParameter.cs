@@ -45,9 +45,9 @@ public class ArazzoParameter : IArazzoSerializable, IArazzoExtensible
         ArgumentNullException.ThrowIfNull(Value);
 
         writer.WriteStartObject();
-        writer.WriteRequiredProperty("name", Name);
-        writer.WriteRequiredProperty("in", In.Value.GetDisplayName());
-        writer.WriteOptionalObject("value", Value, static (w, v) => w.WriteAny(v));
+        writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterName, Name);
+        writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterIn, In.Value.GetDisplayName());
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, Value, static (w, v) => w.WriteAny(v));
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();
     }

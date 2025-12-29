@@ -28,8 +28,8 @@ public class ArazzoInfo : IArazzoSerializable, IArazzoExtensible
     public void SerializeAsV1(IOpenApiWriter writer)
     {
         writer.WriteStartObject();
-        writer.WriteProperty("title", Title);
-        writer.WriteProperty("version", Version);
+        writer.WriteProperty(ArazzoConstants.ArazzoInfoTitle, Title);
+        writer.WriteProperty(ArazzoConstants.ArazzoInfoVersion, Version);
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();
     }

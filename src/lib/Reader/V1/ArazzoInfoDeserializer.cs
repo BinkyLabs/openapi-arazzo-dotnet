@@ -6,8 +6,8 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoInfo> InfoFixedFields = new()
     {
-        { "title", (o, v) => o.Title = v.GetScalarValue() },
-        { "version", (o, v) => o.Version = v.GetScalarValue() }
+        { ArazzoConstants.ArazzoInfoTitle, (o, v) => o.Title = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoInfoVersion, (o, v) => o.Version = v.GetScalarValue() }
     };
     public static readonly PatternFieldMap<ArazzoInfo> InfoPatternFields = new()
     {

@@ -1,0 +1,68 @@
+namespace BinkyLabs.OpenApi.Arazzo;
+/// <summary>
+/// Contains constant values used across Arazzo models and readers.
+/// </summary>
+public static class ArazzoConstants
+{
+    /// <summary>
+    /// The prefix for extension field names.
+    /// </summary>
+    public const string ExtensionFieldNamePrefix = "x-";
+
+    /// <summary>
+    /// The "info" field name in the Arazzo document.
+    /// </summary>
+    public const string ArazzoDocumentInfo = "info";
+    /// <summary>
+    /// The "arazzo" field name in the Arazzo document.
+    /// </summary>
+    public const string ArazzoDocumentArazzo = "arazzo";
+
+    // ArazzoInfo
+    /// <summary>
+    /// The "title" field name in the Arazzo Info object.
+    /// </summary>
+    public const string ArazzoInfoTitle = "title";
+    /// <summary>
+    /// The "version" field name in the Arazzo Info object.
+    /// </summary>
+    public const string ArazzoInfoVersion = "version";
+
+    // ArazzoParameter
+    /// <summary>
+    /// The "name" field name in the Arazzo Parameter object.
+    /// </summary>
+    public const string ArazzoParameterName = "name";
+    /// <summary>
+    /// The "in" field name in the Arazzo Parameter object.
+    /// </summary>
+    public const string ArazzoParameterIn = "in";
+    /// <summary>
+    /// The "value" field name in the Arazzo Parameter object.
+    /// </summary>
+    public const string ArazzoParameterValue = "value";
+
+    // ArazzoSourceDescription
+    /// <summary>
+    /// The "name" field name in the Arazzo Source Description object.
+    /// </summary>
+    public const string ArazzoSourceDescriptionName = "name";
+    /// <summary>
+    /// The "url" field name in the Arazzo Source Description object.
+    /// </summary>
+    public const string ArazzoSourceDescriptionUrl = "url";
+    /// <summary>
+    /// The "type" field name in the Arazzo Source Description object.
+    /// </summary>
+    public const string ArazzoSourceDescriptionType = "type";
+
+    // ArazzoPayloadReplacement
+    /// <summary>
+    /// The "target" field name in the Arazzo Payload Replacement object.
+    /// </summary>
+    public const string ArazzoPayloadReplacementTarget = "target";
+    /// <summary>
+    /// The "value" field name in the Arazzo Payload Replacement object.
+    /// </summary>
+    public const string ArazzoPayloadReplacementValue = "value";
+}
