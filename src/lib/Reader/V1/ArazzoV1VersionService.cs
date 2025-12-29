@@ -28,6 +28,7 @@ internal class ArazzoV1VersionService : IArazzoVersionService
         [typeof(JsonNodeExtension)] = ArazzoV1Deserializer.LoadAny,
         [typeof(ArazzoDocument)] = ArazzoV1Deserializer.LoadDocument,
         [typeof(ArazzoInfo)] = ArazzoV1Deserializer.LoadInfo,
+        [typeof(ArazzoParameter)] = ArazzoV1Deserializer.LoadParameter,
     };
 
     public ArazzoDocument LoadDocument(RootNode rootNode, Uri location)
