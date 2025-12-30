@@ -33,16 +33,4 @@ internal static partial class ArazzoV1Deserializer
 
         return parameter;
     }
-
-    private static ParameterLocation ParseParameterLocation(ParseNode node)
-    {
-        var location = node.GetScalarValue();
-
-        if (Enum.TryParse<ParameterLocation>(location, true, out var parameterLocation))
-        {
-            return parameterLocation;
-        }
-
-        throw new ArazzoReaderException($"Invalid parameter location '{location}'.", node.Context);
-    }
 }
