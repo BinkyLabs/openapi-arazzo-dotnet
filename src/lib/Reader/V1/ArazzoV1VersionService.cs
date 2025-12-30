@@ -26,6 +26,7 @@ internal class ArazzoV1VersionService : IArazzoVersionService
     private readonly Dictionary<Type, Func<ParseNode, object?>> _loaders = new Dictionary<Type, Func<ParseNode, object?>>
     {
         [typeof(JsonNodeExtension)] = ArazzoV1Deserializer.LoadAny,
+        [typeof(ArazzoCriterion)] = ArazzoV1Deserializer.LoadCriterion,
         [typeof(ArazzoCriterionExpressionType)] = ArazzoV1Deserializer.LoadCriterionExpressionType,
         [typeof(ArazzoDocument)] = ArazzoV1Deserializer.LoadDocument,
         [typeof(ArazzoInfo)] = ArazzoV1Deserializer.LoadInfo,

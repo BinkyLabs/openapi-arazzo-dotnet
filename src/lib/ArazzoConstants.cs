@@ -80,6 +80,20 @@ public static class ArazzoConstants
     /// </summary>
     public const string ArazzoRequestBodyReplacements = "replacements";
 
+    // ArazzoCriterion
+    /// <summary>
+    /// The "context" field name in the Arazzo Criterion object.
+    /// </summary>
+    public const string ArazzoCriterionContext = "context";
+    /// <summary>
+    /// The "type" field name in the Arazzo Criterion object.
+    /// </summary>
+    public const string ArazzoCriterionType = "type";
+    /// <summary>
+    /// The "condition" field name in the Arazzo Criterion object.
+    /// </summary>
+    public const string ArazzoCriterionCondition = "condition";
+
     // ArazzoCriterionExpressionType
     /// <summary>
     /// The "type" field name in the Arazzo Criterion Expression Type object.
