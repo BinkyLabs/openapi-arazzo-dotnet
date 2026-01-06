@@ -6,23 +6,17 @@ using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo;
 /// <summary>
-/// Represents a reusable parameter definition.
+/// Represents a parameter definition.
 /// </summary>
-public class ArazzoParameter : IArazzoSerializable, IArazzoExtensible
+public class ArazzoParameter : IArazzoParameter
 {
-    /// <summary>
-    /// Gets or sets the parameter name.
-    /// </summary>
+    /// <inheritdoc/>
     public string? Name { get; set; }
 
-    /// <summary>
-    /// Gets or sets the location of the parameter.
-    /// </summary>
+    /// <inheritdoc/>
     public ParameterLocation? In { get; set; }
-
-    /// <summary>
-    /// Gets or sets the parameter value.
-    /// </summary>
+    
+    /// <inheritdoc/>
     public JsonNode? Value { get; set; }
 
     /// <inheritdoc/>
