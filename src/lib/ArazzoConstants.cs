@@ -103,4 +103,26 @@ public static class ArazzoConstants
     /// The "version" field name in the Arazzo Criterion Expression Type object.
     /// </summary>
     public const string ArazzoCriterionExpressionTypeVersion = "version";
+
+    // ArazzoSuccessAction
+    /// <summary>
+    /// The "name" field name in the Arazzo Success Action object.
+    /// </summary>
+    public const string ArazzoSuccessActionName = "name";
+    /// <summary>
+    /// The "type" field name in the Arazzo Success Action object.
+    /// </summary>
+    public const string ArazzoSuccessActionType = "type";
+    /// <summary>
+    /// The "workflowId" field name in the Arazzo Success Action object.
+    /// </summary>
+    public const string ArazzoSuccessActionWorkflowId = "workflowId";
+    /// <summary>
+    /// The "stepId" field name in the Arazzo Success Action object.
+    /// </summary>
+    public const string ArazzoSuccessActionStepId = "stepId";
+    /// <summary>
+    /// The "criteria" field name in the Arazzo Success Action object.
+    /// </summary>
+    public const string ArazzoSuccessActionCriteria = "criteria";
 }

@@ -14,9 +14,10 @@
 - [x] source-description-object
 - [ ] specification-extensions
 - [ ] step-object
-- [ ] success-action-object
+- [x] success-action-object
 - [ ] workflow-object
 
 # features to implement
 
 - [ ] references resolution
+- [ ] extensions on objects
