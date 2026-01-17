@@ -1,7 +1,7 @@
 # Models to implement
 
 - [x] document
-- [ ] components-object
+- [x] components-object
 - [x] criterion-expression-type-object
 - [x] criterion-object
 - [x] failure-action-object

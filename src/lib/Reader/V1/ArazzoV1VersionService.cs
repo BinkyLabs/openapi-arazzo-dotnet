@@ -33,6 +33,7 @@ internal class ArazzoV1VersionService : IArazzoVersionService
         [typeof(ArazzoParameter)] = ArazzoV1Deserializer.LoadParameter,
         [typeof(ArazzoPayloadReplacement)] = ArazzoV1Deserializer.LoadPayloadReplacement,
         [typeof(ArazzoRequestBody)] = ArazzoV1Deserializer.LoadRequestBody,
+        [typeof(ArazzoComponent)] = ArazzoV1Deserializer.LoadComponent,
         [typeof(ArazzoSourceDescription)] = ArazzoV1Deserializer.LoadSourceDescription,
         [typeof(ArazzoSuccessAction)] = ArazzoV1Deserializer.LoadSuccessAction,
         [typeof(ArazzoFailureAction)] = ArazzoV1Deserializer.LoadFailureAction,

@@ -42,6 +42,24 @@ public static class ArazzoConstants
     /// </summary>
     public const string ArazzoParameterValue = "value";
 
+    // ArazzoComponent
+    /// <summary>
+    /// The "parameters" field name in the Arazzo Component object.
+    /// </summary>
+    public const string ArazzoComponentParameters = "parameters";
+    /// <summary>
+    /// The "successActions" field name in the Arazzo Component object.
+    /// </summary>
+    public const string ArazzoComponentSuccessActions = "successActions";
+    /// <summary>
+    /// The "failureActions" field name in the Arazzo Component object.
+    /// </summary>
+    public const string ArazzoComponentFailureActions = "failureActions";
+    /// <summary>
+    /// The "inputs" field name in the Arazzo Component object.
+    /// </summary>
+    public const string ArazzoComponentInputs = "inputs";
+
     // ArazzoSourceDescription
     /// <summary>
     /// The "name" field name in the Arazzo Source Description object.
