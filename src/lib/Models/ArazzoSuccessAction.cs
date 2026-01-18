@@ -18,9 +18,9 @@ public class ArazzoSuccessAction : ArazzoResultAction<ArazzoSuccessType>, IArazz
         ArgumentNullException.ThrowIfNull(writer);
 
         writer.WriteStartObject();
-        
+
         SerializeCommonPropertiesAsV1(writer);
-        
+
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();
     }

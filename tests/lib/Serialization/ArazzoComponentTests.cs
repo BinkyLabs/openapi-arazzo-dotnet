@@ -16,11 +16,11 @@ public class ArazzoComponentTests
         {
             Parameters = new Dictionary<string, ArazzoParameter>
             {
-                ["param1"] = new ArazzoParameter 
-                { 
-                    Name = "id", 
-                    In = ParameterLocation.Path, 
-                    Value = "123" 
+                ["param1"] = new ArazzoParameter
+                {
+                    Name = "id",
+                    In = ParameterLocation.Path,
+                    Value = "123"
                 }
             },
             SuccessActions = new Dictionary<string, ArazzoSuccessAction>

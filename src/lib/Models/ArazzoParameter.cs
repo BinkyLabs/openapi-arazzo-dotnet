@@ -15,7 +15,7 @@ public class ArazzoParameter : IArazzoParameter
 
     /// <inheritdoc/>
     public ParameterLocation? In { get; set; }
-    
+
     /// <inheritdoc/>
     public JsonNode? Value { get; set; }
 

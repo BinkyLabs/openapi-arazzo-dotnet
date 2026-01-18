@@ -15,14 +15,14 @@ internal static partial class ArazzoV1Deserializer
         } },
         { ArazzoConstants.ArazzoResultActionWorkflowId, (o, v) => o.WorkflowId = v.GetScalarValue() },
         { ArazzoConstants.ArazzoResultActionStepId, (o, v) => o.StepId = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoFailureActionRetryAfter, (o, v) => 
+        { ArazzoConstants.ArazzoFailureActionRetryAfter, (o, v) =>
         {
             if (decimal.TryParse(v.GetScalarValue(), out var retryAfter))
             {
                 o.RetryAfter = retryAfter;
             }
         } },
-        { ArazzoConstants.ArazzoFailureActionRetryLimit, (o, v) => 
+        { ArazzoConstants.ArazzoFailureActionRetryLimit, (o, v) =>
         {
             if (ulong.TryParse(v.GetScalarValue(), out var retryLimit))
             {

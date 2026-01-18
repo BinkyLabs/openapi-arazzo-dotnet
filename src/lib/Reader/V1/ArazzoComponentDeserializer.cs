@@ -31,11 +31,11 @@ internal static partial class ArazzoV1Deserializer
     {
         var mapNode = node.CheckMapNode("Component");
         var component = new ArazzoComponent();
-        
+
         // TODO: Implement validation during serialization/deserialization that any of the keys 
         // of Parameters, SuccessActions, FailureActions, and Inputs dictionaries must match 
         // the following regex: ^[a-zA-Z0-9\.\-_]+$
-        
+
         ParseMap(mapNode, component, ComponentFixedFields, ComponentPatternFields);
 
         return component;

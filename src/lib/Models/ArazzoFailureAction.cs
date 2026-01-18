@@ -24,9 +24,9 @@ public class ArazzoFailureAction : ArazzoResultAction<ArazzoFailureType>, IArazz
         ArgumentNullException.ThrowIfNull(writer);
 
         writer.WriteStartObject();
-        
+
         SerializeCommonPropertiesAsV1(writer);
-        
+
         if (RetryAfter.HasValue)
         {
             writer.WriteProperty(ArazzoConstants.ArazzoFailureActionRetryAfter, RetryAfter.Value);
@@ -35,7 +35,7 @@ public class ArazzoFailureAction : ArazzoResultAction<ArazzoFailureType>, IArazz
         {
             writer.WriteProperty(ArazzoConstants.ArazzoFailureActionRetryLimit, (long)RetryLimit.Value);
         }
-        
+
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();
     }

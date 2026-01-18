@@ -47,7 +47,7 @@ public class ArazzoComponent : IArazzoSerializable, IArazzoExtensible
         // the following regex: ^[a-zA-Z0-9\.\-_]+$
 
         writer.WriteStartObject();
-        
+
         // Write parameters
         if (Parameters != null && Parameters.Count > 0)
         {
@@ -60,7 +60,7 @@ public class ArazzoComponent : IArazzoSerializable, IArazzoExtensible
             }
             writer.WriteEndObject();
         }
-        
+
         // Write success actions
         if (SuccessActions != null && SuccessActions.Count > 0)
         {
@@ -73,7 +73,7 @@ public class ArazzoComponent : IArazzoSerializable, IArazzoExtensible
             }
             writer.WriteEndObject();
         }
-        
+
         // Write failure actions
         if (FailureActions != null && FailureActions.Count > 0)
         {
@@ -86,13 +86,13 @@ public class ArazzoComponent : IArazzoSerializable, IArazzoExtensible
             }
             writer.WriteEndObject();
         }
-        
+
         // Write inputs
         if (Inputs != null && Inputs.Count > 0)
         {
             writer.WriteOptionalMap(ArazzoConstants.ArazzoComponentInputs, Inputs, (w, s) => s.SerializeAsV32(w));
         }
-        
+
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();
     }

@@ -42,17 +42,17 @@ public abstract class ArazzoResultAction<T> : IResultAction<T> where T : struct,
 
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoResultActionName, Name);
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoResultActionType, Type.Value.GetDisplayName());
-        
+
         if (!string.IsNullOrEmpty(WorkflowId))
         {
             writer.WriteProperty(ArazzoConstants.ArazzoResultActionWorkflowId, WorkflowId);
         }
-        
+
         if (!string.IsNullOrEmpty(StepId))
         {
             writer.WriteProperty(ArazzoConstants.ArazzoResultActionStepId, StepId);
         }
-        
+
         if (Criteria != null && Criteria.Count > 0)
         {
             writer.WritePropertyName(ArazzoConstants.ArazzoResultActionCriteria);
