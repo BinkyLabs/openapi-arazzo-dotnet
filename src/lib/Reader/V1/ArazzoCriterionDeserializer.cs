@@ -4,9 +4,9 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoCriterion> CriterionFixedFields = new()
     {
-        { ArazzoConstants.ArazzoCriterionContext, (o, v) => o.Context = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoCriterionCondition, (o, v) => o.Condition = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoCriterionType, (o, v) => {
+        { ArazzoConstants.ArazzoCriterionContext, static (o, v) => o.Context = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoCriterionCondition, static (o, v) => o.Condition = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoCriterionType, static (o, v) => {
             if (v is ValueNode valueNode && v.GetScalarValue().TryGetEnumFromDisplayName<ArazzoCriterionExpressionTypeType>(v.Context, out var typeValue))
             {
                 // Type is a string (Simple or Regex)

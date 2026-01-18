@@ -6,7 +6,7 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoCriterionExpressionType> CriterionExpressionTypeFixedFields = new()
     {
-        { ArazzoConstants.ArazzoCriterionExpressionTypeType, (o, v) =>
+        { ArazzoConstants.ArazzoCriterionExpressionTypeType, static (o, v) =>
         {
             if (!v.GetScalarValue().TryGetEnumFromDisplayName<ArazzoCriterionExpressionTypeType>(v.Context, out var type))
             {
@@ -14,7 +14,7 @@ internal static partial class ArazzoV1Deserializer
             }
             o.Type = type;
         } },
-        { ArazzoConstants.ArazzoCriterionExpressionTypeVersion, (o, v) =>
+        { ArazzoConstants.ArazzoCriterionExpressionTypeVersion, static (o, v) =>
         {
             if (!v.GetScalarValue().TryGetEnumFromDisplayName<ArazzoCriterionExpressionVersion>(v.Context, out var version))
             {

@@ -9,10 +9,10 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoComponent> ComponentFixedFields = new()
     {
-        { ArazzoConstants.ArazzoComponentParameters, (o, v) => o.Parameters = v.CreateMap(LoadParameter) },
-        { ArazzoConstants.ArazzoComponentSuccessActions, (o, v) => o.SuccessActions = v.CreateMap(LoadSuccessAction) },
-        { ArazzoConstants.ArazzoComponentFailureActions, (o, v) => o.FailureActions = v.CreateMap(LoadFailureAction) },
-        { ArazzoConstants.ArazzoComponentInputs, (o, v) => o.Inputs = v.CreateMap(LoadSchema).Where(static x => x.Value != null).ToDictionary(static x => x.Key, static x => x.Value!) },
+        { ArazzoConstants.ArazzoComponentParameters, static (o, v) => o.Parameters = v.CreateMap(LoadParameter) },
+        { ArazzoConstants.ArazzoComponentSuccessActions, static (o, v) => o.SuccessActions = v.CreateMap(LoadSuccessAction) },
+        { ArazzoConstants.ArazzoComponentFailureActions, static (o, v) => o.FailureActions = v.CreateMap(LoadFailureAction) },
+        { ArazzoConstants.ArazzoComponentInputs, static (o, v) => o.Inputs = v.CreateMap(LoadSchema).Where(static x => x.Value != null).ToDictionary(static x => x.Key, static x => x.Value!) },
     };
 
     public static readonly PatternFieldMap<ArazzoComponent> ComponentPatternFields = new()

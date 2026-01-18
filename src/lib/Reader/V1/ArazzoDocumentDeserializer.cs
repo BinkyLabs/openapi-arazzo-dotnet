@@ -4,8 +4,8 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoDocument> DocumentFixedFields = new()
     {
-        { ArazzoConstants.ArazzoDocumentArazzo, (o, v) => o.Arazzo = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoDocumentInfo, (o, v) => o.Info = LoadInfo(v) },
+        { ArazzoConstants.ArazzoDocumentArazzo, static (o, v) => o.Arazzo = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoDocumentInfo, static (o, v) => o.Info = LoadInfo(v) },
     };
     public static readonly PatternFieldMap<ArazzoDocument> DocumentPatternFields = new()
     {
