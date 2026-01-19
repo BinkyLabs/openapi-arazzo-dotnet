@@ -102,54 +102,18 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
             writer.WriteProperty(ArazzoConstants.ArazzoStepWorkflowId, WorkflowId);
         }
 
-        if (Parameters is not null && Parameters.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoStepParameters);
-            writer.WriteStartArray();
-            foreach (var parameter in Parameters)
-            {
-                parameter?.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepParameters, Parameters, static (w, p) => p?.SerializeAsV1(w));
 
         writer.WriteOptionalObject(
             ArazzoConstants.ArazzoStepRequestBody,
             RequestBody,
             (w, rb) => rb.SerializeAsV1(w));
 
-        if (SuccessCriteria is not null && SuccessCriteria.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoStepSuccessCriteria);
-            writer.WriteStartArray();
-            foreach (var criterion in SuccessCriteria)
-            {
-                criterion?.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepSuccessCriteria, SuccessCriteria, static (w, c) => c?.SerializeAsV1(w));
 
-        if (OnSuccess is not null && OnSuccess.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoStepOnSuccess);
-            writer.WriteStartArray();
-            foreach (var action in OnSuccess)
-            {
-                action?.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepOnSuccess, OnSuccess, static (w, a) => a?.SerializeAsV1(w));
 
-        if (OnFailure is not null && OnFailure.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoStepOnFailure);
-            writer.WriteStartArray();
-            foreach (var action in OnFailure)
-            {
-                action?.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepOnFailure, OnFailure, static (w, a) => a?.SerializeAsV1(w));
 
         writer.WriteOptionalMap(
             ArazzoConstants.ArazzoStepOutputs,

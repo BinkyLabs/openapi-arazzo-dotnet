@@ -83,52 +83,16 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         }
 
         // Write dependsOn
-        if (DependsOn != null && DependsOn.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoWorkflowDependsOn);
-            writer.WriteStartArray();
-            foreach (var dependency in DependsOn)
-            {
-                writer.WriteValue(dependency);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowDependsOn, DependsOn, static (w, d) => w.WriteValue(d!));
 
         // Write steps
-        if (Steps != null && Steps.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoWorkflowSteps);
-            writer.WriteStartArray();
-            foreach (var step in Steps)
-            {
-                step.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowSteps, Steps, static (w, s) => s.SerializeAsV1(w));
 
         // Write success actions
-        if (SuccessActions != null && SuccessActions.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoWorkflowSuccessActions);
-            writer.WriteStartArray();
-            foreach (var action in SuccessActions)
-            {
-                action.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowSuccessActions, SuccessActions, static (w, a) => a.SerializeAsV1(w));
 
         // Write failure actions
-        if (FailureActions != null && FailureActions.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoWorkflowFailureActions);
-            writer.WriteStartArray();
-            foreach (var action in FailureActions)
-            {
-                action.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowFailureActions, FailureActions, static (w, a) => a.SerializeAsV1(w));
 
         // Write outputs
         if (Outputs != null && Outputs.Count > 0)

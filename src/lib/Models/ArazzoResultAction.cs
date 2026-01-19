@@ -53,16 +53,7 @@ public abstract class ArazzoResultAction<T> : IResultAction<T> where T : struct,
             writer.WriteProperty(ArazzoConstants.ArazzoResultActionStepId, StepId);
         }
 
-        if (Criteria != null && Criteria.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoResultActionCriteria);
-            writer.WriteStartArray();
-            foreach (var criterion in Criteria)
-            {
-                criterion.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoResultActionCriteria, Criteria, static (w, c) => c.SerializeAsV1(w));
     }
 
     /// <summary>

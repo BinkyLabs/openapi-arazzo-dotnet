@@ -64,21 +64,9 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, "1.0.1");
         writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, (w, obj) => obj.SerializeAsV1(w));
 
-        writer.WritePropertyName(ArazzoConstants.ArazzoDocumentSourceDescriptions);
-        writer.WriteStartArray();
-        foreach (var sourceDescription in SourceDescriptions)
-        {
-            sourceDescription.SerializeAsV1(writer);
-        }
-        writer.WriteEndArray();
+        writer.WriteRequiredCollection(ArazzoConstants.ArazzoDocumentSourceDescriptions, SourceDescriptions, static (w, s) => s.SerializeAsV1(w));
 
-        writer.WritePropertyName(ArazzoConstants.ArazzoDocumentWorkflows);
-        writer.WriteStartArray();
-        foreach (var workflow in Workflows)
-        {
-            workflow.SerializeAsV1(writer);
-        }
-        writer.WriteEndArray();
+        writer.WriteRequiredCollection(ArazzoConstants.ArazzoDocumentWorkflows, Workflows, static (w, wf) => wf.SerializeAsV1(w));
 
         if (Components != null)
         {
