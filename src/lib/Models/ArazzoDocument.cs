@@ -41,34 +41,45 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     /// Serializes the overlay document as an OpenAPI Arazzo v1.0.0 JSON object.
     /// </summary>
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
+    /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
+        // Validate required fields
+        if (Info is null)
+        {
+            throw new ArazzoSerializationException("Info is required for ArazzoDocument serialization.");
+        }
+
+        if (SourceDescriptions is not { Count: > 0 })
+        {
+            throw new ArazzoSerializationException("SourceDescriptions is required and must contain at least one element for ArazzoDocument serialization.");
+        }
+
+        if (Workflows is not { Count: > 0 })
+        {
+            throw new ArazzoSerializationException("Workflows is required and must contain at least one element for ArazzoDocument serialization.");
+        }
+
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, "1.0.1");
-        if (Info != null)
+        writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, (w, obj) => obj.SerializeAsV1(w));
+
+        writer.WritePropertyName(ArazzoConstants.ArazzoDocumentSourceDescriptions);
+        writer.WriteStartArray();
+        foreach (var sourceDescription in SourceDescriptions)
         {
-            writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, (w, obj) => obj.SerializeAsV1(w));
+            sourceDescription.SerializeAsV1(writer);
         }
-        if (SourceDescriptions != null && SourceDescriptions.Count > 0)
+        writer.WriteEndArray();
+
+        writer.WritePropertyName(ArazzoConstants.ArazzoDocumentWorkflows);
+        writer.WriteStartArray();
+        foreach (var workflow in Workflows)
         {
-            writer.WritePropertyName(ArazzoConstants.ArazzoDocumentSourceDescriptions);
-            writer.WriteStartArray();
-            foreach (var sourceDescription in SourceDescriptions)
-            {
-                sourceDescription.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
+            workflow.SerializeAsV1(writer);
         }
-        if (Workflows != null && Workflows.Count > 0)
-        {
-            writer.WritePropertyName(ArazzoConstants.ArazzoDocumentWorkflows);
-            writer.WriteStartArray();
-            foreach (var workflow in Workflows)
-            {
-                workflow.SerializeAsV1(writer);
-            }
-            writer.WriteEndArray();
-        }
+        writer.WriteEndArray();
+
         if (Components != null)
         {
             writer.WritePropertyName(ArazzoConstants.ArazzoDocumentComponents);

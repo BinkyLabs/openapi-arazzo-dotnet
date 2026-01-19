@@ -111,6 +111,19 @@ public class ArazzoDocumentTests
             {
                 Title = "Minimal Overlay",
                 Version = "1.0.0"
+            },
+            SourceDescriptions = new List<ArazzoSourceDescription>
+            {
+                new ArazzoSourceDescription
+                {
+                    Name = "source1",
+                    Url = new Uri("https://example.com/api"),
+                    Type = ArazzoDescriptionType.OpenAPI
+                }
+            },
+            Workflows = new List<ArazzoWorkflow>
+            {
+                new ArazzoWorkflow { WorkflowId = "workflow1" }
             }
         };
         using var textWriter = new StringWriter();
@@ -123,7 +136,19 @@ public class ArazzoDocumentTests
             "info": {
                 "title": "Minimal Overlay",
                 "version": "1.0.0"
-            }
+            },
+            "sourceDescriptions": [
+                {
+                    "name": "source1",
+                    "url": "https://example.com/api",
+                    "type": "openapi"
+                }
+            ],
+            "workflows": [
+                {
+                    "workflowId": "workflow1"
+                }
+            ]
         }
         """;
 
@@ -199,77 +224,6 @@ public class ArazzoDocumentTests
         Assert.True(document.Components.Parameters.ContainsKey("testParam"));
     }
 
-    [Fact]
-    public void SerializeAsV1_ShouldHandleNullCollections()
-    {
-        // Arrange
-        var document = new ArazzoDocument
-        {
-            Info = new ArazzoInfo
-            {
-                Title = "Test",
-                Version = "1.0.0"
-            }
-        };
-        using var textWriter = new StringWriter();
-        var writer = new OpenApiJsonWriter(textWriter);
-
-        var expectedJson =
-        """
-        {
-            "arazzo": "1.0.1",
-            "info": {
-                "title": "Test",
-                "version": "1.0.0"
-            }
-        }
-        """;
-
-        // Act
-        document.SerializeAsV1(writer);
-        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
-        var expectedJsonObject = JsonNode.Parse(expectedJson);
-
-        // Assert
-        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "The serialized JSON does not match the expected JSON.");
-    }
-
-    [Fact]
-    public void SerializeAsV1_ShouldHandleEmptyCollections()
-    {
-        // Arrange
-        var document = new ArazzoDocument
-        {
-            Info = new ArazzoInfo
-            {
-                Title = "Test",
-                Version = "1.0.0"
-            },
-            SourceDescriptions = new List<ArazzoSourceDescription>(),
-            Workflows = new List<ArazzoWorkflow>()
-        };
-        using var textWriter = new StringWriter();
-        var writer = new OpenApiJsonWriter(textWriter);
-
-        var expectedJson =
-        """
-        {
-            "arazzo": "1.0.1",
-            "info": {
-                "title": "Test",
-                "version": "1.0.0"
-            }
-        }
-        """;
-
-        // Act
-        document.SerializeAsV1(writer);
-        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
-        var expectedJsonObject = JsonNode.Parse(expectedJson);
-
-        // Assert
-        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "The serialized JSON does not match the expected JSON.");
-    }
 
     [Fact]
     public void Deserialize_WithExtensions_ShouldLoadExtensions()
@@ -295,5 +249,128 @@ public class ArazzoDocumentTests
         // Assert
         Assert.NotNull(document.Extensions);
         Assert.True(document.Extensions.ContainsKey("x-custom"));
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithNullInfo_ShouldThrowArazzoSerializationException()
+    {
+        // Arrange
+        var document = new ArazzoDocument
+        {
+            Info = null,
+            SourceDescriptions = new List<ArazzoSourceDescription>
+            {
+                new ArazzoSourceDescription
+                {
+                    Name = "source1",
+                    Url = new Uri("https://example.com/api"),
+                    Type = ArazzoDescriptionType.OpenAPI
+                }
+            },
+            Workflows = new List<ArazzoWorkflow>
+            {
+                new ArazzoWorkflow { WorkflowId = "workflow1" }
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        // Act & Assert
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1(writer));
+        Assert.Equal("Info is required for ArazzoDocument serialization.", exception.Message);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithNullSourceDescriptions_ShouldThrowArazzoSerializationException()
+    {
+        // Arrange
+        var document = new ArazzoDocument
+        {
+            Info = new ArazzoInfo { Title = "Test", Version = "1.0.0" },
+            SourceDescriptions = null,
+            Workflows = new List<ArazzoWorkflow>
+            {
+                new ArazzoWorkflow { WorkflowId = "workflow1" }
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        // Act & Assert
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1(writer));
+        Assert.Equal("SourceDescriptions is required and must contain at least one element for ArazzoDocument serialization.", exception.Message);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithEmptySourceDescriptions_ShouldThrowArazzoSerializationException()
+    {
+        // Arrange
+        var document = new ArazzoDocument
+        {
+            Info = new ArazzoInfo { Title = "Test", Version = "1.0.0" },
+            SourceDescriptions = new List<ArazzoSourceDescription>(),
+            Workflows = new List<ArazzoWorkflow>
+            {
+                new ArazzoWorkflow { WorkflowId = "workflow1" }
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        // Act & Assert
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1(writer));
+        Assert.Equal("SourceDescriptions is required and must contain at least one element for ArazzoDocument serialization.", exception.Message);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithNullWorkflows_ShouldThrowArazzoSerializationException()
+    {
+        // Arrange
+        var document = new ArazzoDocument
+        {
+            Info = new ArazzoInfo { Title = "Test", Version = "1.0.0" },
+            SourceDescriptions = new List<ArazzoSourceDescription>
+            {
+                new ArazzoSourceDescription
+                {
+                    Name = "source1",
+                    Url = new Uri("https://example.com/api"),
+                    Type = ArazzoDescriptionType.OpenAPI
+                }
+            },
+            Workflows = null
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        // Act & Assert
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1(writer));
+        Assert.Equal("Workflows is required and must contain at least one element for ArazzoDocument serialization.", exception.Message);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithEmptyWorkflows_ShouldThrowArazzoSerializationException()
+    {
+        // Arrange
+        var document = new ArazzoDocument
+        {
+            Info = new ArazzoInfo { Title = "Test", Version = "1.0.0" },
+            SourceDescriptions = new List<ArazzoSourceDescription>
+            {
+                new ArazzoSourceDescription
+                {
+                    Name = "source1",
+                    Url = new Uri("https://example.com/api"),
+                    Type = ArazzoDescriptionType.OpenAPI
+                }
+            },
+            Workflows = new List<ArazzoWorkflow>()
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        // Act & Assert
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1(writer));
+        Assert.Equal("Workflows is required and must contain at least one element for ArazzoDocument serialization.", exception.Message);
     }
 }
