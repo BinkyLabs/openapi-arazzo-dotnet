@@ -19,6 +19,21 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     /// </summary>
     public ArazzoInfo? Info { get; set; }
 
+    /// <summary>
+    /// Gets or sets the source descriptions list.
+    /// </summary>
+    public IList<ArazzoSourceDescription>? SourceDescriptions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the workflows list.
+    /// </summary>
+    public IList<ArazzoWorkflow>? Workflows { get; set; }
+
+    /// <summary>
+    /// Gets or sets the components object.
+    /// </summary>
+    public ArazzoComponent? Components { get; set; }
+
     /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
 
@@ -33,6 +48,31 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
         if (Info != null)
         {
             writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, (w, obj) => obj.SerializeAsV1(w));
+        }
+        if (SourceDescriptions != null && SourceDescriptions.Count > 0)
+        {
+            writer.WritePropertyName(ArazzoConstants.ArazzoDocumentSourceDescriptions);
+            writer.WriteStartArray();
+            foreach (var sourceDescription in SourceDescriptions)
+            {
+                sourceDescription.SerializeAsV1(writer);
+            }
+            writer.WriteEndArray();
+        }
+        if (Workflows != null && Workflows.Count > 0)
+        {
+            writer.WritePropertyName(ArazzoConstants.ArazzoDocumentWorkflows);
+            writer.WriteStartArray();
+            foreach (var workflow in Workflows)
+            {
+                workflow.SerializeAsV1(writer);
+            }
+            writer.WriteEndArray();
+        }
+        if (Components != null)
+        {
+            writer.WritePropertyName(ArazzoConstants.ArazzoDocumentComponents);
+            Components.SerializeAsV1(writer);
         }
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();

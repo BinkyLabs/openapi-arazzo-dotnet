@@ -12,7 +12,7 @@
 - [ ] reusable-object
 - [ ] schema
 - [x] source-description-object
-- [ ] specification-extensions
+- [x] specification-extensions
 - [x] step-object
 - [x] success-action-object
 - [x] workflow-object
@@ -20,4 +20,4 @@
 # features to implement
 
 - [ ] references resolution
-- [ ] extensions on objects
+- [x] extensions on objects

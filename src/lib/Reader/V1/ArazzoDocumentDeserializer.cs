@@ -6,6 +6,9 @@ internal static partial class ArazzoV1Deserializer
     {
         { ArazzoConstants.ArazzoDocumentArazzo, static (o, v) => o.Arazzo = v.GetScalarValue() },
         { ArazzoConstants.ArazzoDocumentInfo, static (o, v) => o.Info = LoadInfo(v) },
+        { ArazzoConstants.ArazzoDocumentSourceDescriptions, static (o, v) => o.SourceDescriptions = v.CreateList(LoadSourceDescription) },
+        { ArazzoConstants.ArazzoDocumentWorkflows, static (o, v) => o.Workflows = v.CreateList(LoadWorkflow) },
+        { ArazzoConstants.ArazzoDocumentComponents, static (o, v) => o.Components = LoadComponent(v) },
     };
     public static readonly PatternFieldMap<ArazzoDocument> DocumentPatternFields = new()
     {

@@ -17,6 +17,18 @@ public static class ArazzoConstants
     /// The "arazzo" field name in the Arazzo document.
     /// </summary>
     public const string ArazzoDocumentArazzo = "arazzo";
+    /// <summary>
+    /// The "sourceDescriptions" field name in the Arazzo document.
+    /// </summary>
+    public const string ArazzoDocumentSourceDescriptions = "sourceDescriptions";
+    /// <summary>
+    /// The "workflows" field name in the Arazzo document.
+    /// </summary>
+    public const string ArazzoDocumentWorkflows = "workflows";
+    /// <summary>
+    /// The "components" field name in the Arazzo document.
+    /// </summary>
+    public const string ArazzoDocumentComponents = "components";
 
     // ArazzoInfo
     /// <summary>
