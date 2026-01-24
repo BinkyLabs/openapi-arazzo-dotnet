@@ -34,7 +34,7 @@ public class BaseArazzoReference : IArazzoSerializable
     /// </summary>
     public bool IsFragment { get; init; }
 
-    private ArazzoDocument? hostDocument;        
+    private ArazzoDocument? hostDocument;
     /// <summary>
     /// The ArazzoDocument that is hosting the OpenApiReference instance. This is used to enable dereferencing the reference.
     /// </summary>
@@ -63,12 +63,12 @@ public class BaseArazzoReference : IArazzoSerializable
 
             return $"#/components/{Type.GetDisplayName()}/{Id}";
         }
-        private set 
-        { 
+        private set
+        {
             if (value is not null)
             {
                 _referenceV1 = value;
-            }               
+            }
         }
     }
 
@@ -141,7 +141,7 @@ public class BaseArazzoReference : IArazzoSerializable
         for (int i = 0; i <= nodeLocationSegments.Count - relativeSegments.Length; i++)
         {
             if (relativeSegments.SequenceEqual(nodeLocationSegments.Skip(i).Take(relativeSegments.Length), StringComparer.Ordinal) &&
-                nodeLocationSegments.Take(i + relativeSegments.Length).ToArray() is {Length: > 0} matchingSegments)
+                nodeLocationSegments.Take(i + relativeSegments.Length).ToArray() is { Length: > 0 } matchingSegments)
             {
                 // Trim to include just the matching segment chain
                 return $"#/{string.Join("/", matchingSegments)}";
