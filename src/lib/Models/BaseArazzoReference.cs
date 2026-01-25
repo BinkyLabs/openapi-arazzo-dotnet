@@ -22,10 +22,7 @@ public class BaseArazzoReference : IArazzoSerializable
 
     /// <summary>
     /// The identifier of the reusable component of one particular ReferenceType.
-    /// If ExternalResource is present, this is the path to the component after the '#/'.
-    /// For example, if the reference is 'example.json#/path/to/component', the Id is 'path/to/component'.
-    /// If ExternalResource is not present, this is the name of the component without the reference type name.
-    /// For example, if the reference is '#/components/schemas/componentName', the Id is 'componentName'.
+    /// For example, if the reference is '$components/schemas/componentName', the Id is 'componentName'.
     /// </summary>
     public string? Id { get; init; }
 
@@ -56,12 +53,12 @@ public class BaseArazzoReference : IArazzoSerializable
             if (!string.IsNullOrEmpty(Id) && Id is not null &&
                 (Id.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                  Id.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
-                 Id.Contains("#/components", StringComparison.OrdinalIgnoreCase)))
+                 Id.Contains("$components", StringComparison.OrdinalIgnoreCase)))
             {
                 return Id;
             }
 
-            return $"#/components/{Type.GetDisplayName()}/{Id}";
+            return $"$components.{Type.GetDisplayName()}.{Id}";
         }
         private set
         {
@@ -115,13 +112,13 @@ public class BaseArazzoReference : IArazzoSerializable
 
     internal void SetJsonPointerPath(string pointer, string nodeLocation)
     {
-        // Relative reference to internal JSON schema node/resource (e.g. "#/properties/b")
-        if (pointer.StartsWith("#/", StringComparison.OrdinalIgnoreCase) && !pointer.Contains("/components/schemas", StringComparison.OrdinalIgnoreCase))
+        // Relative reference to internal JSON schema node/resource (e.g. "$/properties/b")
+        if (pointer.StartsWith("$", StringComparison.OrdinalIgnoreCase) && !pointer.Contains("$.components/schemas", StringComparison.OrdinalIgnoreCase))
         {
             ReferenceV1 = ResolveRelativePointer(nodeLocation, pointer);
         }
 
-        // Absolute reference or anchor (e.g. "#/components/schemas/..." or full URL)
+        // Absolute reference or anchor (e.g. "$components/schemas/..." or full URL)
         else if ((pointer.Contains('#') || pointer.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             && !string.Equals(ReferenceV1, pointer, StringComparison.OrdinalIgnoreCase))
         {
@@ -132,10 +129,10 @@ public class BaseArazzoReference : IArazzoSerializable
     private static string ResolveRelativePointer(string nodeLocation, string relativeRef)
     {
         // Convert nodeLocation to path segments
-        var nodeLocationSegments = nodeLocation.TrimStart('#').Split(['/'], StringSplitOptions.RemoveEmptyEntries).ToList();
+        var nodeLocationSegments = nodeLocation.TrimStart('$').Split(['.'], StringSplitOptions.RemoveEmptyEntries).ToList();
 
         // Convert relativeRef to dynamic segments
-        var relativeSegments = relativeRef.TrimStart('#').Split(['/'], StringSplitOptions.RemoveEmptyEntries);
+        var relativeSegments = relativeRef.TrimStart('$').Split(['.'], StringSplitOptions.RemoveEmptyEntries);
 
         // Locate the first occurrence of relativeRef segments in the full path
         for (int i = 0; i <= nodeLocationSegments.Count - relativeSegments.Length; i++)
@@ -144,15 +141,10 @@ public class BaseArazzoReference : IArazzoSerializable
                 nodeLocationSegments.Take(i + relativeSegments.Length).ToArray() is { Length: > 0 } matchingSegments)
             {
                 // Trim to include just the matching segment chain
-                return $"#/{string.Join("/", matchingSegments)}";
+                return $"${string.Join(".", matchingSegments)}";
             }
         }
 
-        // Fallback on building a full path
-        if (nodeLocation.StartsWith("#/components/schemas/", StringComparison.OrdinalIgnoreCase))
-        { // If the nodeLocation is a schema, we only want to keep the first three segments which are components/schemas/{schemaName}
-            return $"#/{string.Join("/", nodeLocationSegments.Take(3).Concat(relativeSegments))}";
-        }
-        return $"#/{string.Join("/", nodeLocationSegments.SkipLast(relativeSegments.Length).Concat(relativeSegments))}";
+        return $"${string.Join(".", nodeLocationSegments.SkipLast(relativeSegments.Length).Concat(relativeSegments))}";
     }
 }

@@ -21,3 +21,7 @@
 
 - [ ] references resolution
 - [x] extensions on objects
+
+# open questions
+
+- How is $ref supposed to work for JSON schema fields? externals supported? where can the component schema live in the document?
