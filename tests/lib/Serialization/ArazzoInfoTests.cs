@@ -15,9 +15,9 @@ public class ArazzoInfoTests
     public void SerializeAsV1_ShouldWriteCorrectJson()
     {
         // Arrange
-        var overlayInfo = new ArazzoInfo
+        var arazzoInfo = new ArazzoInfo
         {
-            Title = "Test Overlay",
+            Title = "Test Arazzo",
             Version = "1.0.0"
         };
         using var textWriter = new StringWriter();
@@ -26,13 +26,13 @@ public class ArazzoInfoTests
         var expectedJson =
 """
 {
-    "title": "Test Overlay",
+    "title": "Test Arazzo",
     "version": "1.0.0"
 }
 """;
 
         // Act
-        overlayInfo.SerializeAsV1(writer);
+        arazzoInfo.SerializeAsV1(writer);
         var jsonResult = textWriter.ToString();
         var jsonResultObject = JsonNode.Parse(jsonResult);
         var expectedJsonObject = JsonNode.Parse(expectedJson);
@@ -48,7 +48,7 @@ public class ArazzoInfoTests
         // Arrange
         var json = """
         {
-            "title": "Test Overlay",
+            "title": "Test Arazzo",
             "version": "1.0.0"
         }
         """;
@@ -61,7 +61,7 @@ public class ArazzoInfoTests
         var arazzoInfo = ArazzoV1Deserializer.LoadInfo(parseNode);
 
         // Assert
-        Assert.Equal("Test Overlay", arazzoInfo.Title);
+        Assert.Equal("Test Arazzo", arazzoInfo.Title);
         Assert.Equal("1.0.0", arazzoInfo.Version);
     }
 }

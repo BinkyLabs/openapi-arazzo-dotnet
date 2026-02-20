@@ -10,12 +10,12 @@ namespace BinkyLabs.OpenApi.Arazzo;
 public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 {
     /// <summary>
-    /// Gets or sets the overlay version. Default is "1.0.1".
+    /// Gets or sets the Arazzo version. Default is "1.0.1".
     /// </summary>
     public string? Arazzo { get; internal set; } = "1.0.1";
 
     /// <summary>
-    /// Gets or sets the overlay info object.
+    /// Gets or sets the Arazzo info object.
     /// </summary>
     public ArazzoInfo? Info { get; set; }
 
@@ -38,7 +38,7 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
 
     /// <summary>
-    /// Serializes the overlay document as an OpenAPI Arazzo v1.0.0 JSON object.
+    /// Serializes the Arazzo document as an OpenAPI Arazzo v1.0.0 JSON object.
     /// </summary>
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>

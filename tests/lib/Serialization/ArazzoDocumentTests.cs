@@ -18,7 +18,7 @@ public class ArazzoDocumentTests
             Arazzo = "1.0.1",
             Info = new ArazzoInfo
             {
-                Title = "Test Overlay",
+                Title = "Test Arazzo",
                 Version = "1.0.0"
             },
             SourceDescriptions = new List<ArazzoSourceDescription>
@@ -63,7 +63,7 @@ public class ArazzoDocumentTests
         {
             "arazzo": "1.0.1",
             "info": {
-                "title": "Test Overlay",
+                "title": "Test Arazzo",
                 "version": "1.0.0"
             },
             "sourceDescriptions": [
@@ -109,7 +109,7 @@ public class ArazzoDocumentTests
         {
             Info = new ArazzoInfo
             {
-                Title = "Minimal Overlay",
+                Title = "Minimal Arazzo",
                 Version = "1.0.0"
             },
             SourceDescriptions = new List<ArazzoSourceDescription>
@@ -134,7 +134,7 @@ public class ArazzoDocumentTests
         {
             "arazzo": "1.0.1",
             "info": {
-                "title": "Minimal Overlay",
+                "title": "Minimal Arazzo",
                 "version": "1.0.0"
             },
             "sourceDescriptions": [
@@ -169,7 +169,7 @@ public class ArazzoDocumentTests
         {
             "arazzo": "1.0.1",
             "info": {
-                "title": "Test Overlay",
+                "title": "Test Arazzo",
                 "version": "1.0.0"
             },
             "sourceDescriptions": [
@@ -206,7 +206,7 @@ public class ArazzoDocumentTests
         // Assert
         Assert.Equal("1.0.1", document.Arazzo);
         Assert.NotNull(document.Info);
-        Assert.Equal("Test Overlay", document.Info.Title);
+        Assert.Equal("Test Arazzo", document.Info.Title);
         Assert.Equal("1.0.0", document.Info.Version);
 
         Assert.NotNull(document.SourceDescriptions);
