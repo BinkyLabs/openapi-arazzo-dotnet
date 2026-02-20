@@ -1,5 +1,5 @@
 {
-  "bootstrap-sha": "a86a120902cf51478bfb3f2dc9cdbffa2c1d0842",
+  "bootstrap-sha": "837a50c2918874d303400ee66ef5655b7930f6b3",
   "exclude-paths": [
     ".github",
     ".vs",
@@ -16,12 +16,12 @@
   "prerelease-type": "preview",
   "packages": {
     ".": {
-      "package-name": "openapi-overlays-dotnet",
+      "package-name": "openapi-arazzo-dotnet",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         {
           "type": "xml",
-          "path": "src/lib/BinkyLabs.OpenApi.Overlays.csproj",
+          "path": "src/lib/BinkyLabs.OpenApi.Arazzo.csproj",
           "xpath": "//Project/PropertyGroup/Version"
         }
       ]
