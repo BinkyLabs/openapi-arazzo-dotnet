@@ -40,6 +40,7 @@ public sealed class ArazzoModelFactoryTests
         // Then
         Assert.NotNull(result);
         Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document.Info);
         Assert.Equal("Sample Arazzo", result.Document.Info.Title);
     }
 
@@ -56,6 +57,7 @@ public sealed class ArazzoModelFactoryTests
         // Then
         Assert.NotNull(result);
         Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document.Info);
         Assert.Equal("Sample Arazzo", result.Document.Info.Title);
     }
 
@@ -72,6 +74,8 @@ public sealed class ArazzoModelFactoryTests
         // Then
         Assert.NotNull(result);
         Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document.Info);
+
         Assert.Equal("Sample Arazzo", result.Document.Info.Title);
     }
 
@@ -88,6 +92,7 @@ public sealed class ArazzoModelFactoryTests
         // Then
         Assert.NotNull(result);
         Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document.Info);
         Assert.Equal("Sample Arazzo", result.Document.Info.Title);
     }
 
@@ -104,6 +109,7 @@ public sealed class ArazzoModelFactoryTests
         // Then
         Assert.NotNull(result);
         Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document.Info);
         Assert.Equal("Sample Arazzo", result.Document.Info.Title);
     }
 
@@ -116,6 +122,7 @@ public sealed class ArazzoModelFactoryTests
         // Then
         Assert.NotNull(result);
         Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document.Info);
         Assert.Equal("Sample Arazzo", result.Document.Info.Title);
     }
 
@@ -132,6 +139,7 @@ public sealed class ArazzoModelFactoryTests
         // Then
         Assert.NotNull(result);
         Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document.Info);
         Assert.Equal("Sample Arazzo", result.Document.Info.Title);
     }
 
@@ -147,6 +155,7 @@ public sealed class ArazzoModelFactoryTests
         // Then
         Assert.NotNull(result);
         Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document.Info);
         Assert.Equal("Sample Arazzo", result.Document.Info.Title);
     }
 
