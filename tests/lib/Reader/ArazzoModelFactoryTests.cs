@@ -35,7 +35,7 @@ public sealed class ArazzoModelFactoryTests
         using var nonSeekableStream = new NonSeekableStream(memoryStream);
 
         // When
-        var result = await ArazzoModelFactory.LoadFromStreamAsync(nonSeekableStream);
+        var result = await ArazzoModelFactory.LoadFromStreamAsync(nonSeekableStream, cancellationToken: TestContext.Current.CancellationToken);
 
         // Then
         Assert.NotNull(result);
@@ -51,7 +51,7 @@ public sealed class ArazzoModelFactoryTests
         using var nonSeekableStream = new NonSeekableStream(memoryStream);
 
         // When
-        var result = await ArazzoModelFactory.LoadFromStreamAsync(nonSeekableStream);
+        var result = await ArazzoModelFactory.LoadFromStreamAsync(nonSeekableStream, cancellationToken: TestContext.Current.CancellationToken);
 
         // Then
         Assert.NotNull(result);
@@ -67,7 +67,7 @@ public sealed class ArazzoModelFactoryTests
         await using var asyncOnlyStream = new AsyncOnlyStream(memoryStream);
 
         // When
-        var result = await ArazzoModelFactory.LoadFromStreamAsync(asyncOnlyStream);
+        var result = await ArazzoModelFactory.LoadFromStreamAsync(asyncOnlyStream, cancellationToken: TestContext.Current.CancellationToken);
 
         // Then
         Assert.NotNull(result);
@@ -83,7 +83,7 @@ public sealed class ArazzoModelFactoryTests
         await using var asyncOnlyStream = new AsyncOnlyStream(memoryStream);
 
         // When
-        var result = await ArazzoModelFactory.LoadFromStreamAsync(asyncOnlyStream);
+        var result = await ArazzoModelFactory.LoadFromStreamAsync(asyncOnlyStream, cancellationToken: TestContext.Current.CancellationToken);
 
         // Then
         Assert.NotNull(result);
@@ -99,7 +99,7 @@ public sealed class ArazzoModelFactoryTests
         using var nonSeekableStream = new NonSeekableStream(memoryStream);
 
         // When
-        var result = await ArazzoModelFactory.LoadFromStreamAsync(nonSeekableStream);
+        var result = await ArazzoModelFactory.LoadFromStreamAsync(nonSeekableStream, cancellationToken: TestContext.Current.CancellationToken);
 
         // Then
         Assert.NotNull(result);
@@ -127,7 +127,7 @@ public sealed class ArazzoModelFactoryTests
         using var nonSeekableStream = new NonSeekableStream(memoryStream);
 
         // When
-        var result = await ArazzoModelFactory.LoadFromStreamAsync(nonSeekableStream);
+        var result = await ArazzoModelFactory.LoadFromStreamAsync(nonSeekableStream, cancellationToken: TestContext.Current.CancellationToken);
 
         // Then
         Assert.NotNull(result);
@@ -142,7 +142,7 @@ public sealed class ArazzoModelFactoryTests
         using var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(documentJson));
 
         // When
-        var result = await ArazzoModelFactory.LoadFromStreamAsync(memoryStream);
+        var result = await ArazzoModelFactory.LoadFromStreamAsync(memoryStream, cancellationToken: TestContext.Current.CancellationToken);
 
         // Then
         Assert.NotNull(result);
