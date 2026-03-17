@@ -182,7 +182,7 @@ public sealed class ArazzoModelFactoryTests
 
         public override long Length => _innerStream.Length;
 
-        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object? state)
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
         {
             return _innerStream.BeginRead(buffer, offset, count, callback, state);
         }
@@ -230,7 +230,7 @@ public sealed class ArazzoModelFactoryTests
 
         public override bool CanTimeout => _innerStream.CanTimeout;
 
-        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object? state)
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
         {
             return _innerStream.BeginWrite(buffer, offset, count, callback, state);
         }
@@ -336,7 +336,7 @@ public sealed class ArazzoModelFactoryTests
 
         public override long Length => _innerStream.Length;
 
-        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object? state)
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
         {
             return _innerStream.BeginRead(buffer, offset, count, callback, state);
         }
@@ -385,7 +385,7 @@ public sealed class ArazzoModelFactoryTests
 
         public override bool CanTimeout => _innerStream.CanTimeout;
 
-        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object? state)
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
         {
             return _innerStream.BeginWrite(buffer, offset, count, callback, state);
         }
