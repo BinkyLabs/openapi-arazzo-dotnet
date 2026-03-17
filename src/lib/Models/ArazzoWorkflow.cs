@@ -22,7 +22,7 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the inputs schema.
     /// </summary>
-    public OpenApiSchema? Inputs { get; set; }
+    public IOpenApiSchema? Inputs { get; set; }
 
     /// <summary>
     /// Gets or sets the set of workflow identifiers that this workflow depends on.

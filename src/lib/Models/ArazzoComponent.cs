@@ -27,7 +27,7 @@ public class ArazzoComponent : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the inputs dictionary.
     /// </summary>
-    public IDictionary<string, OpenApiSchema>? Inputs { get; set; }
+    public IDictionary<string, IOpenApiSchema>? Inputs { get; set; }
 
     /// <summary>
     /// Gets or sets the extensions dictionary.

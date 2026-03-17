@@ -31,7 +31,7 @@ public class ArazzoComponentTests
             {
                 ["failure1"] = new ArazzoFailureAction { Name = "failure1", Type = ArazzoFailureType.End }
             },
-            Inputs = new Dictionary<string, OpenApiSchema>
+            Inputs = new Dictionary<string, IOpenApiSchema>
             {
                 ["input1"] = new OpenApiSchema { Type = JsonSchemaType.String }
             },

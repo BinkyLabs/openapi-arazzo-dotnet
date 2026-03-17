@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Nodes;
 
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
@@ -20,10 +21,19 @@ internal static partial class ArazzoV1Deserializer
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n) => o.AddExtension(k, LoadExtension(k, n)) }
     };
 
-    public static OpenApiSchema? LoadSchema(ParseNode node)
+    public static IOpenApiSchema? LoadSchema(ParseNode node)
     {
         //TODO this leads to double encoding and memory overhead, find a better way by adding an overload that accepts json node
         using var ms = new MemoryStream(Encoding.UTF8.GetBytes(node.JsonNode.ToJsonString()));
+        if (node.JsonNode is JsonObject jsonObject &&
+            jsonObject.TryGetPropertyValue("$ref", out var reference)
+            && reference is JsonValue referenceValue
+            && referenceValue.TryGetValue<string>(out var referenceString)
+            && !string.IsNullOrEmpty(referenceString))
+        {
+            // TODO the reference might fail to resolve because of the underlying infrastructure. We might need to come up with our own type.
+            return OpenApiModelFactory.Load<OpenApiSchemaReference>(ms, OpenApiSpecVersion.OpenApi3_2, OpenApiConstants.Json, new(), out var varRef);
+        }
         return OpenApiModelFactory.Load<OpenApiSchema>(ms, OpenApiSpecVersion.OpenApi3_2, OpenApiConstants.Json, new(), out var _);
     }
 

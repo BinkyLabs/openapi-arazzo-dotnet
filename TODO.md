@@ -25,3 +25,5 @@
 # open questions
 
 - How is $ref supposed to work for JSON schema fields? externals supported? where can the component schema live in the document?
+---> JSON schema (inputs) use $ref
+---> everything else the reusable object

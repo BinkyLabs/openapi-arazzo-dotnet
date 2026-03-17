@@ -6,7 +6,7 @@ BinkyLabs.OpenApi.Arazzo.ArazzoComponent.Extensions.get -> System.Collections.Ge
 BinkyLabs.OpenApi.Arazzo.ArazzoComponent.Extensions.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoComponent.FailureActions.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.ArazzoFailureAction!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoComponent.FailureActions.set -> void
-BinkyLabs.OpenApi.Arazzo.ArazzoComponent.Inputs.get -> System.Collections.Generic.IDictionary<string!, Microsoft.OpenApi.OpenApiSchema!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoComponent.Inputs.get -> System.Collections.Generic.IDictionary<string!, Microsoft.OpenApi.IOpenApiSchema!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoComponent.Inputs.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoComponent.Parameters.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.ArazzoParameter!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoComponent.Parameters.set -> void
@@ -211,7 +211,7 @@ BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Extensions.get -> System.Collections.Gen
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Extensions.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.FailureActions.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.IArazzoFailureAction!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.FailureActions.set -> void
-BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Inputs.get -> Microsoft.OpenApi.OpenApiSchema?
+BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Inputs.get -> Microsoft.OpenApi.IOpenApiSchema?
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Inputs.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Outputs.get -> System.Collections.Generic.IDictionary<string!, string!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Outputs.set -> void
