@@ -488,3 +488,6 @@ debug-samples/updated.yaml
 
 # Test files
 test-api.json
+
+# Coverage reports
+reports/
