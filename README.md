@@ -1,4 +1,4 @@
-[![NuGet Version](https://img.shields.io/nuget/vpre/BinkyLabs.OpenApi.Overlays)](https://www.nuget.org/packages/BinkyLabs.OpenApi.Overlays) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/BinkyLabs/openapi-arazzo-dotnet/dotnet.yml)](https://github.com/BinkyLabs/openapi-arazzo-dotnet/actions/workflows/dotnet.yml)
+[![NuGet Version](https://img.shields.io/nuget/vpre/BinkyLabs.OpenApi.Arazzo)](https://www.nuget.org/packages/BinkyLabs.OpenApi.Arazzo) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/BinkyLabs/openapi-arazzo-dotnet/dotnet.yml)](https://github.com/BinkyLabs/openapi-arazzo-dotnet/actions/workflows/dotnet.yml)
 
 # OpenAPI Arazzo Library for dotnet
 
