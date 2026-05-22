@@ -106,11 +106,13 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     /// <param name="input"> The string input.</param>
     /// <param name="format"></param>
     /// <param name="settings"></param>
+    /// <param name="cancellationToken">Propagates notification that operations should be cancelled.</param>
     /// <returns></returns>
     public static Task<ReadResult> ParseAsync(string input,
                                    string? format = null,
-                                   ArazzoReaderSettings? settings = null)
+                                   ArazzoReaderSettings? settings = null,
+                                   CancellationToken cancellationToken = default)
     {
-        return ArazzoModelFactory.ParseAsync(input, format, settings);
+        return ArazzoModelFactory.ParseAsync(input, format, settings, cancellationToken);
     }
 }
