@@ -8,7 +8,6 @@
     <Nullable>enable</Nullable>
     <Authors>BinkyLabs</Authors>
     <Copyright>BinkyLabs. All rights reserved.</Copyright>
-    <SignAssembly>True</SignAssembly>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageIcon>logo-binkylabs.png</PackageIcon>
     <IncludePackageIcon>true</IncludePackageIcon>
