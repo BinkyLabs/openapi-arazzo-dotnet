@@ -57,9 +57,8 @@ public class ArazzoParameterTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var parameter = ArazzoV1Deserializer.LoadParameter(parseNode);
+        var parameter = ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext);
 
         Assert.Equal("limit", parameter.Name);
         Assert.Equal(ParameterLocation.Query, parameter.In);

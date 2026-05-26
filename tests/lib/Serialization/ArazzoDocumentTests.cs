@@ -198,10 +198,9 @@ public class ArazzoDocumentTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
         // Act
-        var document = ArazzoV1Deserializer.LoadDocument(parseNode);
+        var document = ArazzoV1Deserializer.LoadDocument(jsonNode, parsingContext);
 
         // Assert
         Assert.Equal("1.0.1", document.Arazzo);
@@ -241,10 +240,9 @@ public class ArazzoDocumentTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
         // Act
-        var document = ArazzoV1Deserializer.LoadDocument(parseNode);
+        var document = ArazzoV1Deserializer.LoadDocument(jsonNode, parsingContext);
 
         // Assert
         Assert.NotNull(document.Extensions);

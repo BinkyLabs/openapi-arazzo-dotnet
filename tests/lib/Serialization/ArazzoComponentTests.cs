@@ -104,9 +104,8 @@ public class ArazzoComponentTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var component = ArazzoV1Deserializer.LoadComponent(parseNode);
+        var component = ArazzoV1Deserializer.LoadComponent(jsonNode, parsingContext);
 
         Assert.NotNull(component.Parameters);
         Assert.Contains("param1", component.Parameters!.Keys);

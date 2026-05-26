@@ -54,11 +54,10 @@ public class ArazzoInfoTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
 
         // Act
-        var arazzoInfo = ArazzoV1Deserializer.LoadInfo(parseNode);
+        var arazzoInfo = ArazzoV1Deserializer.LoadInfo(jsonNode, parsingContext);
 
         // Assert
         Assert.Equal("Test Arazzo", arazzoInfo.Title);

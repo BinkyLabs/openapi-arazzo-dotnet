@@ -1,32 +1,34 @@
+using System.Text.Json.Nodes;
+
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoStep> StepFixedFields = new()
     {
-        { ArazzoConstants.ArazzoStepDescription, static (o, v) => o.Description = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoStepStepId, static (o, v) => o.StepId = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoStepOperationId, static (o, v) => o.OperationId = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoStepOperationPath, static (o, v) => o.OperationPath = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoStepWorkflowId, static (o, v) => o.WorkflowId = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoStepParameters, static (o, v) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter) },
-        { ArazzoConstants.ArazzoStepRequestBody, static (o, v) => o.RequestBody = LoadRequestBody(v) },
-        { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v) => o.SuccessCriteria = v.CreateList(LoadCriterion) },
-        { ArazzoConstants.ArazzoStepOnSuccess, static (o, v) => o.OnSuccess = v.CreateList<IArazzoSuccessAction>(LoadSuccessAction) },
-        { ArazzoConstants.ArazzoStepOnFailure, static (o, v) => o.OnFailure = v.CreateList<IArazzoFailureAction>(LoadFailureAction) },
-        { ArazzoConstants.ArazzoStepOutputs, static (o, v) => o.Outputs = v.CreateSimpleMap(static n => n.GetScalarValue()) }
+        { ArazzoConstants.ArazzoStepDescription, static (o, v, c) => o.Description = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoStepStepId, static (o, v, c) => o.StepId = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoStepOperationId, static (o, v, c) => o.OperationId = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoStepOperationPath, static (o, v, c) => o.OperationPath = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoStepWorkflowId, static (o, v, c) => o.WorkflowId = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoStepParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
+        { ArazzoConstants.ArazzoStepRequestBody, static (o, v, c) => o.RequestBody = LoadRequestBody(v, c) },
+        { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v, c) => o.SuccessCriteria = v.CreateList(LoadCriterion, c) },
+        { ArazzoConstants.ArazzoStepOnSuccess, static (o, v, c) => o.OnSuccess = v.CreateList<IArazzoSuccessAction>(LoadSuccessAction, c) },
+        { ArazzoConstants.ArazzoStepOnFailure, static (o, v, c) => o.OnFailure = v.CreateList<IArazzoFailureAction>(LoadFailureAction, c) },
+        { ArazzoConstants.ArazzoStepOutputs, static (o, v, c) => o.Outputs = v.CreateSimpleMap(static n => n.GetScalarValue()!, c) }
     };
 
     public static readonly PatternFieldMap<ArazzoStep> StepPatternFields = new()
     {
-        { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n) => o.AddExtension(k, LoadExtension(k, n)) }
+        { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
 
-    public static ArazzoStep LoadStep(ParseNode node)
+    public static ArazzoStep LoadStep(JsonNode node, ParsingContext context)
     {
-        var mapNode = node.CheckMapNode("Step");
+        var mapNode = node.CheckMapNode("Step", context);
         var step = new ArazzoStep();
-        ParseMap(mapNode, step, StepFixedFields, StepPatternFields);
+        mapNode.ParseMap(step, StepFixedFields, StepPatternFields, context);
 
         return step;
     }

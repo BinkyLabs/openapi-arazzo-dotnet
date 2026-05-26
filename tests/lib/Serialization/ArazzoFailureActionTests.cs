@@ -168,9 +168,8 @@ public class ArazzoFailureActionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var failureAction = ArazzoV1Deserializer.LoadFailureAction(parseNode);
+        var failureAction = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
 
         Assert.Equal("retryAction", failureAction.Name);
         Assert.Equal(ArazzoFailureType.Retry, failureAction.Type);
@@ -198,9 +197,8 @@ public class ArazzoFailureActionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var failureAction = ArazzoV1Deserializer.LoadFailureAction(parseNode);
+        var failureAction = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
 
         Assert.Equal("simpleEnd", failureAction.Name);
         Assert.Equal(ArazzoFailureType.End, failureAction.Type);
@@ -225,9 +223,8 @@ public class ArazzoFailureActionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var failureAction = ArazzoV1Deserializer.LoadFailureAction(parseNode);
+        var failureAction = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
 
         Assert.Equal("gotoFailure", failureAction.Name);
         Assert.Equal(ArazzoFailureType.Goto, failureAction.Type);

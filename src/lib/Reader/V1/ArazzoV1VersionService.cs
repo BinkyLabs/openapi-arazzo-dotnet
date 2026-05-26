@@ -1,14 +1,14 @@
-﻿
+
 // Licensed under the MIT license.
 
-using Microsoft.OpenApi;
+using System.Text.Json.Nodes;
 
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 /// <summary>
 /// The version service for the Arazzo 1.0 specification.
 /// </summary>
-internal class ArazzoV1VersionService : IArazzoVersionService
+internal class ArazzoV1VersionService : BaseArazzoVersionService
 {
 
     /// <summary>
@@ -19,9 +19,9 @@ internal class ArazzoV1VersionService : IArazzoVersionService
     {
     }
 
-    private readonly Dictionary<Type, Func<ParseNode, object?>> _loaders = new Dictionary<Type, Func<ParseNode, object?>>
+    private static readonly Dictionary<Type, Func<JsonNode, ParsingContext, object?>> _loaders = new()
     {
-        [typeof(JsonNodeExtension)] = ArazzoV1Deserializer.LoadAny,
+        [typeof(JsonNodeExtension)] = static (node, _) => new JsonNodeExtension(node),
         [typeof(ArazzoCriterion)] = ArazzoV1Deserializer.LoadCriterion,
         [typeof(ArazzoCriterionExpressionType)] = ArazzoV1Deserializer.LoadCriterionExpressionType,
         [typeof(ArazzoDocument)] = ArazzoV1Deserializer.LoadDocument,
@@ -36,19 +36,10 @@ internal class ArazzoV1VersionService : IArazzoVersionService
         [typeof(ArazzoWorkflow)] = ArazzoV1Deserializer.LoadWorkflow,
     };
 
-    public ArazzoDocument LoadDocument(RootNode rootNode, Uri location)
+    public override ArazzoDocument LoadDocument(JsonNode jsonNode, Uri location, ParsingContext context)
     {
-        return ArazzoV1Deserializer.LoadArazzoDocument(rootNode, location);
+        return ArazzoV1Deserializer.LoadArazzoDocument(jsonNode, location, context);
     }
 
-    public T? LoadElement<T>(ParseNode node) where T : IOpenApiElement
-    {
-        if (Loaders.TryGetValue(typeof(T), out var loader) && loader(node) is T result)
-        {
-            return result;
-        }
-        return default;
-    }
-
-    internal Dictionary<Type, Func<ParseNode, object?>> Loaders => _loaders;
+    protected override Dictionary<Type, Func<JsonNode, ParsingContext, object?>> Loaders => _loaders;
 }

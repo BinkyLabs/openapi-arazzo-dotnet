@@ -132,9 +132,8 @@ public class ArazzoSuccessActionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var successAction = ArazzoV1Deserializer.LoadSuccessAction(parseNode);
+        var successAction = ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext);
 
         Assert.Equal("gotoAction", successAction.Name);
         Assert.Equal(ArazzoSuccessType.Goto, successAction.Type);
@@ -160,9 +159,8 @@ public class ArazzoSuccessActionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var successAction = ArazzoV1Deserializer.LoadSuccessAction(parseNode);
+        var successAction = ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext);
 
         Assert.Equal("simpleEnd", successAction.Name);
         Assert.Equal(ArazzoSuccessType.End, successAction.Type);

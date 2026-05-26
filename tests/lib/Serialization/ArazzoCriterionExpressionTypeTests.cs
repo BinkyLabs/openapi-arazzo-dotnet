@@ -80,9 +80,8 @@ public class ArazzoCriterionExpressionTypeTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(parseNode);
+        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
 
         Assert.Equal(ArazzoCriterionExpressionTypeType.XPath, expressionType.Type);
         Assert.Equal(ArazzoCriterionExpressionVersion.XPath20, expressionType.Version);
@@ -102,9 +101,8 @@ public class ArazzoCriterionExpressionTypeTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(parseNode);
+        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
 
         Assert.Equal(ArazzoCriterionExpressionTypeType.JsonPath, expressionType.Type);
         Assert.Equal(ArazzoCriterionExpressionVersion.DraftGoessnerDispatchJsonPath00, expressionType.Version);
@@ -121,9 +119,8 @@ public class ArazzoCriterionExpressionTypeTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(parseNode);
+        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
 
         Assert.Equal(ArazzoCriterionExpressionTypeType.XPath, expressionType.Type);
         Assert.Equal(ArazzoCriterionExpressionVersion.XPath10, expressionType.Version);
@@ -197,9 +194,8 @@ public class ArazzoCriterionExpressionTypeTests
         var jsonNode = JsonNode.Parse(json)!;
         var diagnostic = new ArazzoDiagnostic();
         var parsingContext = new ParsingContext(diagnostic);
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(parseNode);
+        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
 
         // Verify that the object was deserialized
         Assert.Equal(ArazzoCriterionExpressionTypeType.Simple, expressionType.Type);
@@ -222,9 +218,8 @@ public class ArazzoCriterionExpressionTypeTests
         var jsonNode = JsonNode.Parse(json)!;
         var diagnostic = new ArazzoDiagnostic();
         var parsingContext = new ParsingContext(diagnostic);
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(parseNode);
+        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
 
         // Verify that the object was deserialized
         Assert.Equal(ArazzoCriterionExpressionTypeType.Regex, expressionType.Type);

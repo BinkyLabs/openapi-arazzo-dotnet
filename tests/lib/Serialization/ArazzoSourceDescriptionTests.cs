@@ -88,10 +88,9 @@ public class ArazzoSourceDescriptionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
         // Act
-        var sourceDescription = ArazzoV1Deserializer.LoadSourceDescription(parseNode);
+        var sourceDescription = ArazzoV1Deserializer.LoadSourceDescription(jsonNode, parsingContext);
 
         // Assert
         Assert.Equal("Test Source", sourceDescription.Name);
@@ -112,10 +111,9 @@ public class ArazzoSourceDescriptionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
         // Act
-        var sourceDescription = ArazzoV1Deserializer.LoadSourceDescription(parseNode);
+        var sourceDescription = ArazzoV1Deserializer.LoadSourceDescription(jsonNode, parsingContext);
 
         // Assert
         Assert.Equal("Test Arazzo Source", sourceDescription.Name);

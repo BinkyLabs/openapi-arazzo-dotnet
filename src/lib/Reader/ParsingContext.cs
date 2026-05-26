@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 using Microsoft.OpenApi;
+using Microsoft.OpenApi.Reader;
 
 namespace BinkyLabs.OpenApi.Arazzo.Reader;
 
@@ -25,7 +26,7 @@ public class ParsingContext
     public Dictionary<string, Func<JsonNode, ArazzoSpecVersion, IArazzoExtension>>? ExtensionParsers { get; set; } =
         new();
 
-    internal RootNode? RootNode { get; set; }
+    internal JsonNode? JsonNode { get; set; }
     /// <summary>
     /// The base url for the document
     /// </summary>
@@ -59,9 +60,9 @@ public class ParsingContext
     /// <returns>An ArazzoDocument populated based on the passed yamlDocument </returns>
     public ArazzoDocument Parse(JsonNode jsonNode, Uri location)
     {
-        RootNode = new RootNode(this, jsonNode);
+        JsonNode = jsonNode;
 
-        var inputVersion = GetVersion(RootNode);
+        var inputVersion = GetVersion(jsonNode);
 
         ArazzoDocument doc;
 
@@ -69,7 +70,7 @@ public class ParsingContext
         {
             case string version when ArazzoV1Version.Equals(version, StringComparison.OrdinalIgnoreCase):
                 VersionService = new ArazzoV1VersionService(Diagnostic);
-                doc = VersionService.LoadDocument(RootNode, location);
+                doc = VersionService.LoadDocument(jsonNode, location, this);
                 this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_0;
                 ValidateRequiredFields(doc, version);
                 break;
@@ -89,15 +90,13 @@ public class ParsingContext
     /// <returns>An ArazzoDocument populated based on the passed yamlDocument </returns>
     public T? ParseFragment<T>(JsonNode jsonNode, ArazzoSpecVersion version) where T : IOpenApiElement
     {
-        var node = ParseNode.Create(this, jsonNode);
-
         var element = default(T);
 
         switch (version)
         {
             case ArazzoSpecVersion.Arazzo1_0:
                 VersionService = new ArazzoV1VersionService(Diagnostic);
-                element = this.VersionService.LoadElement<T>(node);
+                element = this.VersionService.LoadElement<T>(jsonNode, this);
                 break;
             default:
                 throw new OpenApiUnsupportedSpecVersionException(version.ToString());
@@ -110,13 +109,14 @@ public class ParsingContext
     /// <summary>
     /// Gets the version of the Open API document.
     /// </summary>
-    private static string GetVersion(RootNode rootNode)
+    private static string GetVersion(JsonNode jsonNode)
     {
-        var versionNode = rootNode.Find(new("/Arazzo"));
+        var versionNode = new JsonPointer("/Arazzo").Find(jsonNode);
 
         if (versionNode is not null)
         {
-            return versionNode.GetScalarValue().Replace("\"", string.Empty);
+            return versionNode.GetScalarValue()?.Replace("\"", string.Empty)
+                ?? throw new OpenApiException("Version node not found.");
         }
 
         throw new OpenApiException("Version node not found.");
@@ -244,14 +244,10 @@ public class ParsingContext
 
     private void ValidateRequiredFields(ArazzoDocument doc, string version)
     {
-        if (!ArazzoV1Version.Equals(version, StringComparison.OrdinalIgnoreCase))
+        if (ArazzoV1Version.Equals(version, StringComparison.OrdinalIgnoreCase) && JsonNode is not null)
         {
-            return;
-        }
-
-        if (doc.Info == null && RootNode is not null)
-        {
-            RootNode.Context.Diagnostic.Errors.Add(new OpenApiError("", $"Info is a REQUIRED field at {RootNode.Context.GetLocation()}"));
+            if (doc.Info == null)
+                Diagnostic.Errors.Add(new OpenApiError("", $"Info is a REQUIRED field at {GetLocation()}"));
         }
     }
 }

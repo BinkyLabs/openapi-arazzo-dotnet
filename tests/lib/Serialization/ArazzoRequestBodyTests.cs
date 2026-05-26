@@ -75,9 +75,8 @@ public class ArazzoRequestBodyTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var requestBody = ArazzoV1Deserializer.LoadRequestBody(parseNode);
+        var requestBody = ArazzoV1Deserializer.LoadRequestBody(jsonNode, parsingContext);
 
         Assert.Equal("application/json", requestBody.ContentType);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("{\"count\":10}"), requestBody.Payload), "Payload does not match expected value.");

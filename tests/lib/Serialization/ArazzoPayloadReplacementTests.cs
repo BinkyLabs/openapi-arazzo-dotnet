@@ -54,9 +54,8 @@ public class ArazzoPayloadReplacementTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var replacement = ArazzoV1Deserializer.LoadPayloadReplacement(parseNode);
+        var replacement = ArazzoV1Deserializer.LoadPayloadReplacement(jsonNode, parsingContext);
 
         Assert.Equal("/data/count", replacement.Target);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("\"10\""), replacement.Value), "Replacement value does not match expected value.");

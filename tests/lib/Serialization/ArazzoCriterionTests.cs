@@ -225,9 +225,8 @@ public class ArazzoCriterionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var criterion = ArazzoV1Deserializer.LoadCriterion(parseNode);
+        var criterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
         Assert.Equal("response", criterion.Context);
         Assert.NotNull(criterion.Type);
@@ -250,9 +249,8 @@ public class ArazzoCriterionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var criterion = ArazzoV1Deserializer.LoadCriterion(parseNode);
+        var criterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
         Assert.Null(criterion.Context);
         Assert.NotNull(criterion.Type);
@@ -276,9 +274,8 @@ public class ArazzoCriterionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var criterion = ArazzoV1Deserializer.LoadCriterion(parseNode);
+        var criterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
         Assert.Equal("response", criterion.Context);
         Assert.NotNull(criterion.Type);
@@ -301,9 +298,8 @@ public class ArazzoCriterionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var criterion = ArazzoV1Deserializer.LoadCriterion(parseNode);
+        var criterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
         Assert.Null(criterion.Context);
         Assert.NotNull(criterion.Type);
@@ -322,9 +318,8 @@ public class ArazzoCriterionTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var criterion = ArazzoV1Deserializer.LoadCriterion(parseNode);
+        var criterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
         Assert.Null(criterion.Context);
         Assert.Null(criterion.Type);
@@ -353,8 +348,7 @@ public class ArazzoCriterionTests
         // Deserialize
         var jsonNode = JsonNode.Parse(textWriter.ToString())!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
-        var deserializedCriterion = ArazzoV1Deserializer.LoadCriterion(parseNode);
+        var deserializedCriterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
         // Assert
         Assert.Equal(originalCriterion.Context, deserializedCriterion.Context);
@@ -385,8 +379,7 @@ public class ArazzoCriterionTests
         // Deserialize
         var jsonNode = JsonNode.Parse(textWriter.ToString())!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
-        var deserializedCriterion = ArazzoV1Deserializer.LoadCriterion(parseNode);
+        var deserializedCriterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
         // Assert
         Assert.Equal(originalCriterion.Context, deserializedCriterion.Context);

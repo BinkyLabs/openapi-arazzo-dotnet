@@ -180,9 +180,8 @@ public class ArazzoStepTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var step = ArazzoV1Deserializer.LoadStep(parseNode);
+        var step = ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
 
         Assert.Equal("Fetch user details", step.Description);
         Assert.Equal("getUser", step.StepId);

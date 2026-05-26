@@ -150,9 +150,8 @@ public class ArazzoWorkflowTests
         """;
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
-        var parseNode = new MapNode(parsingContext, jsonNode);
 
-        var workflow = ArazzoV1Deserializer.LoadWorkflow(parseNode);
+        var workflow = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
 
         Assert.Equal("testWorkflow", workflow.WorkflowId);
         Assert.Equal("Test workflow", workflow.Summary);
