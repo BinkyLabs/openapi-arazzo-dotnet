@@ -25,7 +25,7 @@ internal static partial class ArazzoV1Deserializer
     {
         var mapNode = node.CheckMapNode("SourceDescription", context);
         var sourceDescription = new ArazzoSourceDescription();
-        ParseMap(mapNode, sourceDescription, SourceDescriptionFixedFields, SourceDescriptionPatternFields, context);
+        mapNode.ParseMap(sourceDescription, SourceDescriptionFixedFields, SourceDescriptionPatternFields, context);
 
         return sourceDescription;
     }

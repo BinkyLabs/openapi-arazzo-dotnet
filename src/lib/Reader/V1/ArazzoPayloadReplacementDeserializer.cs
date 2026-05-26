@@ -19,7 +19,7 @@ internal static partial class ArazzoV1Deserializer
     {
         var mapNode = node.CheckMapNode("PayloadReplacement", context);
         var replacement = new ArazzoPayloadReplacement();
-        ParseMap(mapNode, replacement, PayloadReplacementFixedFields, PayloadReplacementPatternFields, context);
+        mapNode.ParseMap(replacement, PayloadReplacementFixedFields, PayloadReplacementPatternFields, context);
 
         return replacement;
     }

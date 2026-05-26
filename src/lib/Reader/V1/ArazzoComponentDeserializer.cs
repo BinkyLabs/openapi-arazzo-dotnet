@@ -46,7 +46,7 @@ internal static partial class ArazzoV1Deserializer
         // of Parameters, SuccessActions, FailureActions, and Inputs dictionaries must match 
         // the following regex: ^[a-zA-Z0-9\.\-_]+$
 
-        ParseMap(mapNode, component, ComponentFixedFields, ComponentPatternFields, context);
+        mapNode.ParseMap(component, ComponentFixedFields, ComponentPatternFields, context);
 
         return component;
     }

@@ -41,7 +41,7 @@ internal static partial class ArazzoV1Deserializer
         // TODO: Implement validation during serialization/deserialization that any of the keys 
         // of Outputs and Parameters dictionaries must match the following regex: ^[a-zA-Z0-9\.\-_]+$
 
-        ParseMap(mapNode, workflow, WorkflowFixedFields, WorkflowPatternFields, context);
+        mapNode.ParseMap(workflow, WorkflowFixedFields, WorkflowPatternFields, context);
 
         return workflow;
     }

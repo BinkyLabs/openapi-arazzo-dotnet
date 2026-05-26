@@ -4,21 +4,6 @@ namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
 {
-    private static void ParseMap<T>(
-        JsonObject? mapNode,
-        T domainObject,
-        FixedFieldMap<T> fixedFieldMap,
-        PatternFieldMap<T> patternFieldMap,
-        ParsingContext context)
-    {
-        mapNode.ParseMap(domainObject, fixedFieldMap, patternFieldMap, context);
-    }
-
-    public static JsonNode? LoadAny(JsonNode node, ParsingContext context)
-    {
-        return node;
-    }
-
     private static IArazzoExtension LoadExtension(string name, JsonNode node, ParsingContext context)
     {
         if (context.ExtensionParsers is not null && context.ExtensionParsers.TryGetValue(name, out var parser) && parser(

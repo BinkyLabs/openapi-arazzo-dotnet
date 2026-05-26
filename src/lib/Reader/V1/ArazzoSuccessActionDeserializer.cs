@@ -29,7 +29,7 @@ internal static partial class ArazzoV1Deserializer
     {
         var mapNode = node.CheckMapNode("SuccessAction", context);
         var successAction = new ArazzoSuccessAction();
-        ParseMap(mapNode, successAction, SuccessActionFixedFields, SuccessActionPatternFields, context);
+        mapNode.ParseMap(successAction, SuccessActionFixedFields, SuccessActionPatternFields, context);
 
         return successAction;
     }

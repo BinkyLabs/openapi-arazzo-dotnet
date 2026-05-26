@@ -43,7 +43,7 @@ internal static partial class ArazzoV1Deserializer
     {
         var mapNode = node.CheckMapNode("FailureAction", context);
         var failureAction = new ArazzoFailureAction();
-        ParseMap(mapNode, failureAction, FailureActionFixedFields, FailureActionPatternFields, context);
+        mapNode.ParseMap(failureAction, FailureActionFixedFields, FailureActionPatternFields, context);
 
         return failureAction;
     }

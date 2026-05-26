@@ -28,7 +28,7 @@ internal static partial class ArazzoV1Deserializer
     {
         var mapNode = node.CheckMapNode("Step", context);
         var step = new ArazzoStep();
-        ParseMap(mapNode, step, StepFixedFields, StepPatternFields, context);
+        mapNode.ParseMap(step, StepFixedFields, StepPatternFields, context);
 
         return step;
     }

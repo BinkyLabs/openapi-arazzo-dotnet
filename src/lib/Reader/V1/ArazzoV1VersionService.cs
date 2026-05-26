@@ -1,4 +1,4 @@
-﻿
+
 // Licensed under the MIT license.
 
 using System.Text.Json.Nodes;
@@ -21,7 +21,7 @@ internal class ArazzoV1VersionService : BaseArazzoVersionService
 
     private static readonly Dictionary<Type, Func<JsonNode, ParsingContext, object?>> _loaders = new()
     {
-        [typeof(JsonNodeExtension)] = ArazzoV1Deserializer.LoadAny,
+        [typeof(JsonNodeExtension)] = static (node, _) => new JsonNodeExtension(node),
         [typeof(ArazzoCriterion)] = ArazzoV1Deserializer.LoadCriterion,
         [typeof(ArazzoCriterionExpressionType)] = ArazzoV1Deserializer.LoadCriterionExpressionType,
         [typeof(ArazzoDocument)] = ArazzoV1Deserializer.LoadDocument,

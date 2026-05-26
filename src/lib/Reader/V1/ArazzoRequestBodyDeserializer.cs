@@ -20,7 +20,7 @@ internal static partial class ArazzoV1Deserializer
     {
         var mapNode = node.CheckMapNode("RequestBody", context);
         var requestBody = new ArazzoRequestBody();
-        ParseMap(mapNode, requestBody, RequestBodyFixedFields, RequestBodyPatternFields, context);
+        mapNode.ParseMap(requestBody, RequestBodyFixedFields, RequestBodyPatternFields, context);
 
         return requestBody;
     }

@@ -19,14 +19,14 @@ internal static partial class ArazzoV1Deserializer
     public static ArazzoDocument LoadArazzoDocument(JsonNode node, Uri location, ParsingContext context)
     {
         var document = new ArazzoDocument();
-        ParseMap(node.CheckMapNode("Document", context), document, DocumentFixedFields, DocumentPatternFields, context);
+        node.CheckMapNode("Document", context).ParseMap(document, DocumentFixedFields, DocumentPatternFields, context);
         return document;
     }
     public static ArazzoDocument LoadDocument(JsonNode node, ParsingContext context)
     {
         var mapNode = node.CheckMapNode("Document", context);
         var info = new ArazzoDocument();
-        ParseMap(mapNode, info, DocumentFixedFields, DocumentPatternFields, context);
+        mapNode.ParseMap(info, DocumentFixedFields, DocumentPatternFields, context);
 
         return info;
     }

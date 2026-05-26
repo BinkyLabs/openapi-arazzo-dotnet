@@ -35,7 +35,7 @@ internal static partial class ArazzoV1Deserializer
     {
         var mapNode = node.CheckMapNode("Criterion", context);
         var criterion = new ArazzoCriterion();
-        ParseMap(mapNode, criterion, CriterionFixedFields, CriterionPatternFields, context);
+        mapNode.ParseMap(criterion, CriterionFixedFields, CriterionPatternFields, context);
 
         return criterion;
     }

@@ -29,7 +29,7 @@ internal static partial class ArazzoV1Deserializer
     {
         var mapNode = node.CheckMapNode("Parameter", context);
         var parameter = new ArazzoParameter();
-        ParseMap(mapNode, parameter, ParameterFixedFields, ParameterPatternFields, context);
+        mapNode.ParseMap(parameter, ParameterFixedFields, ParameterPatternFields, context);
 
         return parameter;
     }
