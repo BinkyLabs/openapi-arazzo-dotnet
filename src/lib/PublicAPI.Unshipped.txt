@@ -112,6 +112,15 @@ BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Target.get -> string?
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Target.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Value.get -> System.Text.Json.Nodes.JsonNode?
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Value.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject
+BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.ArazzoReusableObject() -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Extensions.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.IArazzoExtension!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Extensions.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Reference.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Reference.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Value.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Value.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoReaderException
 BinkyLabs.OpenApi.Arazzo.ArazzoReaderException.ArazzoReaderException() -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoReaderException.ArazzoReaderException(string! message) -> void
@@ -344,6 +353,8 @@ const BinkyLabs.OpenApi.Arazzo.ArazzoConstants.ArazzoParameterName = "name" -> s
 const BinkyLabs.OpenApi.Arazzo.ArazzoConstants.ArazzoParameterValue = "value" -> string!
 const BinkyLabs.OpenApi.Arazzo.ArazzoConstants.ArazzoPayloadReplacementTarget = "target" -> string!
 const BinkyLabs.OpenApi.Arazzo.ArazzoConstants.ArazzoPayloadReplacementValue = "value" -> string!
+const BinkyLabs.OpenApi.Arazzo.ArazzoConstants.ArazzoReusableObjectReference = "reference" -> string!
+const BinkyLabs.OpenApi.Arazzo.ArazzoConstants.ArazzoReusableObjectValue = "value" -> string!
 const BinkyLabs.OpenApi.Arazzo.ArazzoConstants.ArazzoRequestBodyContentType = "contentType" -> string!
 const BinkyLabs.OpenApi.Arazzo.ArazzoConstants.ArazzoRequestBodyPayload = "payload" -> string!
 const BinkyLabs.OpenApi.Arazzo.ArazzoConstants.ArazzoRequestBodyReplacements = "replacements" -> string!
