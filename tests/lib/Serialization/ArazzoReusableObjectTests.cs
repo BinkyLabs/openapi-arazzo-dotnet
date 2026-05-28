@@ -15,11 +15,7 @@ public class ArazzoReusableObjectTests
         var reusableObject = new ArazzoReusableObject
         {
             Reference = "$steps.getUser.outputs.userId",
-            Value = "42",
-            Extensions = new Dictionary<string, IArazzoExtension>
-            {
-                ["x-extra"] = new JsonNodeExtension(JsonNode.Parse("{\"note\":\"yes\"}")!)
-            }
+            Value = "42"
         };
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
@@ -28,10 +24,7 @@ public class ArazzoReusableObjectTests
         """
         {
             "reference": "$steps.getUser.outputs.userId",
-            "value": "42",
-            "x-extra": {
-                "note": "yes"
-            }
+            "value": "42"
         }
         """;
 
@@ -88,13 +81,12 @@ public class ArazzoReusableObjectTests
     }
 
     [Fact]
-    public void Deserialize_ShouldSetPropertiesAndExtensions()
+    public void Deserialize_ShouldSetProperties()
     {
         var json = """
         {
             "reference": "$steps.getUser.outputs.userId",
-            "value": "99",
-            "x-flag": true
+            "value": "99"
         }
         """;
         var jsonNode = JsonNode.Parse(json)!;
@@ -104,9 +96,7 @@ public class ArazzoReusableObjectTests
 
         Assert.Equal("$steps.getUser.outputs.userId", reusableObject.Reference);
         Assert.Equal("99", reusableObject.Value);
-        Assert.NotNull(reusableObject.Extensions);
-        var extension = Assert.IsType<JsonNodeExtension>(reusableObject.Extensions!["x-flag"]);
-        Assert.True(JsonNode.DeepEquals(JsonNode.Parse("true"), extension.Node));
+        Assert.Empty(parsingContext.Diagnostic.Errors);
     }
 
     [Fact]
@@ -124,6 +114,24 @@ public class ArazzoReusableObjectTests
 
         Assert.Equal("$steps.getUser.outputs.userId", reusableObject.Reference);
         Assert.Null(reusableObject.Value);
-        Assert.Null(reusableObject.Extensions);
+        Assert.Empty(parsingContext.Diagnostic.Errors);
+    }
+
+    [Fact]
+    public void Deserialize_ShouldRejectExtensions()
+    {
+        var json = """
+        {
+            "reference": "$steps.getUser.outputs.userId",
+            "x-flag": true
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var reusableObject = ArazzoV1Deserializer.LoadReusableObject(jsonNode, parsingContext);
+
+        Assert.Equal("$steps.getUser.outputs.userId", reusableObject.Reference);
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("x-flag is not a valid property"));
     }
 }

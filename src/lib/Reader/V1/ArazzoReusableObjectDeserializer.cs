@@ -10,10 +10,7 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoReusableObjectValue, static (o, v, c) => o.Value = v.GetScalarValue() }
     };
 
-    public static readonly PatternFieldMap<ArazzoReusableObject> ReusableObjectPatternFields = new()
-    {
-        { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
-    };
+    public static readonly PatternFieldMap<ArazzoReusableObject> ReusableObjectPatternFields = new();
 
     public static ArazzoReusableObject LoadReusableObject(JsonNode node, ParsingContext context)
     {

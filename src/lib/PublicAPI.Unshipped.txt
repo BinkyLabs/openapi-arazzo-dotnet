@@ -114,8 +114,6 @@ BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Value.get -> System.Text.Json.
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Value.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject
 BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.ArazzoReusableObject() -> void
-BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Extensions.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.IArazzoExtension!>?
-BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Extensions.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Reference.get -> string?
 BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.Reference.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoReusableObject.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void

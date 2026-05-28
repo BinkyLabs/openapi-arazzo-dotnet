@@ -7,7 +7,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// <summary>
 /// Represents a reusable object definition.
 /// </summary>
-public class ArazzoReusableObject : IArazzoSerializable, IArazzoExtensible
+public class ArazzoReusableObject : IArazzoSerializable
 {
     /// <summary>
     /// Gets or sets a Runtime Expression used to reference the desired object.
@@ -18,9 +18,6 @@ public class ArazzoReusableObject : IArazzoSerializable, IArazzoExtensible
     /// Gets or sets a value of the referenced parameter. This is only applicable for parameter object references.
     /// </summary>
     public string? Value { get; set; }
-
-    /// <inheritdoc/>
-    public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
 
     /// <summary>
     /// Serializes the reusable object as an OpenAPI Arazzo v1.0.0 JSON object.
@@ -39,7 +36,6 @@ public class ArazzoReusableObject : IArazzoSerializable, IArazzoExtensible
             writer.WriteProperty(ArazzoConstants.ArazzoReusableObjectValue, Value);
         }
 
-        writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();
     }
 }
