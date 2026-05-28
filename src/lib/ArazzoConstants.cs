@@ -96,6 +96,16 @@ public static class ArazzoConstants
     /// </summary>
     public const string ArazzoPayloadReplacementValue = "value";
 
+    // ArazzoReusableObject
+    /// <summary>
+    /// The "reference" field name in the Arazzo Reusable Object.
+    /// </summary>
+    public const string ArazzoReusableObjectReference = "reference";
+    /// <summary>
+    /// The "value" field name in the Arazzo Reusable Object.
+    /// </summary>
+    public const string ArazzoReusableObjectValue = "value";
+
     // ArazzoRequestBody
     /// <summary>
     /// The "contentType" field name in the Arazzo Request Body object.

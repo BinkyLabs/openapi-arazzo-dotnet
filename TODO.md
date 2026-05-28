@@ -9,7 +9,7 @@
 - [x] parameter-object
 - [x] payload-replacement-object
 - [x] request-body-object
-- [ ] reusable-object
+- [x] reusable-object
 - [ ] schema
 - [x] source-description-object
 - [x] specification-extensions
