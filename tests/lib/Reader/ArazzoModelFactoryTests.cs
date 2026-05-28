@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 
-public sealed class ArazzoModelFactoryTests
+public sealed partial class ArazzoModelFactoryTests
 {
     private readonly string documentJson =
         """

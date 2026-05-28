@@ -113,13 +113,18 @@ public class ParsingContext
     {
         var versionNode = new JsonPointer("/Arazzo").Find(jsonNode);
 
-        if (versionNode is not null)
+        if (versionNode is null)
         {
-            return versionNode.GetScalarValue()?.Replace("\"", string.Empty)
-                ?? throw new OpenApiException("Version node not found.");
+            throw new OpenApiException("Version node not found.");
         }
 
-        throw new OpenApiException("Version node not found.");
+        var version = versionNode.GetScalarValue()?.Replace("\"", string.Empty);
+        if (string.IsNullOrEmpty(version))
+        {
+            throw new OpenApiException("Version value is null or empty.");
+        }
+
+        return version;
     }
 
     /// <summary>

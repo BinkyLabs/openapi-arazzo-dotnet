@@ -24,7 +24,12 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoWorkflowSteps, static (o, v, c) => o.Steps = v.CreateList(LoadStep, c) },
         { ArazzoConstants.ArazzoWorkflowSuccessActions, static (o, v, c) => o.SuccessActions = v.CreateList<IArazzoSuccessAction>(LoadSuccessAction, c) },
         { ArazzoConstants.ArazzoWorkflowFailureActions, static (o, v, c) => o.FailureActions = v.CreateList<IArazzoFailureAction>(LoadFailureAction, c) },
-        { ArazzoConstants.ArazzoWorkflowOutputs, static (o, v, c) => o.Outputs = v.CreateSimpleMap(static n => n.GetScalarValue()!, c) },
+        { ArazzoConstants.ArazzoWorkflowOutputs, static (o, v, c) =>
+        {
+            o.Outputs = v.CreateSimpleMap(static n => n.GetScalarValue(), c)
+                .Where(static x => x.Value is not null)
+                .ToDictionary(static x => x.Key, static x => x.Value!);
+        } },
         { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateMap<IArazzoParameter>(LoadParameter, c) },
     };
 

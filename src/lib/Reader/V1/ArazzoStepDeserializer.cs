@@ -16,7 +16,12 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v, c) => o.SuccessCriteria = v.CreateList(LoadCriterion, c) },
         { ArazzoConstants.ArazzoStepOnSuccess, static (o, v, c) => o.OnSuccess = v.CreateList<IArazzoSuccessAction>(LoadSuccessAction, c) },
         { ArazzoConstants.ArazzoStepOnFailure, static (o, v, c) => o.OnFailure = v.CreateList<IArazzoFailureAction>(LoadFailureAction, c) },
-        { ArazzoConstants.ArazzoStepOutputs, static (o, v, c) => o.Outputs = v.CreateSimpleMap(static n => n.GetScalarValue()!, c) }
+        { ArazzoConstants.ArazzoStepOutputs, static (o, v, c) =>
+        {
+            o.Outputs = v.CreateSimpleMap(static n => n.GetScalarValue(), c)
+                .Where(static x => x.Value is not null)
+                .ToDictionary(static x => x.Key, static x => x.Value!);
+        } }
     };
 
     public static readonly PatternFieldMap<ArazzoStep> StepPatternFields = new()
