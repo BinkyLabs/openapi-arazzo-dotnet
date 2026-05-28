@@ -103,9 +103,7 @@ public class ArazzoReaderSettingsTests
     public void GetReader_ReturnsRegisteredReader()
     {
         var settings = new ArazzoReaderSettings();
-        var reader = (IArazzoReader)typeof(ArazzoReaderSettings)
-            .GetMethod("GetReader", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-            .Invoke(settings, new object[] { OpenApiConstants.Json })!;
+        var reader = settings.GetReader(OpenApiConstants.Json);
         Assert.NotNull(reader);
     }
 
@@ -113,20 +111,14 @@ public class ArazzoReaderSettingsTests
     public void GetReader_ThrowsForUnknownFormat()
     {
         var settings = new ArazzoReaderSettings();
-        var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => typeof(ArazzoReaderSettings)
-            .GetMethod("GetReader", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-            .Invoke(settings, new object[] { "unknown-format" }));
-        Assert.IsType<NotSupportedException>(ex.InnerException);
+        Assert.Throws<NotSupportedException>(() => settings.GetReader("unknown-format"));
     }
 
     [Fact]
     public void GetReader_ThrowsOnEmptyFormat()
     {
         var settings = new ArazzoReaderSettings();
-        var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() => typeof(ArazzoReaderSettings)
-            .GetMethod("GetReader", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-            .Invoke(settings, new object[] { "" }));
-        Assert.IsType<ArgumentException>(ex.InnerException);
+        Assert.Throws<ArgumentException>(() => settings.GetReader(""));
     }
 
     [Fact]
