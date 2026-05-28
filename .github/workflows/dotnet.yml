@@ -9,9 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      code-quality: write
+      pull-requests: read
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v5
         with:
@@ -37,7 +41,14 @@ jobs:
       - name: Pack the project
         run: dotnet pack --configuration Release
       - name: Generate coverage report
-        run: reportgenerator -reporttypes:MarkdownSummary -reports:**/coverage.cobertura*.xml -targetdir:./reports/coverage
+        run: reportgenerator -reporttypes:"MarkdownSummary;Cobertura" -reports:**/coverage.cobertura*.xml -targetdir:./reports/coverage
+      - name: Upload coverage report
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: reports/coverage/Cobertura.xml
+          language: CSharp
+          label: code-coverage/dotnet
       - uses: actions/upload-artifact@v7
         with:
           name: coverage
