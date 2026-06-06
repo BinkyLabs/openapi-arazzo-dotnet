@@ -10,7 +10,7 @@
 - [x] payload-replacement-object
 - [x] request-body-object
 - [x] reusable-object
-- [ ] schema
+- [x] schema
 - [x] source-description-object
 - [x] specification-extensions
 - [x] step-object
@@ -19,7 +19,7 @@
 
 # features to implement
 
-- [ ] references resolution
+- [ ] references resolution (1/2 anything other than inputs remains to be implemented)
 - [x] extensions on objects
 
 # open questions

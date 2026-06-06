@@ -31,11 +31,51 @@ internal static partial class ArazzoV1Deserializer
             && referenceValue.TryGetValue<string>(out var referenceString)
             && !string.IsNullOrEmpty(referenceString))
         {
-            throw new NotSupportedException("Schema references in Arazzo inputs are not yet supported.");
+            var hostDocument = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
+            var inputReference = new ArazzoInputReference(GetReferenceId(referenceString), hostDocument, GetExternalResource(referenceString));
+            inputReference.SetMetadataFromJsonObject(jsonObject);
+            inputReference.Reference.EnsureHostDocumentIsSet(hostDocument ?? new ArazzoDocument());
+            inputReference.Reference.SetJsonPointerPath(referenceString, context.GetLocation());
+            return inputReference;
         }
 
         var schema = OpenApiModelFactory.Load<OpenApiSchema>(ms, OpenApiSpecVersion.OpenApi3_2, OpenApiConstants.Json, new(), out var _);
-        return schema is OpenApiSchema openApiSchema ? (ArazzoInput?)openApiSchema : null;
+        var host = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
+        return schema is OpenApiSchema openApiSchema ? ArazzoInput.ConvertFromOpenApiSchema(openApiSchema, host) : null;
+    }
+
+    private static string GetReferenceId(string referenceString)
+    {
+        var fragment = referenceString.Contains('#', StringComparison.Ordinal)
+            ? referenceString[(referenceString.IndexOf('#', StringComparison.Ordinal) + 1)..]
+            : referenceString;
+
+        var trimmedFragment = fragment.TrimEnd('/');
+        if (trimmedFragment.Contains('/', StringComparison.Ordinal))
+        {
+            var segment = trimmedFragment[(trimmedFragment.LastIndexOf('/') + 1)..];
+            if (!string.IsNullOrEmpty(segment))
+            {
+                return segment;
+            }
+        }
+
+        if (referenceString.Contains('/', StringComparison.Ordinal))
+        {
+            var segment = referenceString[(referenceString.LastIndexOf('/') + 1)..];
+            if (!string.IsNullOrEmpty(segment))
+            {
+                return segment;
+            }
+        }
+
+        return referenceString;
+    }
+
+    private static string? GetExternalResource(string referenceString)
+    {
+        var fragmentIndex = referenceString.IndexOf('#', StringComparison.Ordinal);
+        return fragmentIndex > 0 ? referenceString[..fragmentIndex] : null;
     }
 
     public static ArazzoComponent LoadComponent(JsonNode node, ParsingContext context)

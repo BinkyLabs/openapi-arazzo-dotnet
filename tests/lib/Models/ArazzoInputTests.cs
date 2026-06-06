@@ -56,6 +56,45 @@ public class ArazzoInputTests
         Assert.Equal("example-1", json?["examples"]?[0]?.GetValue<string>());
         Assert.Equal("ok", json?["x-extra"]?.GetValue<string>());
     }
+
+    [Fact]
+    public void SerializeAsV1_WithReference_WritesExactReferenceAndOverrides()
+    {
+        var input = new ArazzoInputReference("shared")
+        {
+            Title = "override",
+            Description = "override description",
+            Default = JsonValue.Create("guest"),
+            ReadOnly = true,
+            WriteOnly = true,
+            Deprecated = true,
+            Examples =
+            [
+                JsonValue.Create("guest")!
+            ],
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-extra"] = new JsonNodeExtension(JsonValue.Create("value")!)
+            }
+        };
+
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        input.SerializeAsV1(writer);
+
+        var json = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$components.inputs.shared", json?["$ref"]?.GetValue<string>());
+        Assert.Equal("override", json?["title"]?.GetValue<string>());
+        Assert.Equal("override description", json?["description"]?.GetValue<string>());
+        Assert.Equal("guest", json?["default"]?.GetValue<string>());
+        Assert.True(json?["readOnly"]?.GetValue<bool>());
+        Assert.True(json?["writeOnly"]?.GetValue<bool>());
+        Assert.True(json?["deprecated"]?.GetValue<bool>());
+        Assert.Equal("guest", json?["examples"]?[0]?.GetValue<string>());
+        Assert.Equal("value", json?["x-extra"]?.GetValue<string>());
+    }
     [Fact]
     public void ImplicitConversion_FromOpenApiSchema_CopiesJsonSchemaKeywords()
     {
@@ -245,7 +284,7 @@ public class ArazzoInputTests
     }
 
     [Fact]
-    public void LoadSchema_WithReference_ThrowsNotSupportedException()
+    public void LoadSchema_WithReference_ReturnsArazzoInputReference()
     {
         var json = JsonNode.Parse(
             """
@@ -257,9 +296,43 @@ public class ArazzoInputTests
         var context = new global::BinkyLabs.OpenApi.Arazzo.Reader.ParsingContext(
             new global::BinkyLabs.OpenApi.Arazzo.Reader.ArazzoDiagnostic());
 
-        var exception = Assert.Throws<NotSupportedException>(
-            () => global::BinkyLabs.OpenApi.Arazzo.Reader.V1.ArazzoV1Deserializer.LoadSchema(json, context));
+        var input = global::BinkyLabs.OpenApi.Arazzo.Reader.V1.ArazzoV1Deserializer.LoadSchema(json, context);
 
-        Assert.Contains("not yet supported", exception.Message, StringComparison.OrdinalIgnoreCase);
+        var reference = Assert.IsType<ArazzoInputReference>(input);
+        Assert.Equal("#/$defs/shared", reference.Reference.ReferenceV1);
+    }
+
+    [Fact]
+    public void LoadSchema_WithReferenceMetadata_CopiesSupportedOverrides()
+    {
+        var json = JsonNode.Parse(
+            """
+            {
+              "$ref": "#/components/inputs/shared",
+              "title": "override",
+              "description": "override description",
+              "default": "guest",
+              "readOnly": true,
+              "writeOnly": true,
+              "deprecated": true,
+              "examples": ["guest"],
+              "x-extra": "value"
+            }
+            """)!;
+
+        var context = new global::BinkyLabs.OpenApi.Arazzo.Reader.ParsingContext(
+            new global::BinkyLabs.OpenApi.Arazzo.Reader.ArazzoDiagnostic());
+
+        var input = global::BinkyLabs.OpenApi.Arazzo.Reader.V1.ArazzoV1Deserializer.LoadSchema(json, context);
+
+        var reference = Assert.IsType<ArazzoInputReference>(input);
+        Assert.Equal("override", reference.Title);
+        Assert.Equal("override description", reference.Description);
+        Assert.Equal("guest", reference.Default?.GetValue<string>());
+        Assert.True(reference.ReadOnly);
+        Assert.True(reference.WriteOnly);
+        Assert.True(reference.Deprecated);
+        Assert.Equal("guest", reference.Examples?.Single().GetValue<string>());
+        Assert.Equal("value", Assert.IsType<JsonNodeExtension>(reference.Extensions?["x-extra"]).Node.GetValue<string>());
     }
 }

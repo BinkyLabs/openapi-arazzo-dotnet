@@ -4,6 +4,7 @@ using System.Security;
 using System.Text;
 
 using Microsoft.OpenApi;
+using Microsoft.OpenApi.Reader;
 
 
 namespace BinkyLabs.OpenApi.Arazzo;
@@ -26,9 +27,9 @@ public static class ArazzoModelFactory
     {
         settings ??= DefaultReaderSettings.Value;
         var (stream, format) = await RetrieveStreamAndFormatAsync(url, settings, token).ConfigureAwait(false);
-        using (stream)
+        await using (stream.ConfigureAwait(false))
         {
-            return await LoadFromStreamAsync(stream, format, settings, token).ConfigureAwait(false);
+            return await LoadFromStreamAsync(stream, format, settings, token, CreateLocation(url)).ConfigureAwait(false);
         }
     }
 
@@ -42,6 +43,11 @@ public static class ArazzoModelFactory
     /// <returns></returns>
     public static async Task<ReadResult> LoadFromStreamAsync(Stream input, string? format = null, ArazzoReaderSettings? settings = null, CancellationToken cancellationToken = default)
     {
+        return await LoadFromStreamAsync(input, format, settings, cancellationToken, null).ConfigureAwait(false);
+    }
+
+    internal static async Task<ReadResult> LoadFromStreamAsync(Stream input, string? format, ArazzoReaderSettings? settings, CancellationToken cancellationToken, Uri? location)
+    {
         ArgumentNullException.ThrowIfNull(input);
 
         settings ??= new ArazzoReaderSettings();
@@ -53,7 +59,7 @@ public static class ArazzoModelFactory
         }
 
         // Use StreamReader to process the prepared stream (buffered for YAML, direct for JSON)
-        var result = await InternalLoadAsync(preparedStream ?? input, format, settings, cancellationToken).ConfigureAwait(false);
+        var result = await InternalLoadAsync(preparedStream ?? input, format, settings, cancellationToken, location).ConfigureAwait(false);
 
         if (preparedStream is not null && preparedStream != input)
         {
@@ -90,16 +96,18 @@ public static class ArazzoModelFactory
 
     private static readonly Lazy<ArazzoReaderSettings> DefaultReaderSettings = new(() => new ArazzoReaderSettings());
 
-    private static async Task<ReadResult> InternalLoadAsync(Stream input, string format, ArazzoReaderSettings settings, CancellationToken cancellationToken = default)
+    private static async Task<ReadResult> InternalLoadAsync(Stream input, string format, ArazzoReaderSettings settings, CancellationToken cancellationToken = default, Uri? locationOverride = null)
     {
         settings ??= DefaultReaderSettings.Value;
         var reader = settings.GetReader(format);
 
-        // Handle URI creation more safely for file paths
         Uri location;
-        if (input is FileStream fileStream)
+        if (locationOverride is not null)
         {
-            // Convert to absolute path and then create a file URI to handle relative paths correctly
+            location = locationOverride;
+        }
+        else if (input is FileStream fileStream)
+        {
             var absolutePath = Path.GetFullPath(fileStream.Name);
             location = new Uri(absolutePath, UriKind.Absolute);
         }
@@ -110,7 +118,26 @@ public static class ArazzoModelFactory
 
         var readResult = await reader.ReadAsync(input, location, settings, cancellationToken).ConfigureAwait(false);
 
+        if (readResult.Document is not null && settings.OpenApiSettings.LoadExternalRefs)
+        {
+            var workspace = readResult.Document.Workspace ?? new ArazzoWorkspace(settings.OpenApiSettings.BaseUrl ?? location);
+            readResult.Document.Workspace = workspace;
+            var loader = settings.OpenApiSettings.CustomExternalLoader ?? new DefaultStreamLoader(settings.HttpClient);
+            var workspaceLoader = new Reader.ArazzoWorkspaceLoader(workspace, loader, settings);
+            await workspaceLoader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, readResult.Document, format, cancellationToken).ConfigureAwait(false);
+        }
+
         return readResult;
+    }
+
+    private static Uri CreateLocation(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var absoluteUri))
+        {
+            return absoluteUri;
+        }
+
+        return new Uri(Path.GetFullPath(url), UriKind.Absolute);
     }
 
     private static async Task<(Stream, string?)> RetrieveStreamAndFormatAsync(string url, ArazzoReaderSettings settings, CancellationToken token = default)

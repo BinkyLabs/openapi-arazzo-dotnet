@@ -11,6 +11,65 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// </summary>
 public class ArazzoInput : IArazzoInput
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ArazzoInput"/> class.
+    /// </summary>
+    public ArazzoInput()
+    {
+    }
+
+    internal ArazzoInput(IArazzoInput source, ArazzoInputReference overrides)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(overrides);
+
+        Title = overrides.Title ?? source.Title;
+        Schema = source.Schema;
+        Id = source.Id;
+        Comment = source.Comment;
+        Vocabulary = source.Vocabulary is null ? null : new Dictionary<string, bool>(source.Vocabulary);
+        DynamicRef = source.DynamicRef;
+        DynamicAnchor = source.DynamicAnchor;
+        Definitions = source.Definitions is null ? null : new Dictionary<string, IArazzoInput>(source.Definitions);
+        ExclusiveMaximum = source.ExclusiveMaximum;
+        ExclusiveMinimum = source.ExclusiveMinimum;
+        Type = source.Type;
+        Const = source.Const;
+        Format = source.Format;
+        Description = overrides.Description ?? source.Description;
+        Maximum = source.Maximum;
+        Minimum = source.Minimum;
+        MaxLength = source.MaxLength;
+        MinLength = source.MinLength;
+        Pattern = source.Pattern;
+        MultipleOf = source.MultipleOf;
+        Default = overrides.Default is null ? CloneNode(source.Default) : CloneNode(overrides.Default);
+        ReadOnly = overrides.ReadOnly;
+        WriteOnly = overrides.WriteOnly;
+        AllOf = source.AllOf is null ? null : [.. source.AllOf];
+        OneOf = source.OneOf is null ? null : [.. source.OneOf];
+        AnyOf = source.AnyOf is null ? null : [.. source.AnyOf];
+        Not = source.Not;
+        Required = source.Required is null ? null : new HashSet<string>(source.Required);
+        Items = source.Items;
+        MaxItems = source.MaxItems;
+        MinItems = source.MinItems;
+        UniqueItems = source.UniqueItems;
+        Properties = source.Properties is null ? null : new Dictionary<string, IArazzoInput>(source.Properties);
+        PatternProperties = source.PatternProperties is null ? null : new Dictionary<string, IArazzoInput>(source.PatternProperties);
+        MaxProperties = source.MaxProperties;
+        MinProperties = source.MinProperties;
+        AdditionalPropertiesAllowed = source.AdditionalPropertiesAllowed;
+        AdditionalProperties = source.AdditionalProperties;
+        Examples = overrides.Examples is null ? CloneNodeList(source.Examples) : CloneNodeList(overrides.Examples);
+        Enum = CloneNodeList(source.Enum);
+        UnevaluatedProperties = source.UnevaluatedProperties;
+        UnevaluatedPropertiesSchema = source.UnevaluatedPropertiesSchema;
+        Deprecated = overrides.Deprecated;
+        DependentRequired = CloneDependentRequired(source.DependentRequired);
+        Extensions = overrides.Extensions is null ? CloneArazzoExtensions(source.Extensions) : CloneArazzoExtensions(overrides.Extensions);
+    }
+
     /// <inheritdoc />
     public string? Title { get; set; }
 
@@ -151,7 +210,7 @@ public class ArazzoInput : IArazzoInput
     {
         ArgumentNullException.ThrowIfNull(writer);
 
-        ToOpenApiSchema(this).SerializeAsV32(writer);
+        ConvertToOpenApiSchema(this).SerializeAsV32(writer);
     }
 
     /// <summary>
@@ -167,7 +226,7 @@ public class ArazzoInput : IArazzoInput
 
         ValidateUnsupportedOpenApiKeywords(value);
 
-        return FromOpenApiSchema(value);
+        return ConvertFromOpenApiSchema(value) as ArazzoInput;
     }
 
     /// <summary>
@@ -181,19 +240,22 @@ public class ArazzoInput : IArazzoInput
             return null;
         }
 
-        return ToOpenApiSchema(value);
+        return (OpenApiSchema)ConvertToOpenApiSchema(value);
     }
 
-    private static ArazzoInput FromOpenApiSchema(IOpenApiSchema schema)
+    internal static IArazzoInput ConvertFromOpenApiSchema(IOpenApiSchema schema, ArazzoDocument? hostDocument = null)
     {
-        if (schema is OpenApiSchema openApiSchema)
+        if (schema is OpenApiSchemaReference schemaReference)
         {
-            ValidateUnsupportedOpenApiKeywords(openApiSchema);
+            return ArazzoInputReferenceFactory.Create(schemaReference, hostDocument);
         }
-        else
+
+        if (schema is not OpenApiSchema openApiSchema)
         {
             throw new NotSupportedException($"Conversion from {schema.GetType().Name} is not supported.");
         }
+
+        ValidateUnsupportedOpenApiKeywords(openApiSchema);
 
         return new ArazzoInput
         {
@@ -204,7 +266,7 @@ public class ArazzoInput : IArazzoInput
             Vocabulary = schema.Vocabulary is null ? null : new Dictionary<string, bool>(schema.Vocabulary),
             DynamicRef = schema.DynamicRef,
             DynamicAnchor = schema.DynamicAnchor,
-            Definitions = ConvertSchemaMap(schema.Definitions),
+            Definitions = ConvertSchemaMap(schema.Definitions, hostDocument),
             ExclusiveMaximum = schema.ExclusiveMaximum,
             ExclusiveMinimum = schema.ExclusiveMinimum,
             Type = schema.Type,
@@ -220,34 +282,39 @@ public class ArazzoInput : IArazzoInput
             Default = CloneNode(schema.Default),
             ReadOnly = schema.ReadOnly,
             WriteOnly = schema.WriteOnly,
-            AllOf = ConvertSchemaList(schema.AllOf),
-            OneOf = ConvertSchemaList(schema.OneOf),
-            AnyOf = ConvertSchemaList(schema.AnyOf),
-            Not = schema.Not is null ? null : FromOpenApiSchema(schema.Not),
+            AllOf = ConvertSchemaList(schema.AllOf, hostDocument),
+            OneOf = ConvertSchemaList(schema.OneOf, hostDocument),
+            AnyOf = ConvertSchemaList(schema.AnyOf, hostDocument),
+            Not = schema.Not is null ? null : ConvertFromOpenApiSchema(schema.Not, hostDocument),
             Required = schema.Required is null ? null : new HashSet<string>(schema.Required),
-            Items = schema.Items is null ? null : FromOpenApiSchema(schema.Items),
+            Items = schema.Items is null ? null : ConvertFromOpenApiSchema(schema.Items, hostDocument),
             MaxItems = schema.MaxItems,
             MinItems = schema.MinItems,
             UniqueItems = schema.UniqueItems,
-            Properties = ConvertSchemaMap(schema.Properties),
-            PatternProperties = ConvertSchemaMap(schema.PatternProperties),
+            Properties = ConvertSchemaMap(schema.Properties, hostDocument),
+            PatternProperties = ConvertSchemaMap(schema.PatternProperties, hostDocument),
             MaxProperties = schema.MaxProperties,
             MinProperties = schema.MinProperties,
             AdditionalPropertiesAllowed = schema.AdditionalPropertiesAllowed,
-            AdditionalProperties = schema.AdditionalProperties is null ? null : FromOpenApiSchema(schema.AdditionalProperties),
+            AdditionalProperties = schema.AdditionalProperties is null ? null : ConvertFromOpenApiSchema(schema.AdditionalProperties, hostDocument),
             Examples = CloneNodeList(schema.Examples),
             Enum = CloneNodeList(schema.Enum),
             UnevaluatedProperties = openApiSchema.UnevaluatedProperties,
-            UnevaluatedPropertiesSchema = openApiSchema.UnevaluatedPropertiesSchema is null ? null : FromOpenApiSchema(openApiSchema.UnevaluatedPropertiesSchema),
+            UnevaluatedPropertiesSchema = openApiSchema.UnevaluatedPropertiesSchema is null ? null : ConvertFromOpenApiSchema(openApiSchema.UnevaluatedPropertiesSchema, hostDocument),
             Deprecated = schema.Deprecated,
             Extensions = ConvertExtensions(openApiSchema.Extensions),
             DependentRequired = CloneDependentRequired(schema.DependentRequired)
         };
     }
 
-    private static OpenApiSchema ToOpenApiSchema(IArazzoInput input)
+    internal static IOpenApiSchema ConvertToOpenApiSchema(IArazzoInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
+
+        if (input is ArazzoInputReference reference)
+        {
+            return reference.ToOpenApiSchemaReference();
+        }
 
         return new OpenApiSchema
         {
@@ -277,9 +344,9 @@ public class ArazzoInput : IArazzoInput
             AllOf = ConvertSchemaList(input.AllOf),
             OneOf = ConvertSchemaList(input.OneOf),
             AnyOf = ConvertSchemaList(input.AnyOf),
-            Not = input.Not is null ? null : ToOpenApiSchema(input.Not),
+            Not = input.Not is null ? null : ConvertToOpenApiSchema(input.Not),
             Required = input.Required is null ? null : new HashSet<string>(input.Required),
-            Items = input.Items is null ? null : ToOpenApiSchema(input.Items),
+            Items = input.Items is null ? null : ConvertToOpenApiSchema(input.Items),
             MaxItems = input.MaxItems,
             MinItems = input.MinItems,
             UniqueItems = input.UniqueItems,
@@ -288,13 +355,13 @@ public class ArazzoInput : IArazzoInput
             MaxProperties = input.MaxProperties,
             MinProperties = input.MinProperties,
             AdditionalPropertiesAllowed = input.AdditionalPropertiesAllowed,
-            AdditionalProperties = input.AdditionalProperties is null ? null : ToOpenApiSchema(input.AdditionalProperties),
+            AdditionalProperties = input.AdditionalProperties is null ? null : ConvertToOpenApiSchema(input.AdditionalProperties),
             Examples = CloneNodeList(input.Examples),
             Enum = CloneNodeList(input.Enum),
             UnevaluatedProperties = input.UnevaluatedProperties,
-            UnevaluatedPropertiesSchema = input.UnevaluatedPropertiesSchema is null ? null : ToOpenApiSchema(input.UnevaluatedPropertiesSchema),
+            UnevaluatedPropertiesSchema = input.UnevaluatedPropertiesSchema is null ? null : ConvertToOpenApiSchema(input.UnevaluatedPropertiesSchema),
             Deprecated = input.Deprecated,
-            Extensions = ConvertExtensions(input.Extensions),
+            Extensions = ConvertToOpenApiExtensions(input.Extensions),
             DependentRequired = CloneDependentRequired(input.DependentRequired)
         };
     }
@@ -333,14 +400,15 @@ public class ArazzoInput : IArazzoInput
     }
 
     private static IDictionary<string, IArazzoInput>? ConvertSchemaMap(
-        IDictionary<string, IOpenApiSchema>? source)
+        IDictionary<string, IOpenApiSchema>? source,
+        ArazzoDocument? hostDocument)
     {
         if (source is null)
         {
             return null;
         }
 
-        return source.ToDictionary(static pair => pair.Key, static pair => (IArazzoInput)FromOpenApiSchema(pair.Value));
+        return source.ToDictionary(static pair => pair.Key, pair => ConvertFromOpenApiSchema(pair.Value, hostDocument));
     }
 
     private static IDictionary<string, IOpenApiSchema>? ConvertSchemaMap(
@@ -351,18 +419,19 @@ public class ArazzoInput : IArazzoInput
             return null;
         }
 
-        return source.ToDictionary(static pair => pair.Key, static pair => (IOpenApiSchema)ToOpenApiSchema(pair.Value));
+        return source.ToDictionary(static pair => pair.Key, static pair => (IOpenApiSchema)ConvertToOpenApiSchema(pair.Value));
     }
 
     private static IList<IArazzoInput>? ConvertSchemaList(
-        IList<IOpenApiSchema>? source)
+        IList<IOpenApiSchema>? source,
+        ArazzoDocument? hostDocument)
     {
         if (source is null)
         {
             return null;
         }
 
-        return source.Select(static schema => (IArazzoInput)FromOpenApiSchema(schema)).ToList();
+        return source.Select(schema => ConvertFromOpenApiSchema(schema, hostDocument)).ToList();
     }
 
     private static IList<IOpenApiSchema>? ConvertSchemaList(
@@ -373,10 +442,10 @@ public class ArazzoInput : IArazzoInput
             return null;
         }
 
-        return source.Select(static schema => (IOpenApiSchema)ToOpenApiSchema(schema)).ToList();
+        return source.Select(static schema => (IOpenApiSchema)ConvertToOpenApiSchema(schema)).ToList();
     }
 
-    private static JsonNode? CloneNode(JsonNode? node)
+    internal static JsonNode? CloneNode(JsonNode? node)
     {
         if (node is null)
         {
@@ -385,7 +454,7 @@ public class ArazzoInput : IArazzoInput
         return JsonNode.Parse(node.ToJsonString());
     }
 
-    private static IList<JsonNode>? CloneNodeList(IList<JsonNode>? nodes)
+    internal static IList<JsonNode>? CloneNodeList(IList<JsonNode>? nodes)
     {
         if (nodes is null)
         {
@@ -395,7 +464,7 @@ public class ArazzoInput : IArazzoInput
         return nodes.Select(static node => CloneNode(node)!).ToList();
     }
 
-    private static IDictionary<string, HashSet<string>>? CloneDependentRequired(IDictionary<string, HashSet<string>>? dependentRequired)
+    internal static IDictionary<string, HashSet<string>>? CloneDependentRequired(IDictionary<string, HashSet<string>>? dependentRequired)
     {
         if (dependentRequired is null)
         {
@@ -421,7 +490,7 @@ public class ArazzoInput : IArazzoInput
             });
     }
 
-    private static IDictionary<string, IOpenApiExtension>? ConvertExtensions(IDictionary<string, IArazzoExtension>? extensions)
+    internal static IDictionary<string, IOpenApiExtension>? ConvertToOpenApiExtensions(IDictionary<string, IArazzoExtension>? extensions)
     {
         if (extensions is null)
         {
@@ -452,4 +521,57 @@ public class ArazzoInput : IArazzoInput
             extension.Write(writer, ArazzoSpecVersion.Arazzo1_0);
         }
     }
+
+    internal static IDictionary<string, IArazzoExtension>? CloneArazzoExtensions(IDictionary<string, IArazzoExtension>? extensions)
+    {
+        if (extensions is null)
+        {
+            return null;
+        }
+
+        return extensions.ToDictionary(
+            static pair => pair.Key,
+            static pair => pair.Value is JsonNodeExtension jsonNodeExtension
+                ? (IArazzoExtension)new JsonNodeExtension(CloneNode(jsonNodeExtension.Node)!)
+                : pair.Value);
+    }
+
+    private static class ArazzoInputReferenceFactory
+    {
+        internal static ArazzoInputReference Create(OpenApiSchemaReference schemaReference, ArazzoDocument? hostDocument)
+        {
+            var referenceId = schemaReference.Reference.Id ?? throw new InvalidOperationException("Schema reference Id is required.");
+            var reference = new ArazzoInputReference(referenceId, hostDocument, schemaReference.Reference.ExternalResource)
+            {
+                Title = schemaReference.Reference.Title,
+                Description = schemaReference.Reference.Description,
+                Default = CloneNode(schemaReference.Reference.Default),
+                Examples = CloneNodeList(schemaReference.Reference.Examples),
+                Extensions = ConvertExtensions(schemaReference.Reference.Extensions)
+            };
+
+            if (schemaReference.Reference.ReadOnly.HasValue)
+            {
+                reference.ReadOnly = schemaReference.Reference.ReadOnly.Value;
+            }
+
+            if (schemaReference.Reference.WriteOnly.HasValue)
+            {
+                reference.WriteOnly = schemaReference.Reference.WriteOnly.Value;
+            }
+
+            if (schemaReference.Reference.Deprecated.HasValue)
+            {
+                reference.Deprecated = schemaReference.Reference.Deprecated.Value;
+            }
+
+            if (!string.IsNullOrEmpty(schemaReference.Reference.ReferenceV3))
+            {
+                reference.Reference.SetJsonPointerPath(schemaReference.Reference.ReferenceV3!, "#");
+            }
+
+            return reference;
+        }
+    }
+
 }

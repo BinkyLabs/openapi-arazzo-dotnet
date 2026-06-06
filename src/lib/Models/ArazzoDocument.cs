@@ -10,6 +10,19 @@ namespace BinkyLabs.OpenApi.Arazzo;
 public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 {
     /// <summary>
+    /// Registers document components into the workspace.
+    /// </summary>
+    internal void RegisterComponents()
+    {
+        Workspace?.RegisterComponents(this);
+    }
+
+    /// <summary>
+    /// Related workspace containing components referenced by the document.
+    /// </summary>
+    internal ArazzoWorkspace? Workspace { get; set; }
+
+    /// <summary>
     /// Gets or sets the Arazzo version. Default is "1.0.1".
     /// </summary>
     public string? Arazzo { get; internal set; } = "1.0.1";
@@ -36,6 +49,20 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 
     /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
+
+    /// <summary>
+    /// Absolute location of the document or a generated placeholder if location is not given.
+    /// </summary>
+    internal Uri BaseUri { get; set; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ArazzoDocument"/> class.
+    /// </summary>
+    public ArazzoDocument()
+    {
+        Workspace = new ArazzoWorkspace();
+        BaseUri = new Uri(OpenApiConstants.BaseRegistryUri + Guid.NewGuid());
+    }
 
     /// <summary>
     /// Serializes the Arazzo document as an OpenAPI Arazzo v1.0.0 JSON object.
@@ -114,5 +141,51 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
                                    CancellationToken cancellationToken = default)
     {
         return ArazzoModelFactory.ParseAsync(input, format, settings, cancellationToken);
+    }
+
+    internal T? ResolveReferenceTo<T>(BaseArazzoReference reference, IArazzoInput? parentInput) where T : IArazzoReferenceable
+    {
+        if (ResolveReference(reference, reference.IsExternal, parentInput) is T result)
+        {
+            return result;
+        }
+
+        return default;
+    }
+
+    internal IArazzoReferenceable? ResolveReference(BaseArazzoReference? reference, bool useExternal, IArazzoInput? parentInput)
+    {
+        if (reference is null)
+        {
+            return null;
+        }
+
+        string uriLocation;
+        if (!string.IsNullOrEmpty(reference.ReferenceV1) && reference.ReferenceV1!.Contains('/'))
+        {
+            uriLocation = reference.ReferenceV1!;
+        }
+        else
+        {
+            var relativePath = !string.IsNullOrEmpty(reference.ReferenceV1)
+                ? reference.ReferenceV1!
+                : $"#/components/{reference.Type.GetDisplayName()}/{reference.Id}";
+
+            var externalResourceUri = useExternal ? Workspace?.GetDocumentId(reference.ExternalResource) : null;
+            uriLocation = useExternal && externalResourceUri is not null
+                ? externalResourceUri.AbsoluteUri + (relativePath.StartsWith("#", StringComparison.OrdinalIgnoreCase) ? relativePath : $"#{relativePath}")
+                : BaseUri + relativePath;
+        }
+
+        var absoluteUri = uriLocation.StartsWith("#", StringComparison.OrdinalIgnoreCase)
+            ? new Uri(BaseUri, uriLocation).AbsoluteUri
+            : new Uri(uriLocation).AbsoluteUri;
+
+        if (reference.Type is ReferenceType.Input && absoluteUri.Contains('#') && parentInput is not null)
+        {
+            return Workspace?.ResolveJsonSchemaReference(absoluteUri, parentInput);
+        }
+
+        return Workspace?.ResolveReference<IArazzoReferenceable>(absoluteUri);
     }
 }

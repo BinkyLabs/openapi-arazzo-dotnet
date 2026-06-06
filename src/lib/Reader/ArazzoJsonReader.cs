@@ -51,6 +51,8 @@ public class ArazzoJsonReader : IArazzoReader
         // Validate the document
         if (document is not null && settings.OpenApiSettings.RuleSet is not null && settings.OpenApiSettings.RuleSet.Rules.Any())
         {
+            document.BaseUri = location;
+            document.RegisterComponents();
             var openApiErrors = document.Validate(settings.OpenApiSettings.RuleSet);
             if (openApiErrors is not null)
             {

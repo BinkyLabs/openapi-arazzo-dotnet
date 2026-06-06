@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text.Json.Nodes;
 
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Reader;
 
 namespace BinkyLabs.OpenApi.Arazzo;
 
@@ -15,6 +14,11 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// </summary>
 public class BaseArazzoReference : IArazzoSerializable
 {
+    /// <summary>
+    /// External resource in the reference.
+    /// </summary>
+    internal string? ExternalResource { get; init; }
+
     /// <summary>
     /// The element type referenced.
     /// </summary>
@@ -30,6 +34,16 @@ public class BaseArazzoReference : IArazzoSerializable
     /// Gets a flag indicating whether a file is a valid OpenAPI document or a fragment
     /// </summary>
     public bool IsFragment { get; init; }
+
+    /// <summary>
+    /// Gets a flag indicating whether this reference is an external reference.
+    /// </summary>
+    internal bool IsExternal => ExternalResource != null;
+
+    /// <summary>
+    /// Gets a flag indicating whether this reference is local.
+    /// </summary>
+    internal bool IsLocal => ExternalResource == null;
 
     private ArazzoDocument? hostDocument;
     /// <summary>
@@ -50,10 +64,17 @@ public class BaseArazzoReference : IArazzoSerializable
                 return _referenceV1;
             }
 
+            if (IsExternal)
+            {
+                return GetExternalReferenceV1();
+            }
+
             if (!string.IsNullOrEmpty(Id) && Id is not null &&
                 (Id.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                  Id.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
-                 Id.Contains("$components", StringComparison.OrdinalIgnoreCase)))
+                 Id.Contains("$components", StringComparison.OrdinalIgnoreCase) ||
+                 Id.Contains("#/components", StringComparison.OrdinalIgnoreCase) ||
+                 Id.StartsWith("#/", StringComparison.OrdinalIgnoreCase)))
             {
                 return Id;
             }
@@ -80,6 +101,7 @@ public class BaseArazzoReference : IArazzoSerializable
     public BaseArazzoReference(BaseArazzoReference reference)
     {
         ArgumentNullException.ThrowIfNull(reference);
+        ExternalResource = reference.ExternalResource;
         Type = reference.Type;
         Id = reference.Id;
         HostDocument = reference.HostDocument;
@@ -113,7 +135,9 @@ public class BaseArazzoReference : IArazzoSerializable
     internal void SetJsonPointerPath(string pointer, string nodeLocation)
     {
         // Relative reference to internal JSON schema node/resource (e.g. "$/properties/b")
-        if (pointer.StartsWith("$", StringComparison.OrdinalIgnoreCase) && !pointer.Contains("$.components/schemas", StringComparison.OrdinalIgnoreCase))
+        if ((pointer.StartsWith("$", StringComparison.OrdinalIgnoreCase) || pointer.StartsWith("#/", StringComparison.OrdinalIgnoreCase)) &&
+            !pointer.Contains("#/components/inputs", StringComparison.OrdinalIgnoreCase) &&
+            !pointer.Contains("$.components/", StringComparison.OrdinalIgnoreCase))
         {
             ReferenceV1 = ResolveRelativePointer(nodeLocation, pointer);
         }
@@ -129,10 +153,14 @@ public class BaseArazzoReference : IArazzoSerializable
     private static string ResolveRelativePointer(string nodeLocation, string relativeRef)
     {
         // Convert nodeLocation to path segments
-        var nodeLocationSegments = nodeLocation.TrimStart('$').Split(['.'], StringSplitOptions.RemoveEmptyEntries).ToList();
+        var nodeLocationSegments = nodeLocation.StartsWith("#/", StringComparison.OrdinalIgnoreCase)
+            ? nodeLocation.TrimStart('#').Split(['/'], StringSplitOptions.RemoveEmptyEntries).ToList()
+            : nodeLocation.TrimStart('$').Split(['.'], StringSplitOptions.RemoveEmptyEntries).ToList();
 
         // Convert relativeRef to dynamic segments
-        var relativeSegments = relativeRef.TrimStart('$').Split(['.'], StringSplitOptions.RemoveEmptyEntries);
+        var relativeSegments = relativeRef.StartsWith("#/", StringComparison.OrdinalIgnoreCase)
+            ? relativeRef.TrimStart('#').Split(['/'], StringSplitOptions.RemoveEmptyEntries)
+            : relativeRef.TrimStart('$').Split(['.'], StringSplitOptions.RemoveEmptyEntries);
 
         // Locate the first occurrence of relativeRef segments in the full path
         for (int i = 0; i <= nodeLocationSegments.Count - relativeSegments.Length; i++)
@@ -141,10 +169,61 @@ public class BaseArazzoReference : IArazzoSerializable
                 nodeLocationSegments.Take(i + relativeSegments.Length).ToArray() is { Length: > 0 } matchingSegments)
             {
                 // Trim to include just the matching segment chain
-                return $"${string.Join(".", matchingSegments)}";
+                return relativeRef.StartsWith("#/", StringComparison.OrdinalIgnoreCase)
+                    ? $"#/{string.Join("/", matchingSegments)}"
+                    : $"${string.Join(".", matchingSegments)}";
             }
         }
 
+        if (relativeRef.StartsWith("#/", StringComparison.OrdinalIgnoreCase))
+        {
+            if (nodeLocation.StartsWith("#/components/inputs/", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"#/{string.Join("/", nodeLocationSegments.Take(3).Concat(relativeSegments))}";
+            }
+
+            return $"#/{string.Join("/", nodeLocationSegments.SkipLast(relativeSegments.Length).Concat(relativeSegments))}";
+        }
+
         return $"${string.Join(".", nodeLocationSegments.SkipLast(relativeSegments.Length).Concat(relativeSegments))}";
+    }
+
+    internal void EnsureHostDocumentIsSet(ArazzoDocument currentDocument)
+    {
+        ArgumentNullException.ThrowIfNull(currentDocument);
+        hostDocument ??= currentDocument;
+    }
+
+    internal static string? GetPropertyValueFromNode(JsonObject jsonObject, string key) =>
+        jsonObject.TryGetPropertyValue(key, out var jsonNode) &&
+        jsonNode is JsonValue valueCast &&
+        valueCast.TryGetValue<string>(out var strValue)
+            ? strValue
+            : null;
+
+    private string? GetExternalReferenceV1()
+    {
+        if (Id is null)
+        {
+            return ExternalResource;
+        }
+
+        if (IsFragment)
+        {
+            return ExternalResource + "#" + Id;
+        }
+
+        if (Id.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            Id.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return Id;
+        }
+
+        if (Id.StartsWith("#/", StringComparison.OrdinalIgnoreCase))
+        {
+            return ExternalResource + Id;
+        }
+
+        return ExternalResource + "#/components/" + Type.GetDisplayName() + "/" + Id;
     }
 }
