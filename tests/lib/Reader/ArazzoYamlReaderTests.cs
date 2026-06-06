@@ -1,6 +1,7 @@
 // Licensed under the MIT license.
 
 using System.Text;
+using System.Text.Json;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 
@@ -77,6 +78,22 @@ public class ArazzoYamlReaderTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => reader.GetJsonNodeFromStreamAsync(stream, ct));
     }
 
+    [Fact]
+    public async Task ReadAsync_WhenYamlReaderThrowsJsonException_ReturnsDiagnostic()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var reader = new ArazzoYamlReader();
+        await using var stream = new JsonExceptionMemoryStream();
+
+        var result = await reader.ReadAsync(stream, new Uri("https://example.com/"), new ArazzoReaderSettings(), ct);
+
+        Assert.Null(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        var error = Assert.Single(result.Diagnostic.Errors);
+        Assert.Equal("#line=7", error.Pointer);
+        Assert.Equal("bad yaml", error.Message);
+    }
+
     /// <summary>Wraps an inner stream and pretends to be a non-MemoryStream so the YAML reader takes the buffer branch.</summary>
     private sealed class BufferingPassThroughStream : Stream
     {
@@ -96,5 +113,17 @@ public class ArazzoYamlReaderTests
         public override long Seek(long offset, SeekOrigin origin) => _inner.Seek(offset, origin);
         public override void SetLength(long value) => _inner.SetLength(value);
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    private sealed class JsonExceptionMemoryStream : MemoryStream
+    {
+        public override int Read(byte[] buffer, int offset, int count)
+            => throw new JsonException("bad yaml", path: null, lineNumber: 7, bytePositionInLine: 0);
+
+        public override int Read(Span<byte> buffer)
+            => throw new JsonException("bad yaml", path: null, lineNumber: 7, bytePositionInLine: 0);
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+            => ValueTask.FromException<int>(new JsonException("bad yaml", path: null, lineNumber: 7, bytePositionInLine: 0));
     }
 }

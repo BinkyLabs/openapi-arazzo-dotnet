@@ -390,6 +390,24 @@ public class ArazzoInputTests
     }
 
     [Fact]
+    public void ConvertFromOpenApiSchema_WithReferenceWithoutOptionalMetadata_LeavesOverridesUnset()
+    {
+        var schemaReference = new OpenApiSchemaReference("shared", null, null);
+
+        var converted = Assert.IsType<ArazzoInputReference>(ArazzoInput.ConvertFromOpenApiSchema(schemaReference));
+
+        Assert.Equal("shared", converted.Reference.Id);
+        Assert.Null(converted.Title);
+        Assert.Null(converted.Description);
+        Assert.Null(converted.Default);
+        Assert.Null(converted.Examples);
+        Assert.False(converted.ReadOnly);
+        Assert.False(converted.WriteOnly);
+        Assert.False(converted.Deprecated);
+        Assert.Equal("#/components/schemas/shared", converted.Reference.ReferenceV1);
+    }
+
+    [Fact]
     public void ConvertToOpenApiSchema_WithReference_ReturnsSchemaReference()
     {
         var inputReference = new ArazzoInputReference("shared")
@@ -419,6 +437,17 @@ public class ArazzoInputTests
         Assert.True(converted.Deprecated);
         Assert.Equal("#/components/inputs/shared", converted.Reference.ReferenceV3);
         Assert.Equal("value", Assert.IsType<Microsoft.OpenApi.JsonNodeExtension>(converted.Extensions!["x-extra"]).Node.GetValue<string>());
+    }
+
+    [Fact]
+    public void CopyReferenceAsTargetElementWithOverrides_ReturnsSourceWhenItIsNotArazzoInput()
+    {
+        var reference = new ArazzoInputReference("shared");
+        var input = new NonArazzoInput();
+
+        var result = reference.CopyReferenceAsTargetElementWithOverrides(input);
+
+        Assert.Same(input, result);
     }
 
     [Fact]
@@ -556,6 +585,60 @@ public class ArazzoInputTests
         public void Write(IOpenApiWriter writer, ArazzoSpecVersion specVersion)
         {
             writer.WriteValue(value);
+        }
+    }
+
+    private sealed class NonArazzoInput : IArazzoInput
+    {
+        public string? Title { get; set; }
+        public Uri? Schema { get; set; }
+        public string? Id { get; set; }
+        public string? Comment { get; set; }
+        public IDictionary<string, bool>? Vocabulary { get; set; }
+        public string? DynamicRef { get; set; }
+        public string? DynamicAnchor { get; set; }
+        public IDictionary<string, IArazzoInput>? Definitions { get; set; }
+        public string? ExclusiveMaximum { get; set; }
+        public string? ExclusiveMinimum { get; set; }
+        public JsonSchemaType? Type { get; set; }
+        public string? Const { get; set; }
+        public string? Format { get; set; }
+        public string? Description { get; set; }
+        public string? Maximum { get; set; }
+        public string? Minimum { get; set; }
+        public int? MaxLength { get; set; }
+        public int? MinLength { get; set; }
+        public string? Pattern { get; set; }
+        public decimal? MultipleOf { get; set; }
+        public JsonNode? Default { get; set; }
+        public bool ReadOnly { get; set; }
+        public bool WriteOnly { get; set; }
+        public IList<IArazzoInput>? AllOf { get; set; }
+        public IList<IArazzoInput>? OneOf { get; set; }
+        public IList<IArazzoInput>? AnyOf { get; set; }
+        public IArazzoInput? Not { get; set; }
+        public ISet<string>? Required { get; set; }
+        public IArazzoInput? Items { get; set; }
+        public int? MaxItems { get; set; }
+        public int? MinItems { get; set; }
+        public bool? UniqueItems { get; set; }
+        public IDictionary<string, IArazzoInput>? Properties { get; set; }
+        public IDictionary<string, IArazzoInput>? PatternProperties { get; set; }
+        public int? MaxProperties { get; set; }
+        public int? MinProperties { get; set; }
+        public bool AdditionalPropertiesAllowed { get; set; }
+        public IArazzoInput? AdditionalProperties { get; set; }
+        public IList<JsonNode>? Examples { get; set; }
+        public IList<JsonNode>? Enum { get; set; }
+        public bool UnevaluatedProperties { get; set; }
+        public IArazzoInput? UnevaluatedPropertiesSchema { get; set; }
+        public bool Deprecated { get; set; }
+        public IDictionary<string, HashSet<string>>? DependentRequired { get; set; }
+        public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
+
+        public void SerializeAsV1(IOpenApiWriter writer)
+        {
+            ArgumentNullException.ThrowIfNull(writer);
         }
     }
 }

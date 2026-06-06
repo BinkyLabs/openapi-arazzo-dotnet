@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
@@ -370,5 +371,83 @@ public class ArazzoDocumentTests
         // Act & Assert
         var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1(writer));
         Assert.Equal("Workflows is required and must contain at least one element for ArazzoDocument serialization.", exception.Message);
+    }
+
+    [Fact]
+    public async Task LoadFromStreamAsync_ShouldParseDocument()
+    {
+        const string json =
+            """
+            {
+              "Arazzo": "1.0.0",
+              "info": {
+                "title": "Loaded from stream",
+                "version": "1.0.0"
+              },
+              "sourceDescriptions": [],
+              "workflows": []
+            }
+            """;
+
+        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+        var result = await ArazzoDocument.LoadFromStreamAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result.Document);
+        Assert.Equal("Loaded from stream", result.Document!.Info!.Title);
+    }
+
+    [Fact]
+    public async Task ParseAsync_ShouldParseDocument()
+    {
+        const string json =
+            """
+            {
+              "Arazzo": "1.0.0",
+              "info": {
+                "title": "Parsed document",
+                "version": "1.0.0"
+              },
+              "sourceDescriptions": [],
+              "workflows": []
+            }
+            """;
+
+        var result = await ArazzoDocument.ParseAsync(json, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result.Document);
+        Assert.Equal("Parsed document", result.Document!.Info!.Title);
+    }
+
+    [Fact]
+    public async Task LoadFromUrlAsync_WithLocalFile_ShouldParseDocument()
+    {
+        const string json =
+            """
+            {
+              "Arazzo": "1.0.0",
+              "info": {
+                "title": "Loaded from file",
+                "version": "1.0.0"
+              },
+              "sourceDescriptions": [],
+              "workflows": []
+            }
+            """;
+
+        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.json");
+        await File.WriteAllTextAsync(filePath, json, TestContext.Current.CancellationToken);
+
+        try
+        {
+            var result = await ArazzoDocument.LoadFromUrlAsync(filePath, token: TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result.Document);
+            Assert.Equal("Loaded from file", result.Document!.Info!.Title);
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
     }
 }
