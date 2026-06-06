@@ -159,6 +159,48 @@ public sealed partial class ArazzoModelFactoryTests
         Assert.Equal("Sample Arazzo", result.Document.Info.Title);
     }
 
+    [Fact]
+    public async Task LoadFormUrlAsync_WithLocalFile_LoadsDocument()
+    {
+        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.json");
+        await File.WriteAllTextAsync(filePath, documentJson, TestContext.Current.CancellationToken);
+
+        try
+        {
+            var result = await ArazzoModelFactory.LoadFormUrlAsync(filePath, token: TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result.Document);
+            Assert.Equal("Sample Arazzo", result.Document!.Info!.Title);
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    [Fact]
+    public async Task LoadFormUrlAsync_WithMissingFile_ThrowsInvalidOperationException()
+    {
+        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.json");
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            ArazzoModelFactory.LoadFormUrlAsync(filePath, token: TestContext.Current.CancellationToken));
+
+        Assert.Contains("Could not open the file", exception.Message);
+    }
+
+    [Fact]
+    public async Task ParseAsync_WithExternalRefLoadingEnabled_InitializesWorkspace()
+    {
+        var settings = new ArazzoReaderSettings();
+        settings.OpenApiSettings.LoadExternalRefs = true;
+
+        var result = await ArazzoModelFactory.ParseAsync(documentJson, settings: settings, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document!.Info);
+    }
+
     public sealed class AsyncOnlyStream : Stream
     {
         private readonly Stream _innerStream;

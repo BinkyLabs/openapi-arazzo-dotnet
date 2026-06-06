@@ -48,6 +48,16 @@ public class ArazzoYamlReaderTests
     }
 
     [Fact]
+    public async Task ReadAsync_NullSettings_Throws()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var reader = new ArazzoYamlReader();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(ValidYaml));
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => reader.ReadAsync(stream, new Uri("https://example.com/"), null!, ct));
+    }
+
+    [Fact]
     public async Task GetJsonNodeFromStreamAsync_ReturnsJsonNode()
     {
         var ct = TestContext.Current.CancellationToken;

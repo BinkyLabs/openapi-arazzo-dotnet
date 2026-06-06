@@ -61,10 +61,61 @@ public class JsonNodeHelperTests
     }
 
     [Fact]
+    public void CreateList_OnNonArray_Throws()
+    {
+        Assert.Throws<ArazzoReaderException>(() => JsonNode.Parse("""{"a":1}""")!.CreateList(static (n, _) => n, Ctx()));
+    }
+
+    [Fact]
+    public void CreateSimpleList_ProjectsScalars()
+    {
+        var result = JsonNode.Parse("""["a","b"]""")!.CreateSimpleList(n => n.GetValue<string>(), Ctx());
+
+        Assert.Equal(["a", "b"], result);
+    }
+
+    [Fact]
+    public void CreateSimpleList_OnNonScalar_Throws()
+    {
+        Assert.Throws<ArazzoReaderException>(() => JsonNode.Parse("""[{}]""")!.CreateSimpleList(n => n.GetValue<string>(), Ctx()));
+    }
+
+    [Fact]
     public void CreateMap_NonObjectValueProducesDefault()
     {
         var result = JsonNode.Parse("""{"a": 1}""")!.CreateMap<object?>(static (n, _) => n, Ctx());
         Assert.Null(result["a"]);
+    }
+
+    [Fact]
+    public void CreateSimpleMap_BuildsDictionary()
+    {
+        var result = JsonNode.Parse("""{"a":"1","b":"2"}""")!.CreateSimpleMap(n => n.GetValue<string>(), Ctx());
+
+        Assert.Equal("1", result["a"]);
+        Assert.Equal("2", result["b"]);
+    }
+
+    [Fact]
+    public void CreateSimpleMap_OnNonScalar_Throws()
+    {
+        Assert.Throws<ArazzoReaderException>(() => JsonNode.Parse("""{"a":{}}""")!.CreateSimpleMap(n => n.GetValue<string>(), Ctx()));
+    }
+
+    [Fact]
+    public void GetScalarValue_Generic_ReturnsTypedValue()
+    {
+        JsonNode node = JsonValue.Create(42)!;
+
+        Assert.Equal(42, node.GetScalarValue<int>());
+    }
+
+    [Fact]
+    public void GetScalarValue_Generic_OnNonScalar_Throws()
+    {
+        JsonNode node = new JsonObject();
+
+        Assert.Throws<ArazzoReaderException>(() => node.GetScalarValue<int>());
     }
 
     [Fact]
