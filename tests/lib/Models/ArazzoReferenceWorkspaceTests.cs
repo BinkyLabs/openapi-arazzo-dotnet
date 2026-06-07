@@ -109,55 +109,6 @@ public class ArazzoReferenceWorkspaceTests
     [Fact]
     public void ArazzoInputReference_ResolvesTargetAndRecursiveTarget()
     {
-        var terminal = new ArazzoInput
-        {
-            Title = "terminal",
-            Schema = new Uri("https://json-schema.org/draft/2020-12/schema"),
-            Id = "urn:terminal",
-            Comment = "comment",
-            Vocabulary = new Dictionary<string, bool> { ["core"] = true },
-            DynamicRef = "#dynamic",
-            DynamicAnchor = "dynamic",
-            Definitions = new Dictionary<string, IArazzoInput> { ["def"] = new ArazzoInput { Type = JsonSchemaType.String } },
-            ExclusiveMaximum = "10",
-            ExclusiveMinimum = "1",
-            Type = JsonSchemaType.Object,
-            Const = "fixed",
-            Format = "date-time",
-            Description = "description",
-            Maximum = "9",
-            Minimum = "2",
-            MaxLength = 10,
-            MinLength = 1,
-            Pattern = "^[a-z]+$",
-            MultipleOf = 2,
-            Default = JsonValue.Create("default"),
-            ReadOnly = true,
-            WriteOnly = true,
-            AllOf = [new ArazzoInput { Type = JsonSchemaType.String }],
-            OneOf = [new ArazzoInput { Type = JsonSchemaType.Number }],
-            AnyOf = [new ArazzoInput { Type = JsonSchemaType.Integer }],
-            Not = new ArazzoInput { Type = JsonSchemaType.Null },
-            Required = new HashSet<string> { "id" },
-            Items = new ArazzoInput { Type = JsonSchemaType.String },
-            MaxItems = 3,
-            MinItems = 1,
-            UniqueItems = true,
-            Properties = new Dictionary<string, IArazzoInput> { ["value"] = new ArazzoInput { Type = JsonSchemaType.String } },
-            PatternProperties = new Dictionary<string, IArazzoInput> { ["^x-"] = new ArazzoInput { Type = JsonSchemaType.Boolean } },
-            MaxProperties = 5,
-            MinProperties = 1,
-            AdditionalPropertiesAllowed = false,
-            AdditionalProperties = new ArazzoInput { Type = JsonSchemaType.String },
-            Examples = [JsonValue.Create("example")!],
-            Enum = [JsonValue.Create("A")!],
-            UnevaluatedProperties = false,
-            UnevaluatedPropertiesSchema = new ArazzoInput { Type = JsonSchemaType.Integer },
-            Deprecated = true,
-            DependentRequired = new Dictionary<string, HashSet<string>> { ["a"] = ["b"] },
-            Extensions = new Dictionary<string, IArazzoExtension> { ["x-extra"] = new JsonNodeExtension(JsonValue.Create("value")!) }
-        };
-
         var reference = new ArazzoInputReference("terminal")
         {
             Title = "override",
