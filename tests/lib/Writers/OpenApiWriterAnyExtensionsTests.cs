@@ -57,6 +57,6 @@ public class OpenApiWriterAnyExtensionsTests
     [Fact]
     public void WriteArazzoExtensions_ThrowsOnNullWriter()
     {
-        Assert.Throws<ArgumentNullException>(() => BinkyLabs.OpenApi.Arazzo.Writers.OpenApiWriterAnyExtensions.WriteArazzoExtensions(null!, null, ArazzoSpecVersion.Arazzo1_0));
+        Assert.Throws<ArgumentNullException>(() => Arazzo.Writers.OpenApiWriterAnyExtensions.WriteArazzoExtensions(null!, null, ArazzoSpecVersion.Arazzo1_0));
     }
 }

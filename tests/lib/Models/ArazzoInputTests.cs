@@ -296,7 +296,7 @@ public class ArazzoInputTests
         var context = new global::BinkyLabs.OpenApi.Arazzo.Reader.ParsingContext(
             new global::BinkyLabs.OpenApi.Arazzo.Reader.ArazzoDiagnostic());
 
-        var input = global::BinkyLabs.OpenApi.Arazzo.Reader.V1.ArazzoV1Deserializer.LoadSchema(json, context);
+        var input = Arazzo.Reader.V1.ArazzoV1Deserializer.LoadSchema(json, context);
 
         var reference = Assert.IsType<ArazzoInputReference>(input);
         Assert.Equal("#/$defs/shared", reference.Reference.ReferenceV1);
@@ -323,7 +323,7 @@ public class ArazzoInputTests
         var context = new global::BinkyLabs.OpenApi.Arazzo.Reader.ParsingContext(
             new global::BinkyLabs.OpenApi.Arazzo.Reader.ArazzoDiagnostic());
 
-        var input = global::BinkyLabs.OpenApi.Arazzo.Reader.V1.ArazzoV1Deserializer.LoadSchema(json, context);
+        var input = Arazzo.Reader.V1.ArazzoV1Deserializer.LoadSchema(json, context);
 
         var reference = Assert.IsType<ArazzoInputReference>(input);
         Assert.Equal("override", reference.Title);

@@ -14,7 +14,7 @@ public class ArazzoVersionDeserializerTests
     {
         var service = new TestVersionService(static () => new ArazzoInfo { Title = "loaded" });
 
-        var element = service.LoadElement<ArazzoInfo>(JsonObject.Parse("""{}""")!, new ParsingContext(new()));
+        var element = service.LoadElement<ArazzoInfo>(JsonNode.Parse("""{}""")!, new ParsingContext(new()));
 
         Assert.NotNull(element);
         Assert.Equal("loaded", element.Title);
@@ -24,11 +24,11 @@ public class ArazzoVersionDeserializerTests
     {
         var mismatchedService = new TestVersionService(static () => new JsonNodeExtension(JsonValue.Create("value")!));
 
-        Assert.Null(mismatchedService.LoadElement<ArazzoInfo>(JsonObject.Parse("""{}""")!, new ParsingContext(new())));
+        Assert.Null(mismatchedService.LoadElement<ArazzoInfo>(JsonNode.Parse("""{}""")!, new ParsingContext(new())));
 
         var missingLoaderService = new TestVersionService(static () => new ArazzoInfo());
 
-        Assert.Null(missingLoaderService.LoadElement<ArazzoSourceDescription>(JsonObject.Parse("""{}""")!, new ParsingContext(new())));
+        Assert.Null(missingLoaderService.LoadElement<ArazzoSourceDescription>(JsonNode.Parse("""{}""")!, new ParsingContext(new())));
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class ArazzoVersionDeserializerTests
             BaseUrl = new Uri("https://example.com/from-context/arazzo.json")
         };
 
-        var document = global::BinkyLabs.OpenApi.Arazzo.Reader.V1.ArazzoV1Deserializer.LoadDocument(json, context);
+        var document = Arazzo.Reader.V1.ArazzoV1Deserializer.LoadDocument(json, context);
 
         Assert.Equal(context.BaseUrl, document.BaseUri);
     }
