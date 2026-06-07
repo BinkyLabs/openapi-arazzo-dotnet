@@ -393,9 +393,8 @@ public class ArazzoReferenceWorkspaceTests
             () => reference.DependentRequired = new Dictionary<string, HashSet<string>>()
         };
 
-        foreach (var setter in setters)
+        foreach (var exception in setters.Select(setter => Assert.Throws<NotSupportedException>(setter)))
         {
-            var exception = Assert.Throws<NotSupportedException>(setter);
             Assert.Contains("cannot be overridden", exception.Message, StringComparison.Ordinal);
         }
     }
