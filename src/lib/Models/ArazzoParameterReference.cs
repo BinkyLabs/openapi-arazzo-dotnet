@@ -73,7 +73,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
         ArgumentNullException.ThrowIfNull(writer);
 
         writer.WriteStartObject();
-        writer.WriteProperty(OpenApiConstants.DollarRef, Reference.ReferenceV1);
+        writer.WriteProperty(ArazzoConstants.ArazzoReusableObjectReference, Reference.ReferenceV1);
         writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, _value, static (w, value) => w.WriteAny(value));
         writer.WriteEndObject();
     }

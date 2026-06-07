@@ -83,7 +83,7 @@ public class ArazzoParameterTests
 
         var json = JsonNode.Parse(textWriter.ToString());
 
-        Assert.Equal("$components.parameters.shared", json?["$ref"]?.GetValue<string>());
+        Assert.Equal("$components.parameters.shared", json?["reference"]?.GetValue<string>());
         Assert.Equal("42", json?["value"]?.GetValue<string>());
     }
 
@@ -92,7 +92,7 @@ public class ArazzoParameterTests
     {
         var json = """
         {
-            "$ref": "$components.parameters.shared",
+            "reference": "$components.parameters.shared",
             "value": "25"
         }
         """;
@@ -111,7 +111,7 @@ public class ArazzoParameterTests
         var jsonNode = JsonNode.Parse(
             """
             {
-                "$ref": "external.json#$components.parameters.shared"
+                "reference": "external.json#$components.parameters.shared"
             }
             """)!;
 

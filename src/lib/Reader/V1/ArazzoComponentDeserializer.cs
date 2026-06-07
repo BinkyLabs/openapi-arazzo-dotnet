@@ -101,7 +101,8 @@ internal static partial class ArazzoV1Deserializer
         jsonObject = node as JsonObject;
         referenceString = null;
 
-        if (jsonObject?.TryGetPropertyValue(OpenApiConstants.DollarRef, out var referenceNode) == true &&
+        if ((jsonObject?.TryGetPropertyValue(ArazzoConstants.ArazzoReusableObjectReference, out var referenceNode) == true ||
+             jsonObject?.TryGetPropertyValue(OpenApiConstants.DollarRef, out referenceNode) == true) &&
             referenceNode is JsonValue referenceValue &&
             referenceValue.TryGetValue<string>(out var parsedReferenceString) &&
             !string.IsNullOrEmpty(parsedReferenceString))

@@ -126,8 +126,10 @@ public class BaseArazzoReference : IArazzoSerializable
             callback(writer);
         }
 
-        // $ref
-        writer.WriteProperty(OpenApiConstants.DollarRef, ReferenceV1);
+        var referencePropertyName = Type == ReferenceType.Input
+            ? OpenApiConstants.DollarRef
+            : ArazzoConstants.ArazzoReusableObjectReference;
+        writer.WriteProperty(referencePropertyName, ReferenceV1);
 
         writer.WriteEndObject();
     }

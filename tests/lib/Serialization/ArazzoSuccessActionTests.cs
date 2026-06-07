@@ -171,7 +171,7 @@ public class ArazzoSuccessActionTests
     }
 
     [Fact]
-    public void SerializeAsV1_WithReference_WritesDollarRef()
+    public void SerializeAsV1_WithReference_WritesReference()
     {
         var successAction = new ArazzoSuccessActionReference("shared");
 
@@ -182,7 +182,7 @@ public class ArazzoSuccessActionTests
 
         var json = JsonNode.Parse(textWriter.ToString());
 
-        Assert.Equal("$components.successActions.shared", json?["$ref"]?.GetValue<string>());
+        Assert.Equal("$components.successActions.shared", json?["reference"]?.GetValue<string>());
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public class ArazzoSuccessActionTests
     {
         var json = """
         {
-            "$ref": "$components.successActions.shared"
+            "reference": "$components.successActions.shared"
         }
         """;
         var jsonNode = JsonNode.Parse(json)!;
@@ -208,7 +208,7 @@ public class ArazzoSuccessActionTests
         var jsonNode = JsonNode.Parse(
             """
             {
-                "$ref": "external.json#$components.successActions.shared"
+                "reference": "external.json#$components.successActions.shared"
             }
             """)!;
 

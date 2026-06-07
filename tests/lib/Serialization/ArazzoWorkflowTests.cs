@@ -238,17 +238,17 @@ public class ArazzoWorkflowTests
             "workflowId": "referenceWorkflow",
             "successActions": [
                 {
-                    "$ref": "$components.successActions.successAction"
+                    "reference": "$components.successActions.successAction"
                 }
             ],
             "failureActions": [
                 {
-                    "$ref": "$components.failureActions.failureAction"
+                    "reference": "$components.failureActions.failureAction"
                 }
             ],
             "parameters": [
                 {
-                    "$ref": "$components.parameters.userId",
+                    "reference": "$components.parameters.userId",
                     "value": "7"
                 }
             ]

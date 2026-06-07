@@ -237,7 +237,7 @@ public class ArazzoFailureActionTests
     }
 
     [Fact]
-    public void SerializeAsV1_WithReference_WritesDollarRef()
+    public void SerializeAsV1_WithReference_WritesReference()
     {
         var failureAction = new ArazzoFailureActionReference("shared");
 
@@ -248,7 +248,7 @@ public class ArazzoFailureActionTests
 
         var json = JsonNode.Parse(textWriter.ToString());
 
-        Assert.Equal("$components.failureActions.shared", json?["$ref"]?.GetValue<string>());
+        Assert.Equal("$components.failureActions.shared", json?["reference"]?.GetValue<string>());
     }
 
     [Fact]
@@ -256,7 +256,7 @@ public class ArazzoFailureActionTests
     {
         var json = """
         {
-            "$ref": "$components.failureActions.shared"
+            "reference": "$components.failureActions.shared"
         }
         """;
         var jsonNode = JsonNode.Parse(json)!;
@@ -274,7 +274,7 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(
             """
             {
-                "$ref": "external.json#$components.failureActions.shared"
+                "reference": "external.json#$components.failureActions.shared"
             }
             """)!;
 

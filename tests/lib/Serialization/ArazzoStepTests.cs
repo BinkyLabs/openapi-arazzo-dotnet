@@ -218,9 +218,9 @@ public class ArazzoStepTests
 
         var json = JsonNode.Parse(textWriter.ToString());
 
-        Assert.Equal("$components.parameters.userId", json?["parameters"]?[0]?["$ref"]?.GetValue<string>());
+        Assert.Equal("$components.parameters.userId", json?["parameters"]?[0]?["reference"]?.GetValue<string>());
         Assert.Equal("7", json?["parameters"]?[0]?["value"]?.GetValue<string>());
-        Assert.Equal("$components.successActions.nextAction", json?["onSuccess"]?[0]?["$ref"]?.GetValue<string>());
-        Assert.Equal("$components.failureActions.retryAction", json?["onFailure"]?[0]?["$ref"]?.GetValue<string>());
+        Assert.Equal("$components.successActions.nextAction", json?["onSuccess"]?[0]?["reference"]?.GetValue<string>());
+        Assert.Equal("$components.failureActions.retryAction", json?["onFailure"]?[0]?["reference"]?.GetValue<string>());
     }
 }

@@ -80,7 +80,7 @@ public class BaseArazzoReferenceTests
     }
 
     [Fact]
-    public void SerializeAsV1_WritesDollarRef()
+    public void SerializeAsV1_WritesReference()
     {
         var reference = new BaseArazzoReference { Type = ReferenceType.Parameter, Id = "myParam" };
         using var textWriter = new StringWriter();
@@ -89,7 +89,7 @@ public class BaseArazzoReferenceTests
         reference.SerializeAsV1(writer);
 
         var json = textWriter.ToString();
-        Assert.Contains("$ref", json);
+        Assert.Contains("\"reference\"", json);
         Assert.Contains("$components.parameters.myParam", json);
     }
 
