@@ -132,7 +132,12 @@ public class ArazzoWorkspaceLoaderTests
         public Task<Stream> LoadAsync(Uri baseUrl, Uri uri, CancellationToken cancellationToken = default)
         {
             var resolvedUri = new Uri(baseUrl, uri).AbsoluteUri;
-            return Task.FromResult<Stream>(new MemoryStream(Encoding.UTF8.GetBytes(documents[resolvedUri])));
+            return Task.FromResult(CreateStream(documents[resolvedUri]));
+        }
+
+        private static Stream CreateStream(string document)
+        {
+            return new MemoryStream(Encoding.UTF8.GetBytes(document));
         }
     }
 }
