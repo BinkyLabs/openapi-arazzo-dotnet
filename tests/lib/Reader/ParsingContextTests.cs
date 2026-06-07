@@ -175,6 +175,33 @@ public class ParsingContextTests
     }
 
     [Fact]
+    public void Parse_DuplicateWorkflowParameterNames_AddsDiagnosticError()
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse("""
+            {
+              "arazzo": "1.0.0",
+              "info": { "title": "T", "version": "1" },
+              "sourceDescriptions": [],
+              "workflows": [
+                {
+                  "workflowId": "wf",
+                  "parameters": [
+                    { "name": "token", "in": "header", "value": "one" },
+                    { "name": "token", "in": "query", "value": "two" }
+                  ]
+                }
+              ]
+            }
+            """)!;
+
+        var document = ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.NotNull(document);
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains("duplicate parameter name 'token'", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Parse_MissingVersion_ThrowsOpenApiException()
     {
         var ctx = CreateContext();

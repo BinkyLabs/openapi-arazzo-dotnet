@@ -46,9 +46,9 @@ public class ArazzoWorkflowTests
             {
                 ["user"] = "$response.body#/user"
             },
-            Parameters = new Dictionary<string, IArazzoParameter>
+            Parameters = new List<IArazzoParameter>
             {
-                ["userId"] = new ArazzoParameter
+                new ArazzoParameter
                 {
                     Name = "userId",
                     In = ParameterLocation.Path,
@@ -96,13 +96,13 @@ public class ArazzoWorkflowTests
             "outputs": {
                 "user": "$response.body#/user"
             },
-            "parameters": {
-                "userId": {
+            "parameters": [
+                {
                     "name": "userId",
                     "in": "path",
                     "value": "123"
                 }
-            },
+            ],
             "x-custom": "workflow-extension"
         }
         """;
@@ -167,6 +167,41 @@ public class ArazzoWorkflowTests
     }
 
     [Fact]
+    public void Deserialize_WithParameterList_LoadsParameters()
+    {
+        var json = """
+        {
+            "workflowId": "parameterListWorkflow",
+            "parameters": [
+                {
+                    "name": "workflowLevelParamOne",
+                    "in": "cookie",
+                    "value": "someValue"
+                },
+                {
+                    "name": "workflowLevelParamTwo",
+                    "in": "header",
+                    "value": "anotherValue"
+                }
+            ]
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var workflow = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+
+        Assert.NotNull(workflow.Parameters);
+        Assert.Equal(2, workflow.Parameters!.Count);
+        Assert.Equal("workflowLevelParamOne", workflow.Parameters[0].Name);
+        Assert.Equal(ParameterLocation.Cookie, workflow.Parameters[0].In);
+        Assert.Equal("someValue", workflow.Parameters[0].Value?.GetValue<string>());
+        Assert.Equal("workflowLevelParamTwo", workflow.Parameters[1].Name);
+        Assert.Equal(ParameterLocation.Header, workflow.Parameters[1].In);
+        Assert.Equal("anotherValue", workflow.Parameters[1].Value?.GetValue<string>());
+    }
+
+    [Fact]
     public void SerializeAsV1_ShouldHandleNullCollections()
     {
         var workflow = new ArazzoWorkflow
@@ -207,12 +242,12 @@ public class ArazzoWorkflowTests
                     "$ref": "$components.failureActions.failureAction"
                 }
             ],
-            "parameters": {
-                "userId": {
+            "parameters": [
+                {
                     "$ref": "$components.parameters.userId",
                     "value": "7"
                 }
-            }
+            ]
         }
         """;
         var jsonNode = JsonNode.Parse(json)!;
@@ -222,7 +257,7 @@ public class ArazzoWorkflowTests
 
         Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!));
         Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!));
-        var parameter = Assert.IsType<ArazzoParameterReference>(workflow.Parameters!["userId"]);
+        var parameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!));
         Assert.Equal("7", parameter.Value?.GetValue<string>());
     }
 }

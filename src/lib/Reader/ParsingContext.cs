@@ -257,7 +257,46 @@ public class ParsingContext
         if (IsArazzoV1Version(version) && JsonNode is not null)
         {
             if (doc.Info == null)
+            {
                 Diagnostic.Errors.Add(new OpenApiError("", $"Info is a REQUIRED field at {GetLocation()}"));
+            }
+
+            ValidateWorkflowParameters(doc);
+        }
+    }
+
+    private void ValidateWorkflowParameters(ArazzoDocument doc)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+
+        doc.RegisterComponents();
+
+        if (doc.Workflows is null)
+        {
+            return;
+        }
+
+        foreach (var workflow in doc.Workflows)
+        {
+            if (workflow.Parameters is null || workflow.Parameters.Count < 2)
+            {
+                continue;
+            }
+
+            var parameterNames = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var parameter in workflow.Parameters)
+            {
+                var parameterName = parameter.Name;
+                if (string.IsNullOrEmpty(parameterName))
+                {
+                    continue;
+                }
+
+                if (!parameterNames.Add(parameterName))
+                {
+                    Diagnostic.Errors.Add(new OpenApiError(string.Empty, $"Workflow '{workflow.WorkflowId}' contains duplicate parameter name '{parameterName}'."));
+                }
+            }
         }
     }
 }

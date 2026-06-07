@@ -411,7 +411,7 @@ BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Inputs.get -> BinkyLabs.OpenApi.Arazzo.I
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Inputs.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Outputs.get -> System.Collections.Generic.IDictionary<string!, string!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Outputs.set -> void
-BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Parameters.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.IArazzoParameter!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Parameters.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.IArazzoParameter!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Parameters.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Steps.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.ArazzoStep!>?

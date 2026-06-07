@@ -52,9 +52,9 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
     public IDictionary<string, string>? Outputs { get; set; }
 
     /// <summary>
-    /// Gets or sets the parameters dictionary.
+    /// Gets or sets the list of workflow parameters.
     /// </summary>
-    public IDictionary<string, IArazzoParameter>? Parameters { get; set; }
+    public IList<IArazzoParameter>? Parameters { get; set; }
 
     /// <summary>
     /// Gets or sets the extensions dictionary.
@@ -94,7 +94,7 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowOutputs, Outputs, static (w, s) => w.WriteValue(s));
 
         // Write parameters
-        writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowParameters, Parameters, static (w, _, p) => p.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowParameters, Parameters, static (w, p) => p.SerializeAsV1(w));
 
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();

@@ -30,7 +30,7 @@ internal static partial class ArazzoV1Deserializer
                 .Where(static x => x.Value is not null)
                 .ToDictionary(static x => x.Key, static x => x.Value!);
         } },
-        { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateMap<IArazzoParameter>(LoadParameter, c) },
+        { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
     };
 
     public static readonly PatternFieldMap<ArazzoWorkflow> WorkflowPatternFields = new()
@@ -44,7 +44,7 @@ internal static partial class ArazzoV1Deserializer
         var workflow = new ArazzoWorkflow();
 
         // TODO: Implement validation during serialization/deserialization that any of the keys 
-        // of Outputs and Parameters dictionaries must match the following regex: ^[a-zA-Z0-9\.\-_]+$
+        // of Outputs dictionary must match the following regex: ^[a-zA-Z0-9\.\-_]+$
 
         mapNode.ParseMap(workflow, WorkflowFixedFields, WorkflowPatternFields, context);
 
