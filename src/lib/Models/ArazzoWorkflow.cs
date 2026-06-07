@@ -94,7 +94,7 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowOutputs, Outputs, static (w, s) => w.WriteValue(s));
 
         // Write parameters
-        writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowParameters, Parameters, static (w, p) => p.SerializeAsV1(w));
+        writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowParameters, Parameters, static (w, _, p) => p.SerializeAsV1(w));
 
         writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
         writer.WriteEndObject();

@@ -3,7 +3,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// <summary>
 /// Represents the common properties of result actions.
 /// </summary>
-public interface IResultAction : IArazzoSerializable, IArazzoExtensible, IArazzoReferenceable
+public interface IArazzoResultAction : IArazzoSerializable, IArazzoReferenceable
 {
     /// <summary>
     /// Gets or sets the action name.
@@ -30,7 +30,7 @@ public interface IResultAction : IArazzoSerializable, IArazzoExtensible, IArazzo
 /// Represents a result action with a specific type.
 /// </summary>
 /// <typeparam name="T">The type of the action, constrained to enums.</typeparam>
-public interface IResultAction<T> : IResultAction where T : struct, Enum
+public interface IArazzoResultAction<T> : IArazzoResultAction where T : struct, Enum
 {
     /// <summary>
     /// Gets or sets the type of the action.

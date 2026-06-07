@@ -58,6 +58,8 @@ public class ArazzoVersionDeserializerTests
     [Theory]
     [InlineData("#/components/inputs/shared", "shared")]
     [InlineData("#/components/inputs/shared/", "shared")]
+    [InlineData("$components.parameters.shared", "shared")]
+    [InlineData("external.json#$components.successActions.shared", "shared")]
     [InlineData("external.json/shared", "shared")]
     [InlineData("shared", "shared")]
     public void GetReferenceId_ExtractsExpectedIdentifier(string referenceString, string expectedId)
@@ -69,6 +71,7 @@ public class ArazzoVersionDeserializerTests
 
     [Theory]
     [InlineData("external.json#/components/inputs/shared", "external.json")]
+    [InlineData("external.json#$components.failureActions.shared", "external.json")]
     [InlineData("#/components/inputs/shared", null)]
     [InlineData("shared", null)]
     public void GetExternalResource_ReturnsExpectedPrefix(string referenceString, string? expectedExternalResource)

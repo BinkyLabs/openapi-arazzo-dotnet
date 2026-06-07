@@ -58,7 +58,7 @@ public class ArazzoParameterTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var parameter = ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext);
+        var parameter = Assert.IsType<ArazzoParameter>(ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext));
 
         Assert.Equal("limit", parameter.Name);
         Assert.Equal(ParameterLocation.Query, parameter.In);
@@ -66,5 +66,57 @@ public class ArazzoParameterTests
         Assert.NotNull(parameter.Extensions);
         var extension = Assert.IsType<JsonNodeExtension>(parameter.Extensions!["x-flag"]);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("true"), extension.Node));
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithReference_WritesReferenceAndValueOverride()
+    {
+        var parameter = new ArazzoParameterReference("shared")
+        {
+            Value = JsonValue.Create("42")
+        };
+
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        parameter.SerializeAsV1(writer);
+
+        var json = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$components.parameters.shared", json?["$ref"]?.GetValue<string>());
+        Assert.Equal("42", json?["value"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void Deserialize_WithReference_ReturnsParameterReference()
+    {
+        var json = """
+        {
+            "$ref": "$components.parameters.shared",
+            "value": "25"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var parameter = Assert.IsType<ArazzoParameterReference>(ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext));
+
+        Assert.Equal("$components.parameters.shared", parameter.Reference.ReferenceV1);
+        Assert.Equal("25", parameter.Value?.GetValue<string>());
+    }
+
+    [Fact]
+    public void Deserialize_WithExternalReference_ThrowsOpenApiException()
+    {
+        var jsonNode = JsonNode.Parse(
+            """
+            {
+                "$ref": "external.json#$components.parameters.shared"
+            }
+            """)!;
+
+        var exception = Assert.Throws<OpenApiException>(() => ArazzoV1Deserializer.LoadParameter(jsonNode, new ParsingContext(new())));
+
+        Assert.Contains("do not support external resources", exception.Message, StringComparison.Ordinal);
     }
 }

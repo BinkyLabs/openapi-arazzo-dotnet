@@ -25,7 +25,22 @@ internal static partial class ArazzoV1Deserializer
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
 
-    public static ArazzoSuccessAction LoadSuccessAction(JsonNode node, ParsingContext context)
+    public static IArazzoSuccessAction LoadSuccessAction(JsonNode node, ParsingContext context)
+    {
+        if (TryGetReferenceObject(node, out _, out var referenceString))
+        {
+            ThrowIfExternalReferenceNotSupported(referenceString, "Success action");
+            var hostDocument = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
+            var reference = new ArazzoSuccessActionReference(GetReferenceId(referenceString), hostDocument, GetExternalResource(referenceString));
+            reference.Reference.EnsureHostDocumentIsSet(hostDocument ?? new ArazzoDocument());
+            reference.Reference.SetJsonPointerPath(referenceString, context.GetLocation());
+            return reference;
+        }
+
+        return LoadSuccessActionObject(node, context);
+    }
+
+    public static ArazzoSuccessAction LoadSuccessActionObject(JsonNode node, ParsingContext context)
     {
         var mapNode = node.CheckMapNode("SuccessAction", context);
         var successAction = new ArazzoSuccessAction();

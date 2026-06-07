@@ -136,8 +136,7 @@ public class BaseArazzoReference : IArazzoSerializable
     {
         // Relative reference to internal JSON schema node/resource (e.g. "$/properties/b")
         if ((pointer.StartsWith("$", StringComparison.OrdinalIgnoreCase) || pointer.StartsWith("#/", StringComparison.OrdinalIgnoreCase)) &&
-            !pointer.Contains("#/components/inputs", StringComparison.OrdinalIgnoreCase) &&
-            !pointer.Contains("$.components/", StringComparison.OrdinalIgnoreCase))
+            !IsComponentReference(pointer))
         {
             ReferenceV1 = ResolveRelativePointer(nodeLocation, pointer);
         }
@@ -200,6 +199,14 @@ public class BaseArazzoReference : IArazzoSerializable
         valueCast.TryGetValue<string>(out var strValue)
             ? strValue
             : null;
+
+    private static bool IsComponentReference(string pointer)
+    {
+        return pointer.StartsWith("$components.", StringComparison.OrdinalIgnoreCase) ||
+               pointer.StartsWith("#/components/", StringComparison.OrdinalIgnoreCase) ||
+               pointer.StartsWith("$.components/", StringComparison.OrdinalIgnoreCase) ||
+               pointer.Contains("#/components/", StringComparison.OrdinalIgnoreCase);
+    }
 
     private string? GetExternalReferenceV1()
     {

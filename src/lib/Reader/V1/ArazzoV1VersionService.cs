@@ -26,13 +26,13 @@ internal class ArazzoV1VersionService : BaseArazzoVersionService
         [typeof(ArazzoCriterionExpressionType)] = ArazzoV1Deserializer.LoadCriterionExpressionType,
         [typeof(ArazzoDocument)] = ArazzoV1Deserializer.LoadDocument,
         [typeof(ArazzoInfo)] = ArazzoV1Deserializer.LoadInfo,
-        [typeof(ArazzoParameter)] = ArazzoV1Deserializer.LoadParameter,
+        [typeof(ArazzoParameter)] = ArazzoV1Deserializer.LoadParameterObject,
         [typeof(ArazzoPayloadReplacement)] = ArazzoV1Deserializer.LoadPayloadReplacement,
         [typeof(ArazzoRequestBody)] = ArazzoV1Deserializer.LoadRequestBody,
         [typeof(ArazzoComponent)] = ArazzoV1Deserializer.LoadComponent,
         [typeof(ArazzoSourceDescription)] = ArazzoV1Deserializer.LoadSourceDescription,
-        [typeof(ArazzoSuccessAction)] = ArazzoV1Deserializer.LoadSuccessAction,
-        [typeof(ArazzoFailureAction)] = ArazzoV1Deserializer.LoadFailureAction,
+        [typeof(ArazzoSuccessAction)] = ArazzoV1Deserializer.LoadSuccessActionObject,
+        [typeof(ArazzoFailureAction)] = ArazzoV1Deserializer.LoadFailureActionObject,
         [typeof(ArazzoWorkflow)] = ArazzoV1Deserializer.LoadWorkflow,
     };
 

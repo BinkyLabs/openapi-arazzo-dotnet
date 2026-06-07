@@ -169,7 +169,7 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var failureAction = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+        var failureAction = Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
 
         Assert.Equal("retryAction", failureAction.Name);
         Assert.Equal(ArazzoFailureType.Retry, failureAction.Type);
@@ -198,7 +198,7 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var failureAction = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+        var failureAction = Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
 
         Assert.Equal("simpleEnd", failureAction.Name);
         Assert.Equal(ArazzoFailureType.End, failureAction.Type);
@@ -224,7 +224,7 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var failureAction = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+        var failureAction = Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
 
         Assert.Equal("gotoFailure", failureAction.Name);
         Assert.Equal(ArazzoFailureType.Goto, failureAction.Type);
@@ -234,5 +234,52 @@ public class ArazzoFailureActionTests
         Assert.Null(failureAction.RetryLimit);
         Assert.Null(failureAction.Criteria);
         Assert.Null(failureAction.Extensions);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithReference_WritesDollarRef()
+    {
+        var failureAction = new ArazzoFailureActionReference("shared");
+
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        failureAction.SerializeAsV1(writer);
+
+        var json = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$components.failureActions.shared", json?["$ref"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void Deserialize_WithReference_ReturnsFailureActionReference()
+    {
+        var json = """
+        {
+            "$ref": "$components.failureActions.shared"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var failureAction = Assert.IsType<ArazzoFailureActionReference>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+
+        Assert.Equal("$components.failureActions.shared", failureAction.Reference.ReferenceV1);
+        Assert.Null(failureAction.Criteria);
+    }
+
+    [Fact]
+    public void Deserialize_WithExternalReference_ThrowsOpenApiException()
+    {
+        var jsonNode = JsonNode.Parse(
+            """
+            {
+                "$ref": "external.json#$components.failureActions.shared"
+            }
+            """)!;
+
+        var exception = Assert.Throws<OpenApiException>(() => ArazzoV1Deserializer.LoadFailureAction(jsonNode, new ParsingContext(new())));
+
+        Assert.Contains("do not support external resources", exception.Message, StringComparison.Ordinal);
     }
 }

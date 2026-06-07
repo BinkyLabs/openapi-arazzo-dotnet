@@ -10,6 +10,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 internal class ArazzoWorkspace
 {
     private readonly Dictionary<string, Uri> _documentsIdRegistry = new(StringComparer.Ordinal);
+    private readonly Dictionary<Uri, IArazzoReferenceable> _componentRegistry = new(new UriWithFragmentEqualityComparer());
     private readonly Dictionary<Uri, IArazzoInput> _inputRegistry = new(new UriWithFragmentEqualityComparer());
 
     private sealed class UriWithFragmentEqualityComparer : IEqualityComparer<Uri>
@@ -70,6 +71,11 @@ internal class ArazzoWorkspace
             _documentsIdRegistry[pair.Key] = pair.Value;
         }
 
+        foreach (var pair in workspace._componentRegistry)
+        {
+            _componentRegistry[pair.Key] = pair.Value;
+        }
+
         foreach (var pair in workspace._inputRegistry)
         {
             _inputRegistry[pair.Key] = pair.Value;
@@ -81,7 +87,7 @@ internal class ArazzoWorkspace
     /// </summary>
     public int ComponentsCount()
     {
-        return _inputRegistry.Count;
+        return _componentRegistry.Count + _inputRegistry.Count;
     }
 
     /// <summary>
@@ -92,15 +98,47 @@ internal class ArazzoWorkspace
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        if (document.Components?.Inputs is null)
+        if (document.Components is null)
         {
             return;
         }
 
-        var baseUri = $"{document.BaseUri}#/components/inputs/";
+        if (document.Components.Parameters is not null)
+        {
+            var parametersBaseUri = $"{document.BaseUri}#/components/parameters/";
+            foreach (var item in document.Components.Parameters)
+            {
+                RegisterComponent(parametersBaseUri + item.Key, item.Value);
+            }
+        }
+
+        if (document.Components.SuccessActions is not null)
+        {
+            var successActionsBaseUri = $"{document.BaseUri}#/components/successActions/";
+            foreach (var item in document.Components.SuccessActions)
+            {
+                RegisterComponent(successActionsBaseUri + item.Key, item.Value);
+            }
+        }
+
+        if (document.Components.FailureActions is not null)
+        {
+            var failureActionsBaseUri = $"{document.BaseUri}#/components/failureActions/";
+            foreach (var item in document.Components.FailureActions)
+            {
+                RegisterComponent(failureActionsBaseUri + item.Key, item.Value);
+            }
+        }
+
+        if (document.Components.Inputs is null)
+        {
+            return;
+        }
+
+        var inputsBaseUri = $"{document.BaseUri}#/components/inputs/";
         foreach (var item in document.Components.Inputs)
         {
-            RegisterInputTree(item.Value, baseUri + item.Key);
+            RegisterInputTree(item.Value, inputsBaseUri + item.Key);
         }
     }
 
@@ -110,7 +148,7 @@ internal class ArazzoWorkspace
     /// <param name="document">The document that owns the component.</param>
     /// <param name="componentToRegister">The component to register.</param>
     /// <param name="id">The identifier or URI.</param>
-    public bool RegisterComponentForDocument(ArazzoDocument document, IArazzoInput componentToRegister, string id)
+    public bool RegisterComponentForDocument(ArazzoDocument document, IArazzoReferenceable componentToRegister, string id)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(componentToRegister);
@@ -134,7 +172,7 @@ internal class ArazzoWorkspace
     /// </summary>
     /// <param name="location">The component location.</param>
     /// <param name="component">The component instance.</param>
-    public bool RegisterComponent(string location, IArazzoInput component)
+    public bool RegisterComponent(string location, IArazzoReferenceable component)
     {
         ArgumentException.ThrowIfNullOrEmpty(location);
         ArgumentNullException.ThrowIfNull(component);
@@ -145,12 +183,16 @@ internal class ArazzoWorkspace
             return false;
         }
 
-        if (_inputRegistry.ContainsKey(uri))
+        if (_componentRegistry.ContainsKey(uri))
         {
             return false;
         }
 
-        _inputRegistry[uri] = component;
+        _componentRegistry[uri] = component;
+        if (component is IArazzoInput input)
+        {
+            _inputRegistry[uri] = input;
+        }
         return true;
     }
 
@@ -189,7 +231,7 @@ internal class ArazzoWorkspace
         }
 
         var key = ToLocationUrl(location);
-        return key is not null && _inputRegistry.ContainsKey(key);
+        return key is not null && _componentRegistry.ContainsKey(key);
     }
 
     /// <summary>
@@ -203,7 +245,7 @@ internal class ArazzoWorkspace
         }
 
         var uri = ToLocationUrl(location);
-        if (uri is not null && _inputRegistry.TryGetValue(uri, out var referenceableValue) && referenceableValue is T referenceable)
+        if (uri is not null && _componentRegistry.TryGetValue(uri, out var referenceableValue) && referenceableValue is T referenceable)
         {
             return referenceable;
         }

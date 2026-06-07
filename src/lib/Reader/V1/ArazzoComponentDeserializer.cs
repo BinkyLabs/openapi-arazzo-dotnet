@@ -10,9 +10,9 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoComponent> ComponentFixedFields = new()
     {
-        { ArazzoConstants.ArazzoComponentParameters, static (o, v, c) => o.Parameters = v.CreateMap(LoadParameter, c) },
-        { ArazzoConstants.ArazzoComponentSuccessActions, static (o, v, c) => o.SuccessActions = v.CreateMap(LoadSuccessAction, c) },
-        { ArazzoConstants.ArazzoComponentFailureActions, static (o, v, c) => o.FailureActions = v.CreateMap(LoadFailureAction, c) },
+        { ArazzoConstants.ArazzoComponentParameters, static (o, v, c) => o.Parameters = v.CreateMap(LoadParameterObject, c) },
+        { ArazzoConstants.ArazzoComponentSuccessActions, static (o, v, c) => o.SuccessActions = v.CreateMap(LoadSuccessActionObject, c) },
+        { ArazzoConstants.ArazzoComponentFailureActions, static (o, v, c) => o.FailureActions = v.CreateMap(LoadFailureActionObject, c) },
         { ArazzoConstants.ArazzoComponentInputs, static (o, v, c) => o.Inputs = v.CreateMap(LoadSchema, c).Where(static x => x.Value != null).ToDictionary(static x => x.Key, static x => x.Value!) },
     };
 
@@ -50,6 +50,16 @@ internal static partial class ArazzoV1Deserializer
             ? referenceString[(referenceString.IndexOf('#', StringComparison.Ordinal) + 1)..]
             : referenceString;
 
+        if (fragment.StartsWith("$components.", StringComparison.OrdinalIgnoreCase))
+        {
+            var componentPath = fragment["$components.".Length..];
+            var separatorIndex = componentPath.IndexOf('.', StringComparison.Ordinal);
+            if (separatorIndex > 0 && separatorIndex < componentPath.Length - 1)
+            {
+                return componentPath[(separatorIndex + 1)..];
+            }
+        }
+
         var trimmedFragment = fragment.TrimEnd('/');
         if (trimmedFragment.Contains('/', StringComparison.Ordinal))
         {
@@ -76,6 +86,31 @@ internal static partial class ArazzoV1Deserializer
     {
         var fragmentIndex = referenceString.IndexOf('#', StringComparison.Ordinal);
         return fragmentIndex > 0 ? referenceString[..fragmentIndex] : null;
+    }
+
+    internal static void ThrowIfExternalReferenceNotSupported(string referenceString, string elementName)
+    {
+        if (!string.IsNullOrEmpty(GetExternalResource(referenceString)))
+        {
+            throw new OpenApiException($"{elementName} references do not support external resources: '{referenceString}'.");
+        }
+    }
+
+    internal static bool TryGetReferenceObject(JsonNode node, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out JsonObject? jsonObject, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? referenceString)
+    {
+        jsonObject = node as JsonObject;
+        referenceString = null;
+
+        if (jsonObject?.TryGetPropertyValue(OpenApiConstants.DollarRef, out var referenceNode) == true &&
+            referenceNode is JsonValue referenceValue &&
+            referenceValue.TryGetValue<string>(out var parsedReferenceString) &&
+            !string.IsNullOrEmpty(parsedReferenceString))
+        {
+            referenceString = parsedReferenceString;
+            return true;
+        }
+
+        return false;
     }
 
     public static ArazzoComponent LoadComponent(JsonNode node, ParsingContext context)

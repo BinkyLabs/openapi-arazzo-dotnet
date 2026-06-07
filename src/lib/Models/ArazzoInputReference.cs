@@ -8,7 +8,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// <summary>
 /// Input reference object.
 /// </summary>
-internal class ArazzoInputReference : BaseArazzoReferenceHolder<ArazzoInput, IArazzoInput, BaseArazzoReference>, IArazzoInput
+public class ArazzoInputReference : BaseArazzoReferenceHolder<ArazzoInput, IArazzoInput, BaseArazzoReference>, IArazzoInput
 {
     private string? _description;
     private string? _title;

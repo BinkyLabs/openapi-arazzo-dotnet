@@ -200,4 +200,27 @@ public class ArazzoStepTests
         var extension = Assert.IsType<JsonNodeExtension>(step.Extensions!["x-custom"]);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("\"metadata\""), extension.Node));
     }
+
+    [Fact]
+    public void SerializeAsV1_WithReferences_WritesReferenceObjects()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "referenceStep",
+            Parameters = [new ArazzoParameterReference("userId") { Value = JsonValue.Create("7") }],
+            OnSuccess = [new ArazzoSuccessActionReference("nextAction")],
+            OnFailure = [new ArazzoFailureActionReference("retryAction")]
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        step.SerializeAsV1(writer);
+
+        var json = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$components.parameters.userId", json?["parameters"]?[0]?["$ref"]?.GetValue<string>());
+        Assert.Equal("7", json?["parameters"]?[0]?["value"]?.GetValue<string>());
+        Assert.Equal("$components.successActions.nextAction", json?["onSuccess"]?[0]?["$ref"]?.GetValue<string>());
+        Assert.Equal("$components.failureActions.retryAction", json?["onFailure"]?[0]?["$ref"]?.GetValue<string>());
+    }
 }

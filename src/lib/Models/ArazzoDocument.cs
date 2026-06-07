@@ -160,26 +160,15 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
             return null;
         }
 
-        string uriLocation;
-        if (!string.IsNullOrEmpty(reference.ReferenceV1) && reference.ReferenceV1!.Contains('/'))
-        {
-            uriLocation = reference.ReferenceV1!;
-        }
-        else
-        {
-            var relativePath = !string.IsNullOrEmpty(reference.ReferenceV1)
-                ? reference.ReferenceV1!
-                : $"#/components/{reference.Type.GetDisplayName()}/{reference.Id}";
+        var relativePath = NormalizeReferencePath(reference);
+        var externalResourceUri = useExternal ? Workspace?.GetDocumentId(reference.ExternalResource) : null;
+        var uriLocation = useExternal && externalResourceUri is not null
+            ? externalResourceUri.AbsoluteUri + (relativePath.StartsWith("#", StringComparison.OrdinalIgnoreCase) ? relativePath : $"#{relativePath}")
+            : relativePath.StartsWith("#", StringComparison.OrdinalIgnoreCase)
+                ? new Uri(BaseUri, relativePath).AbsoluteUri
+                : relativePath;
 
-            var externalResourceUri = useExternal ? Workspace?.GetDocumentId(reference.ExternalResource) : null;
-            uriLocation = useExternal && externalResourceUri is not null
-                ? externalResourceUri.AbsoluteUri + (relativePath.StartsWith("#", StringComparison.OrdinalIgnoreCase) ? relativePath : $"#{relativePath}")
-                : BaseUri + relativePath;
-        }
-
-        var absoluteUri = uriLocation.StartsWith("#", StringComparison.OrdinalIgnoreCase)
-            ? new Uri(BaseUri, uriLocation).AbsoluteUri
-            : new Uri(uriLocation).AbsoluteUri;
+        var absoluteUri = new Uri(uriLocation).AbsoluteUri;
 
         if (reference.Type is ReferenceType.Input && absoluteUri.Contains('#') && parentInput is not null)
         {
@@ -187,5 +176,44 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
         }
 
         return Workspace?.ResolveReference<IArazzoReferenceable>(absoluteUri);
+    }
+
+    private string NormalizeReferencePath(BaseArazzoReference reference)
+    {
+        var referenceValue = !string.IsNullOrEmpty(reference.ReferenceV1)
+            ? reference.ReferenceV1!
+            : $"#/components/{reference.Type.GetDisplayName()}/{reference.Id}";
+
+        if (referenceValue.Contains("#$components.", StringComparison.OrdinalIgnoreCase))
+        {
+            var fragmentIndex = referenceValue.IndexOf("#$components.", StringComparison.OrdinalIgnoreCase);
+            var documentPath = referenceValue[..fragmentIndex];
+            var fragment = referenceValue[(fragmentIndex + 1)..];
+
+            return documentPath + NormalizeComponentReferenceSyntax(fragment);
+        }
+
+        var normalizedReferenceValue = NormalizeComponentReferenceSyntax(referenceValue);
+
+        return normalizedReferenceValue.StartsWith("#", StringComparison.OrdinalIgnoreCase) || Uri.TryCreate(normalizedReferenceValue, UriKind.Absolute, out _)
+            ? normalizedReferenceValue
+            : new Uri(BaseUri, normalizedReferenceValue).AbsoluteUri;
+    }
+
+    private static string NormalizeComponentReferenceSyntax(string referenceValue)
+    {
+        if (!referenceValue.StartsWith("$components.", StringComparison.OrdinalIgnoreCase))
+        {
+            return referenceValue;
+        }
+
+        var componentPath = referenceValue["$components.".Length..];
+        var separatorIndex = componentPath.IndexOf('.', StringComparison.Ordinal);
+        if (separatorIndex <= 0 || separatorIndex >= componentPath.Length - 1)
+        {
+            return referenceValue;
+        }
+
+        return $"#/components/{componentPath[..separatorIndex]}/{componentPath[(separatorIndex + 1)..]}";
     }
 }

@@ -6,7 +6,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// Represents the common properties and behavior for result actions.
 /// </summary>
 /// <typeparam name="T">The type of the action, constrained to enums.</typeparam>
-public abstract class ArazzoResultAction<T> : IResultAction<T> where T : struct, Enum
+public abstract class ArazzoResultAction<T> : IArazzoResultAction<T>, IArazzoExtensible where T : struct, Enum
 {
     /// <inheritdoc/>
     public string? Name { get; set; }

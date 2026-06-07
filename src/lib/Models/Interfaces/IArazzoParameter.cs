@@ -7,7 +7,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// <summary>
 /// Represents a parameter definition.
 /// </summary>
-public interface IArazzoParameter : IArazzoSerializable, IArazzoExtensible, IArazzoReferenceable
+public interface IArazzoParameter : IArazzoSerializable, IArazzoReferenceable
 {
     /// <summary>
     /// Gets or sets the parameter name.

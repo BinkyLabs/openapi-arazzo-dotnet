@@ -8,7 +8,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// <typeparam name="T">The concrete class implementation type for the model.</typeparam>
 /// <typeparam name="U">The interface type for the model.</typeparam>
 /// <typeparam name="V">The type for the reference holding the additional fields and annotations.</typeparam>
-internal abstract class BaseArazzoReferenceHolder<T, U, V> : IArazzoReferenceHolder<T, U, V>
+public abstract class BaseArazzoReferenceHolder<T, U, V> : IArazzoReferenceHolder<T, U, V>
     where T : class, IArazzoReferenceable, U
     where U : IArazzoReferenceable, IArazzoSerializable
     where V : BaseArazzoReference, new()

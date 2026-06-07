@@ -39,7 +39,22 @@ internal static partial class ArazzoV1Deserializer
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
 
-    public static ArazzoFailureAction LoadFailureAction(JsonNode node, ParsingContext context)
+    public static IArazzoFailureAction LoadFailureAction(JsonNode node, ParsingContext context)
+    {
+        if (TryGetReferenceObject(node, out _, out var referenceString))
+        {
+            ThrowIfExternalReferenceNotSupported(referenceString, "Failure action");
+            var hostDocument = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
+            var reference = new ArazzoFailureActionReference(GetReferenceId(referenceString), hostDocument, GetExternalResource(referenceString));
+            reference.Reference.EnsureHostDocumentIsSet(hostDocument ?? new ArazzoDocument());
+            reference.Reference.SetJsonPointerPath(referenceString, context.GetLocation());
+            return reference;
+        }
+
+        return LoadFailureActionObject(node, context);
+    }
+
+    public static ArazzoFailureAction LoadFailureActionObject(JsonNode node, ParsingContext context)
     {
         var mapNode = node.CheckMapNode("FailureAction", context);
         var failureAction = new ArazzoFailureAction();

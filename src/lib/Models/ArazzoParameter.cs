@@ -8,7 +8,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// <summary>
 /// Represents a parameter definition.
 /// </summary>
-public class ArazzoParameter : IArazzoParameter
+public class ArazzoParameter : IArazzoParameter, IArazzoExtensible
 {
     /// <inheritdoc/>
     public string? Name { get; set; }

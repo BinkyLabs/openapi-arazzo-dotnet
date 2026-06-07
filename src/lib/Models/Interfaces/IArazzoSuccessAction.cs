@@ -3,6 +3,6 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// <summary>
 /// Represents a success action definition.
 /// </summary>
-public interface IArazzoSuccessAction : IResultAction<ArazzoSuccessType>
+public interface IArazzoSuccessAction : IArazzoResultAction<ArazzoSuccessType>
 {
 }

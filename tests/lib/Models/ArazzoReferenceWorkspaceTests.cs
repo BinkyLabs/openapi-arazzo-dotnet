@@ -360,6 +360,103 @@ public class ArazzoReferenceWorkspaceTests
     }
 
     [Fact]
+    public void ArazzoParameterReference_AppliesValueOverrideToResolvedTarget()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "userId",
+            In = ParameterLocation.Path,
+            Value = JsonValue.Create("1"),
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-extra"] = new JsonNodeExtension(JsonValue.Create("value")!)
+            }
+        };
+        var document = new ArazzoDocument
+        {
+            BaseUri = new Uri("https://example.com/root/arazzo.json"),
+            Components = new ArazzoComponent
+            {
+                Parameters = new Dictionary<string, ArazzoParameter>
+                {
+                    ["userId"] = parameter
+                }
+            }
+        };
+        document.RegisterComponents();
+
+        var reference = new ArazzoParameterReference("userId", document)
+        {
+            Value = JsonValue.Create("42")
+        };
+
+        Assert.Equal("userId", reference.Name);
+        Assert.Equal(ParameterLocation.Path, reference.In);
+        Assert.Equal("42", reference.Value?.GetValue<string>());
+
+        var overridden = Assert.IsType<ArazzoParameter>(reference.CopyReferenceAsTargetElementWithOverrides(parameter));
+        Assert.Equal("42", overridden.Value?.GetValue<string>());
+        Assert.NotSame(parameter.Value, overridden.Value);
+        Assert.Equal("value", Assert.IsType<JsonNodeExtension>(overridden.Extensions!["x-extra"]).Node.GetValue<string>());
+    }
+
+    [Fact]
+    public void ArazzoSuccessAndFailureActionReferences_FallBackToResolvedTargetValues()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Name = "success",
+            Type = ArazzoSuccessType.Goto,
+            WorkflowId = "workflow",
+            StepId = "step",
+            Criteria = [new ArazzoCriterion { Context = "$statusCode", Condition = "200" }]
+        };
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "failure",
+            Type = ArazzoFailureType.Retry,
+            WorkflowId = "workflow",
+            StepId = "retry",
+            RetryAfter = 2.5m,
+            RetryLimit = 3,
+            Criteria = [new ArazzoCriterion { Context = "$statusCode", Condition = "500" }]
+        };
+        var document = new ArazzoDocument
+        {
+            BaseUri = new Uri("https://example.com/root/arazzo.json"),
+            Components = new ArazzoComponent
+            {
+                SuccessActions = new Dictionary<string, ArazzoSuccessAction>
+                {
+                    ["success"] = successAction
+                },
+                FailureActions = new Dictionary<string, ArazzoFailureAction>
+                {
+                    ["failure"] = failureAction
+                }
+            }
+        };
+        document.RegisterComponents();
+
+        var successReference = new ArazzoSuccessActionReference("success", document);
+        var failureReference = new ArazzoFailureActionReference("failure", document);
+
+        Assert.Equal("success", successReference.Name);
+        Assert.Equal(ArazzoSuccessType.Goto, successReference.Type);
+        Assert.Equal("workflow", successReference.WorkflowId);
+        Assert.Equal("step", successReference.StepId);
+        Assert.Single(successReference.Criteria!);
+
+        Assert.Equal("failure", failureReference.Name);
+        Assert.Equal(ArazzoFailureType.Retry, failureReference.Type);
+        Assert.Equal(2.5m, failureReference.RetryAfter);
+        Assert.Equal(3ul, failureReference.RetryLimit);
+        Assert.Equal("workflow", failureReference.WorkflowId);
+        Assert.Equal("retry", failureReference.StepId);
+        Assert.Single(failureReference.Criteria!);
+    }
+
+    [Fact]
     public void BaseArazzoReferenceHolder_CopyConstructor_ClonesReference()
     {
         var original = new TestReferenceHolder("shared");
@@ -399,7 +496,7 @@ public class ArazzoReferenceWorkspaceTests
     }
 
     [Fact]
-    public void ArazzoDocument_ResolveReferenceTo_ResolvesLocalButNotExternalInput()
+    public void ArazzoDocument_ResolveReferenceTo_ResolvesLocalAndExternalInput()
     {
         var local = new ArazzoInput { Type = JsonSchemaType.String };
         var external = new ArazzoInput { Type = JsonSchemaType.Integer };
@@ -435,7 +532,7 @@ public class ArazzoReferenceWorkspaceTests
         externalReference.SetJsonPointerPath("#/components/inputs/shared", "#");
 
         Assert.Same(local, document.ResolveReferenceTo<IArazzoReferenceable>(localReference, null));
-        Assert.Null(document.ResolveReferenceTo<IArazzoReferenceable>(externalReference, null));
+        Assert.Same(external, document.ResolveReferenceTo<IArazzoReferenceable>(externalReference, null));
         Assert.Null(document.ResolveReferenceTo<TestReferenceable>(localReference, null));
     }
 
@@ -466,14 +563,19 @@ public class ArazzoReferenceWorkspaceTests
     }
 
     [Fact]
-    public void ArazzoDocument_ResolveReference_UsesDefaultRelativePathsWhenReferenceStringHasNoSlash()
+    public void ArazzoDocument_ResolveReference_UsesDottedComponentSyntaxWhenReferenceStringHasNoSlash()
     {
         var local = new ArazzoInput { Type = JsonSchemaType.String };
+        var parameter = new ArazzoParameter { Name = "shared", In = ParameterLocation.Query, Value = JsonValue.Create("1") };
         var document = new ArazzoDocument
         {
             BaseUri = new Uri("https://example.com/root/arazzo.json"),
             Components = new ArazzoComponent
             {
+                Parameters = new Dictionary<string, ArazzoParameter>
+                {
+                    ["shared"] = parameter
+                },
                 Inputs = new Dictionary<string, IArazzoInput>
                 {
                     ["local"] = local
@@ -489,16 +591,15 @@ public class ArazzoReferenceWorkspaceTests
             Id = "local",
             HostDocument = document
         };
-        var externalReference = new BaseArazzoReference
+        var parameterReference = new BaseArazzoReference
         {
-            Type = ReferenceType.Input,
+            Type = ReferenceType.Parameter,
             Id = "shared",
-            HostDocument = document,
-            ExternalResource = "external.json"
+            HostDocument = document
         };
 
-        Assert.Null(document.ResolveReference(localReference, useExternal: false, parentInput: null));
-        Assert.Throws<UriFormatException>(() => document.ResolveReference(externalReference, useExternal: true, parentInput: null));
+        Assert.Same(local, document.ResolveReference(localReference, useExternal: false, parentInput: null));
+        Assert.Same(parameter, document.ResolveReference(parameterReference, useExternal: false, parentInput: null));
     }
 
     private sealed class TestReferenceable : IArazzoReferenceable

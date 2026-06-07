@@ -25,7 +25,28 @@ internal static partial class ArazzoV1Deserializer
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
 
-    public static ArazzoParameter LoadParameter(JsonNode node, ParsingContext context)
+    public static IArazzoParameter LoadParameter(JsonNode node, ParsingContext context)
+    {
+        if (TryGetReferenceObject(node, out var jsonObject, out var referenceString))
+        {
+            ThrowIfExternalReferenceNotSupported(referenceString, "Parameter");
+            var hostDocument = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
+            var reference = new ArazzoParameterReference(GetReferenceId(referenceString), hostDocument, GetExternalResource(referenceString));
+            reference.Reference.EnsureHostDocumentIsSet(hostDocument ?? new ArazzoDocument());
+            reference.Reference.SetJsonPointerPath(referenceString, context.GetLocation());
+
+            if (jsonObject.TryGetPropertyValue(ArazzoConstants.ArazzoParameterValue, out var valueNode))
+            {
+                reference.Value = valueNode?.DeepClone();
+            }
+
+            return reference;
+        }
+
+        return LoadParameterObject(node, context);
+    }
+
+    public static ArazzoParameter LoadParameterObject(JsonNode node, ParsingContext context)
     {
         var mapNode = node.CheckMapNode("Parameter", context);
         var parameter = new ArazzoParameter();

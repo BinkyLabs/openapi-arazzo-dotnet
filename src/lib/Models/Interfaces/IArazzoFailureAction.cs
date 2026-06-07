@@ -3,7 +3,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// <summary>
 /// Represents a failure action definition.
 /// </summary>
-public interface IArazzoFailureAction : IResultAction<ArazzoFailureType>
+public interface IArazzoFailureAction : IArazzoResultAction<ArazzoFailureType>
 {
     /// <summary>
     /// Gets or sets the retry after time in seconds.

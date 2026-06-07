@@ -190,4 +190,39 @@ public class ArazzoWorkflowTests
 
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
+
+    [Fact]
+    public void Deserialize_WithReferences_LoadsReferenceTypes()
+    {
+        var json = """
+        {
+            "workflowId": "referenceWorkflow",
+            "successActions": [
+                {
+                    "$ref": "$components.successActions.successAction"
+                }
+            ],
+            "failureActions": [
+                {
+                    "$ref": "$components.failureActions.failureAction"
+                }
+            ],
+            "parameters": {
+                "userId": {
+                    "$ref": "$components.parameters.userId",
+                    "value": "7"
+                }
+            }
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var workflow = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+
+        Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!));
+        Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!));
+        var parameter = Assert.IsType<ArazzoParameterReference>(workflow.Parameters!["userId"]);
+        Assert.Equal("7", parameter.Value?.GetValue<string>());
+    }
 }

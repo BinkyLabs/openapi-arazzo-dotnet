@@ -133,7 +133,7 @@ public class ArazzoSuccessActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var successAction = ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext);
+        var successAction = Assert.IsType<ArazzoSuccessAction>(ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext));
 
         Assert.Equal("gotoAction", successAction.Name);
         Assert.Equal(ArazzoSuccessType.Goto, successAction.Type);
@@ -160,7 +160,7 @@ public class ArazzoSuccessActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var successAction = ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext);
+        var successAction = Assert.IsType<ArazzoSuccessAction>(ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext));
 
         Assert.Equal("simpleEnd", successAction.Name);
         Assert.Equal(ArazzoSuccessType.End, successAction.Type);
@@ -168,5 +168,52 @@ public class ArazzoSuccessActionTests
         Assert.Null(successAction.StepId);
         Assert.Null(successAction.Criteria);
         Assert.Null(successAction.Extensions);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithReference_WritesDollarRef()
+    {
+        var successAction = new ArazzoSuccessActionReference("shared");
+
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        successAction.SerializeAsV1(writer);
+
+        var json = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$components.successActions.shared", json?["$ref"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void Deserialize_WithReference_ReturnsSuccessActionReference()
+    {
+        var json = """
+        {
+            "$ref": "$components.successActions.shared"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var successAction = Assert.IsType<ArazzoSuccessActionReference>(ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext));
+
+        Assert.Equal("$components.successActions.shared", successAction.Reference.ReferenceV1);
+        Assert.Null(successAction.Criteria);
+    }
+
+    [Fact]
+    public void Deserialize_WithExternalReference_ThrowsOpenApiException()
+    {
+        var jsonNode = JsonNode.Parse(
+            """
+            {
+                "$ref": "external.json#$components.successActions.shared"
+            }
+            """)!;
+
+        var exception = Assert.Throws<OpenApiException>(() => ArazzoV1Deserializer.LoadSuccessAction(jsonNode, new ParsingContext(new())));
+
+        Assert.Contains("do not support external resources", exception.Message, StringComparison.Ordinal);
     }
 }
