@@ -380,7 +380,7 @@ internal class ArazzoWorkspace
     {
         RegisterComponent(location, input);
 
-        if (!string.IsNullOrEmpty(input.Id))
+        if (input is not ArazzoInputReference && !string.IsNullOrEmpty(input.Id))
         {
             RegisterComponent(location: ResolveIdentifierLocation(location, input.Id!), component: input);
         }
