@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Reader;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 
+
 public class ArazzoWorkspaceLoaderTests
 {
     [Fact]
@@ -92,6 +93,81 @@ public class ArazzoWorkspaceLoaderTests
         await loader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, null, OpenApiConstants.Json, TestContext.Current.CancellationToken);
 
         Assert.Equal(0, workspace.ComponentsCount());
+    }
+
+    [Fact]
+    public async Task LoadAsync_ExternalInputReferencedDirectlyAndReExportedAtRootDoesNotProduceFalsePositiveCircularReference()
+    {
+        var tempDirectory = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+
+        var rootPath = Path.Join(tempDirectory, "root.arazzo.yaml");
+        var sharedPath = Path.Join(tempDirectory, "shared.arazzo.yaml");
+
+        await File.WriteAllTextAsync(rootPath,
+        @"arazzo: 1.0.1
+info:
+  title: T
+  version: 1.0.0
+sourceDescriptions:
+  - name: api
+    type: openapi
+    url: https://example.com/api.yaml
+workflows:
+  - workflowId: wf
+    inputs:
+      $ref: './shared.arazzo.yaml#/components/inputs/Leaf'
+    steps:
+      - stepId: step
+        operationId: op
+components:
+  inputs:
+    Leaf:
+      $ref: './shared.arazzo.yaml#/components/inputs/Leaf'
+", TestContext.Current.CancellationToken);
+
+        await File.WriteAllTextAsync(sharedPath,
+        @"arazzo: 1.0.1
+info:
+  title: Shared
+  version: 1.0.0
+sourceDescriptions:
+  - name: api
+    type: openapi
+    url: https://example.com/api.yaml
+workflows:
+  - workflowId: wf
+    steps:
+      - stepId: step
+        operationId: op
+components:
+  inputs:
+    Leaf:
+      type: object
+      properties:
+        x:
+          type: string
+        y:
+          type: integer
+", TestContext.Current.CancellationToken);
+
+        try
+        {
+            var settings = new ArazzoReaderSettings();
+            settings.OpenApiSettings.LoadExternalRefs = true;
+            settings.OpenApiSettings.RuleSet = ValidationRuleSet.GetEmptyRuleSet();
+
+            var result = await ArazzoModelFactory.LoadFormUrlAsync(rootPath, settings, TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result.Document);
+            Assert.DoesNotContain(result.Diagnostic!.Errors, error => error.Message.Contains("Circular reference detected while resolving schema", StringComparison.Ordinal));
+            Assert.IsType<ArazzoInputReference>(result.Document.Workflows![0].Inputs);
+            Assert.IsType<ArazzoInputReference>(result.Document.Components!.Inputs!["Leaf"]);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, true);
+        }
     }
 
     private static IArazzoInput CreateNestedExternalReferenceGraph(ArazzoDocument document)
