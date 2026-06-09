@@ -160,7 +160,8 @@ components:
             var result = await ArazzoModelFactory.LoadFormUrlAsync(rootPath, settings, TestContext.Current.CancellationToken);
 
             Assert.NotNull(result.Document);
-            Assert.DoesNotContain(result.Diagnostic!.Errors, error => error.Message.Contains("Circular reference detected while resolving schema", StringComparison.Ordinal));
+            var errors = result.Diagnostic?.Errors ?? [];
+            Assert.DoesNotContain(errors, error => error.Message.Contains("Circular reference detected while resolving schema", StringComparison.Ordinal));
             Assert.IsType<ArazzoInputReference>(result.Document.Workflows![0].Inputs);
             Assert.IsType<ArazzoInputReference>(result.Document.Components!.Inputs!["Leaf"]);
         }
