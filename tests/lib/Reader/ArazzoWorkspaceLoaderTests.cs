@@ -7,7 +7,6 @@ using Microsoft.OpenApi.Reader;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 
-
 public class ArazzoWorkspaceLoaderTests
 {
     [Fact]
