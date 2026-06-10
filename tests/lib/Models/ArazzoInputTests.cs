@@ -110,6 +110,7 @@ public class ArazzoInputTests
             },
             DynamicRef = "#item",
             DynamicAnchor = "item",
+            Anchor = "shared",
             Definitions = new Dictionary<string, IOpenApiSchema>
             {
                 ["item"] = new OpenApiSchema { Type = JsonSchemaType.String }
@@ -154,20 +155,31 @@ public class ArazzoInputTests
             Enum = [JsonValue.Create("a")!, JsonValue.Create("b")!],
             UnevaluatedProperties = false,
             UnevaluatedPropertiesSchema = new OpenApiSchema { Type = JsonSchemaType.Boolean },
-            UnrecognizedKeywords = new Dictionary<string, JsonNode>
+            Contains = new OpenApiSchema { Type = JsonSchemaType.String },
+            MaxContains = 5,
+            MinContains = 1,
+            ContentEncoding = "base64",
+            ContentMediaType = "application/json",
+            ContentSchema = new OpenApiSchema { Type = JsonSchemaType.String },
+            PropertyNames = new OpenApiSchema { Pattern = "^[a-z]+$" },
+            DependentSchemas = new Dictionary<string, IOpenApiSchema>
             {
-                ["$anchor"] = JsonValue.Create("shared")!,
-                ["contains"] = JsonNode.Parse("""{"type":"string"}""")!,
-                ["maxContains"] = JsonValue.Create((uint)5)!,
-                ["minContains"] = JsonValue.Create((uint)1)!,
-                ["contentEncoding"] = JsonValue.Create("base64")!,
-                ["contentMediaType"] = JsonValue.Create("application/json")!,
-                ["contentSchema"] = JsonNode.Parse("""{"type":"string"}""")!,
-                ["propertyNames"] = JsonNode.Parse("""{"pattern":"^[a-z]+$"}""")!,
-                ["dependentSchemas"] = JsonNode.Parse("""{"type":{"type":"string"}}""")!,
-                ["if"] = JsonNode.Parse("""{"required":["type"]}""")!,
-                ["then"] = JsonNode.Parse("""{"properties":{"value":{"type":"string"}}}""")!,
-                ["else"] = JsonNode.Parse("""{"properties":{"value":{"type":"number"}}}""")!
+                ["type"] = new OpenApiSchema { Type = JsonSchemaType.String }
+            },
+            If = new OpenApiSchema { Required = new HashSet<string> { "type" } },
+            Then = new OpenApiSchema
+            {
+                Properties = new Dictionary<string, IOpenApiSchema>
+                {
+                    ["value"] = new OpenApiSchema { Type = JsonSchemaType.String }
+                }
+            },
+            Else = new OpenApiSchema
+            {
+                Properties = new Dictionary<string, IOpenApiSchema>
+                {
+                    ["value"] = new OpenApiSchema { Type = JsonSchemaType.Number }
+                }
             },
             Deprecated = true,
             Extensions = new Dictionary<string, IOpenApiExtension>
@@ -277,7 +289,7 @@ public class ArazzoInputTests
     }
 
     [Fact]
-    public void ImplicitConversion_ToOpenApiSchema_CopiesNestedKeywords()
+    public void ImplicitConversion_ToOpenApiSchema_CopiesNestedSchemaProperties()
     {
         var input = new ArazzoInput
         {
@@ -320,18 +332,18 @@ public class ArazzoInputTests
         Assert.Equal(JsonSchemaType.Integer, schema.AdditionalProperties?.Type);
         Assert.Equal(JsonSchemaType.Boolean, schema.PatternProperties?["^x-"].Type);
         Assert.Equal(JsonSchemaType.Number, schema.UnevaluatedPropertiesSchema?.Type);
-        Assert.Equal("shared", schema.UnrecognizedKeywords?["$anchor"]?.GetValue<string>());
-        Assert.Equal("string", schema.UnrecognizedKeywords?["contains"]?["type"]?.GetValue<string>());
-        Assert.Equal((uint)5, schema.UnrecognizedKeywords?["maxContains"]?.GetValue<uint>());
-        Assert.Equal((uint)1, schema.UnrecognizedKeywords?["minContains"]?.GetValue<uint>());
-        Assert.Equal("base64", schema.UnrecognizedKeywords?["contentEncoding"]?.GetValue<string>());
-        Assert.Equal("application/json", schema.UnrecognizedKeywords?["contentMediaType"]?.GetValue<string>());
-        Assert.Equal("string", schema.UnrecognizedKeywords?["contentSchema"]?["type"]?.GetValue<string>());
-        Assert.Equal("^[a-z]+$", schema.UnrecognizedKeywords?["propertyNames"]?["pattern"]?.GetValue<string>());
-        Assert.Equal("string", schema.UnrecognizedKeywords?["dependentSchemas"]?["type"]?["type"]?.GetValue<string>());
-        Assert.Equal("type", schema.UnrecognizedKeywords?["if"]?["required"]?[0]?.GetValue<string>());
-        Assert.Equal("string", schema.UnrecognizedKeywords?["then"]?["properties"]?["value"]?["type"]?.GetValue<string>());
-        Assert.Equal("number", schema.UnrecognizedKeywords?["else"]?["properties"]?["value"]?["type"]?.GetValue<string>());
+        Assert.Equal("shared", schema.Anchor);
+        Assert.Equal(JsonSchemaType.String, schema.Contains?.Type);
+        Assert.Equal((uint)5, schema.MaxContains);
+        Assert.Equal((uint)1, schema.MinContains);
+        Assert.Equal("base64", schema.ContentEncoding);
+        Assert.Equal("application/json", schema.ContentMediaType);
+        Assert.Equal(JsonSchemaType.String, schema.ContentSchema?.Type);
+        Assert.Equal("^[a-z]+$", schema.PropertyNames?.Pattern);
+        Assert.Equal(JsonSchemaType.String, schema.DependentSchemas?["type"].Type);
+        Assert.Contains("type", schema.If?.Required!);
+        Assert.Equal(JsonSchemaType.String, schema.Then?.Properties?["value"].Type);
+        Assert.Equal(JsonSchemaType.Number, schema.Else?.Properties?["value"].Type);
         Assert.Equal(
             "value",
             Assert.IsType<Microsoft.OpenApi.JsonNodeExtension>(schema.Extensions?["x-extra"]).Node.GetValue<string>());

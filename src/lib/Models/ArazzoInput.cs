@@ -11,18 +11,6 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// </summary>
 public class ArazzoInput : IArazzoInput
 {
-    private const string AnchorKeyword = "$anchor";
-    private const string ContainsKeyword = "contains";
-    private const string MaxContainsKeyword = "maxContains";
-    private const string MinContainsKeyword = "minContains";
-    private const string ContentEncodingKeyword = "contentEncoding";
-    private const string ContentMediaTypeKeyword = "contentMediaType";
-    private const string ContentSchemaKeyword = "contentSchema";
-    private const string PropertyNamesKeyword = "propertyNames";
-    private const string DependentSchemasKeyword = "dependentSchemas";
-    private const string IfKeyword = "if";
-    private const string ThenKeyword = "then";
-    private const string ElseKeyword = "else";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ArazzoInput"/> class.
@@ -328,7 +316,7 @@ public class ArazzoInput : IArazzoInput
             DynamicRef = schema.DynamicRef,
             DynamicAnchor = schema.DynamicAnchor,
             Definitions = ConvertSchemaMap(schema.Definitions, hostDocument),
-            Anchor = GetStringKeyword(openApiSchema.UnrecognizedKeywords, AnchorKeyword),
+            Anchor = openApiSchema.Anchor,
             ExclusiveMaximum = schema.ExclusiveMaximum,
             ExclusiveMinimum = schema.ExclusiveMinimum,
             Type = schema.Type,
@@ -353,9 +341,9 @@ public class ArazzoInput : IArazzoInput
             MaxItems = schema.MaxItems,
             MinItems = schema.MinItems,
             UniqueItems = schema.UniqueItems,
-            Contains = GetSchemaKeyword(openApiSchema.UnrecognizedKeywords, ContainsKeyword, hostDocument),
-            MaxContains = GetUIntKeyword(openApiSchema.UnrecognizedKeywords, MaxContainsKeyword),
-            MinContains = GetUIntKeyword(openApiSchema.UnrecognizedKeywords, MinContainsKeyword),
+            Contains = openApiSchema.Contains is null ? null : ConvertFromOpenApiSchema(openApiSchema.Contains, hostDocument),
+            MaxContains = openApiSchema.MaxContains,
+            MinContains = openApiSchema.MinContains,
             Properties = ConvertSchemaMap(schema.Properties, hostDocument),
             PatternProperties = ConvertSchemaMap(schema.PatternProperties, hostDocument),
             MaxProperties = schema.MaxProperties,
@@ -366,14 +354,14 @@ public class ArazzoInput : IArazzoInput
             Enum = CloneNodeList(schema.Enum),
             UnevaluatedProperties = openApiSchema.UnevaluatedProperties,
             UnevaluatedPropertiesSchema = openApiSchema.UnevaluatedPropertiesSchema is null ? null : ConvertFromOpenApiSchema(openApiSchema.UnevaluatedPropertiesSchema, hostDocument),
-            ContentEncoding = GetStringKeyword(openApiSchema.UnrecognizedKeywords, ContentEncodingKeyword),
-            ContentMediaType = GetStringKeyword(openApiSchema.UnrecognizedKeywords, ContentMediaTypeKeyword),
-            ContentSchema = GetSchemaKeyword(openApiSchema.UnrecognizedKeywords, ContentSchemaKeyword, hostDocument),
-            PropertyNames = GetSchemaKeyword(openApiSchema.UnrecognizedKeywords, PropertyNamesKeyword, hostDocument),
-            DependentSchemas = GetSchemaMapKeyword(openApiSchema.UnrecognizedKeywords, DependentSchemasKeyword, hostDocument),
-            If = GetSchemaKeyword(openApiSchema.UnrecognizedKeywords, IfKeyword, hostDocument),
-            Then = GetSchemaKeyword(openApiSchema.UnrecognizedKeywords, ThenKeyword, hostDocument),
-            Else = GetSchemaKeyword(openApiSchema.UnrecognizedKeywords, ElseKeyword, hostDocument),
+            ContentEncoding = openApiSchema.ContentEncoding,
+            ContentMediaType = openApiSchema.ContentMediaType,
+            ContentSchema = openApiSchema.ContentSchema is null ? null : ConvertFromOpenApiSchema(openApiSchema.ContentSchema, hostDocument),
+            PropertyNames = openApiSchema.PropertyNames is null ? null : ConvertFromOpenApiSchema(openApiSchema.PropertyNames, hostDocument),
+            DependentSchemas = ConvertSchemaMap(openApiSchema.DependentSchemas, hostDocument),
+            If = openApiSchema.If is null ? null : ConvertFromOpenApiSchema(openApiSchema.If, hostDocument),
+            Then = openApiSchema.Then is null ? null : ConvertFromOpenApiSchema(openApiSchema.Then, hostDocument),
+            Else = openApiSchema.Else is null ? null : ConvertFromOpenApiSchema(openApiSchema.Else, hostDocument),
             Deprecated = schema.Deprecated,
             Extensions = ConvertExtensions(openApiSchema.Extensions),
             DependentRequired = CloneDependentRequired(schema.DependentRequired)
@@ -398,6 +386,7 @@ public class ArazzoInput : IArazzoInput
             Vocabulary = input.Vocabulary is null ? null : new Dictionary<string, bool>(input.Vocabulary),
             DynamicRef = input.DynamicRef,
             DynamicAnchor = input.DynamicAnchor,
+            Anchor = input.Anchor,
             Definitions = ConvertSchemaMap(input.Definitions),
             ExclusiveMaximum = input.ExclusiveMaximum,
             ExclusiveMinimum = input.ExclusiveMinimum,
@@ -423,6 +412,9 @@ public class ArazzoInput : IArazzoInput
             MaxItems = input.MaxItems,
             MinItems = input.MinItems,
             UniqueItems = input.UniqueItems,
+            Contains = input.Contains is null ? null : ConvertToOpenApiSchema(input.Contains),
+            MaxContains = input.MaxContains,
+            MinContains = input.MinContains,
             Properties = ConvertSchemaMap(input.Properties),
             PatternProperties = ConvertSchemaMap(input.PatternProperties),
             MaxProperties = input.MaxProperties,
@@ -433,23 +425,18 @@ public class ArazzoInput : IArazzoInput
             Enum = CloneNodeList(input.Enum),
             UnevaluatedProperties = input.UnevaluatedProperties,
             UnevaluatedPropertiesSchema = input.UnevaluatedPropertiesSchema is null ? null : ConvertToOpenApiSchema(input.UnevaluatedPropertiesSchema),
+            ContentEncoding = input.ContentEncoding,
+            ContentMediaType = input.ContentMediaType,
+            ContentSchema = input.ContentSchema is null ? null : ConvertToOpenApiSchema(input.ContentSchema),
+            PropertyNames = input.PropertyNames is null ? null : ConvertToOpenApiSchema(input.PropertyNames),
+            DependentSchemas = ConvertSchemaMap(input.DependentSchemas),
+            If = input.If is null ? null : ConvertToOpenApiSchema(input.If),
+            Then = input.Then is null ? null : ConvertToOpenApiSchema(input.Then),
+            Else = input.Else is null ? null : ConvertToOpenApiSchema(input.Else),
             Deprecated = input.Deprecated,
             Extensions = ConvertToOpenApiExtensions(input.Extensions),
             DependentRequired = CloneDependentRequired(input.DependentRequired)
         };
-
-        SetUnrecognizedKeyword(schema, AnchorKeyword, input.Anchor is null ? null : JsonValue.Create(input.Anchor));
-        SetUnrecognizedKeyword(schema, ContainsKeyword, ToJsonNode(input.Contains));
-        SetUnrecognizedKeyword(schema, MaxContainsKeyword, input.MaxContains is null ? null : JsonValue.Create(input.MaxContains.Value));
-        SetUnrecognizedKeyword(schema, MinContainsKeyword, input.MinContains is null ? null : JsonValue.Create(input.MinContains.Value));
-        SetUnrecognizedKeyword(schema, ContentEncodingKeyword, input.ContentEncoding is null ? null : JsonValue.Create(input.ContentEncoding));
-        SetUnrecognizedKeyword(schema, ContentMediaTypeKeyword, input.ContentMediaType is null ? null : JsonValue.Create(input.ContentMediaType));
-        SetUnrecognizedKeyword(schema, ContentSchemaKeyword, ToJsonNode(input.ContentSchema));
-        SetUnrecognizedKeyword(schema, PropertyNamesKeyword, ToJsonNode(input.PropertyNames));
-        SetUnrecognizedKeyword(schema, DependentSchemasKeyword, ToJsonObject(input.DependentSchemas));
-        SetUnrecognizedKeyword(schema, IfKeyword, ToJsonNode(input.If));
-        SetUnrecognizedKeyword(schema, ThenKeyword, ToJsonNode(input.Then));
-        SetUnrecognizedKeyword(schema, ElseKeyword, ToJsonNode(input.Else));
 
         return schema;
     }
@@ -531,107 +518,6 @@ public class ArazzoInput : IArazzoInput
         }
 
         return source.Select(static schema => (IOpenApiSchema)ConvertToOpenApiSchema(schema)).ToList();
-    }
-
-    private static string? GetStringKeyword(IDictionary<string, JsonNode>? keywords, string key)
-    {
-        if (keywords is null || !keywords.TryGetValue(key, out var node) || node is not JsonValue value)
-        {
-            return null;
-        }
-
-        return value.TryGetValue<string>(out var text) ? text : null;
-    }
-
-    private static uint? GetUIntKeyword(IDictionary<string, JsonNode>? keywords, string key)
-    {
-        if (keywords is null || !keywords.TryGetValue(key, out var node) || node is not JsonValue value)
-        {
-            return null;
-        }
-
-        return value.TryGetValue<uint>(out var result) ? result : null;
-    }
-
-    private static IArazzoInput? GetSchemaKeyword(IDictionary<string, JsonNode>? keywords, string key, ArazzoDocument? hostDocument)
-    {
-        if (keywords is null || !keywords.TryGetValue(key, out var node) || node is null)
-        {
-            return null;
-        }
-
-        var context = new Reader.ParsingContext(new Reader.ArazzoDiagnostic());
-        context.SetTempStorage("CurrentDocument", hostDocument ?? new ArazzoDocument());
-        return Reader.V1.ArazzoV1Deserializer.LoadSchema(node.DeepClone(), context);
-    }
-
-    private static IDictionary<string, IArazzoInput>? GetSchemaMapKeyword(IDictionary<string, JsonNode>? keywords, string key, ArazzoDocument? hostDocument)
-    {
-        if (keywords is null || !keywords.TryGetValue(key, out var node) || node is not JsonObject jsonObject)
-        {
-            return null;
-        }
-
-        var result = new Dictionary<string, IArazzoInput>();
-        foreach (var property in jsonObject)
-        {
-            if (property.Value is null)
-            {
-                continue;
-            }
-
-            var converted = GetSchemaKeyword(new Dictionary<string, JsonNode> { [key] = property.Value }, key, hostDocument);
-            if (converted is not null)
-            {
-                result[property.Key] = converted;
-            }
-        }
-
-        return result.Count == 0 ? null : result;
-    }
-
-    private static JsonNode? ToJsonNode(IArazzoInput? input)
-    {
-        if (input is null)
-        {
-            return null;
-        }
-
-        using var textWriter = new StringWriter();
-        var writer = new OpenApiJsonWriter(textWriter);
-        ConvertToOpenApiSchema(input).SerializeAsV32(writer);
-        return JsonNode.Parse(textWriter.ToString());
-    }
-
-    private static JsonNode? ToJsonObject(IDictionary<string, IArazzoInput>? inputs)
-    {
-        if (inputs is null)
-        {
-            return null;
-        }
-
-        var result = new JsonObject();
-        foreach (var pair in inputs)
-        {
-            var node = ToJsonNode(pair.Value);
-            if (node is not null)
-            {
-                result[pair.Key] = node;
-            }
-        }
-
-        return result;
-    }
-
-    private static void SetUnrecognizedKeyword(OpenApiSchema schema, string key, JsonNode? value)
-    {
-        if (value is null)
-        {
-            return;
-        }
-
-        schema.UnrecognizedKeywords ??= new Dictionary<string, JsonNode>(StringComparer.Ordinal);
-        schema.UnrecognizedKeywords[key] = value;
     }
 
     internal static JsonNode? CloneNode(JsonNode? node)
