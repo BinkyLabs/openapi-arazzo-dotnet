@@ -51,6 +51,11 @@ public interface IArazzoInput : IArazzoReferenceable, IArazzoExtensible
     IDictionary<string, IArazzoInput>? Definitions { get; set; }
 
     /// <summary>
+    /// $anchor - identifies a plain-name location-independent fragment within the schema resource.
+    /// </summary>
+    string? Anchor { get; set; }
+
+    /// <summary>
     /// Follow JSON Schema definition: https://json-schema.org/draft/2020-12/json-schema-validation
     /// </summary>
     string? ExclusiveMaximum { get; set; }
@@ -257,6 +262,46 @@ public interface IArazzoInput : IArazzoReferenceable, IArazzoExtensible
     IArazzoInput? UnevaluatedPropertiesSchema { get; set; }
 
     /// <summary>
+    /// contentEncoding - identifies the encoding of string content.
+    /// </summary>
+    string? ContentEncoding { get; set; }
+
+    /// <summary>
+    /// contentMediaType - identifies the media type of string content.
+    /// </summary>
+    string? ContentMediaType { get; set; }
+
+    /// <summary>
+    /// contentSchema - provides a schema that describes the decoded string content.
+    /// </summary>
+    IArazzoInput? ContentSchema { get; set; }
+
+    /// <summary>
+    /// propertyNames - provides a schema that validates property names.
+    /// </summary>
+    IArazzoInput? PropertyNames { get; set; }
+
+    /// <summary>
+    /// dependentSchemas - maps property names to schemas that are applied when that property is present.
+    /// </summary>
+    IDictionary<string, IArazzoInput>? DependentSchemas { get; set; }
+
+    /// <summary>
+    /// if - applies a conditional schema that determines whether <see cref="Then"/> or <see cref="Else"/> should be evaluated.
+    /// </summary>
+    IArazzoInput? If { get; set; }
+
+    /// <summary>
+    /// then - applies when <see cref="If"/> evaluates successfully.
+    /// </summary>
+    IArazzoInput? Then { get; set; }
+
+    /// <summary>
+    /// else - applies when <see cref="If"/> does not evaluate successfully.
+    /// </summary>
+    IArazzoInput? Else { get; set; }
+
+    /// <summary>
     /// Specifies that a schema is deprecated and SHOULD be transitioned out of usage.
     /// Default value is false.
     /// </summary>
@@ -266,4 +311,23 @@ public interface IArazzoInput : IArazzoReferenceable, IArazzoExtensible
     /// Follow JSON Schema definition:https://json-schema.org/draft/2020-12/json-schema-validation#section-6.5.4
     /// </summary>
     IDictionary<string, HashSet<string>>? DependentRequired { get; set; }
+
+    /// <summary>
+    /// Follow JSON Schema definition: https://json-schema.org/draft/2020-12/json-schema-core#name-contains
+    /// An array instance is valid against "contains" if at least one of its elements is valid against this schema.
+    /// Inline or referenced schema MUST be of a Schema Object and not a standard JSON Schema.
+    /// </summary>
+    IArazzoInput? Contains { get; set; }
+
+    /// <summary>
+    /// Follow JSON Schema definition: https://json-schema.org/draft/2020-12/json-schema-validation
+    /// The number of elements matching the "contains" schema MUST be less than or equal to this value.
+    /// </summary>
+    uint? MaxContains { get; set; }
+
+    /// <summary>
+    /// Follow JSON Schema definition: https://json-schema.org/draft/2020-12/json-schema-validation
+    /// The number of elements matching the "contains" schema MUST be greater than or equal to this value.
+    /// </summary>
+    uint? MinContains { get; set; }
 }

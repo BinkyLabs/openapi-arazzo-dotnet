@@ -11,6 +11,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// </summary>
 public class ArazzoInput : IArazzoInput
 {
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ArazzoInput"/> class.
     /// </summary>
@@ -31,6 +32,7 @@ public class ArazzoInput : IArazzoInput
         DynamicRef = source.DynamicRef;
         DynamicAnchor = source.DynamicAnchor;
         Definitions = source.Definitions is null ? null : new Dictionary<string, IArazzoInput>(source.Definitions);
+        Anchor = source.Anchor;
         ExclusiveMaximum = source.ExclusiveMaximum;
         ExclusiveMinimum = source.ExclusiveMinimum;
         Type = source.Type;
@@ -55,6 +57,9 @@ public class ArazzoInput : IArazzoInput
         MaxItems = source.MaxItems;
         MinItems = source.MinItems;
         UniqueItems = source.UniqueItems;
+        Contains = source.Contains;
+        MaxContains = source.MaxContains;
+        MinContains = source.MinContains;
         Properties = source.Properties is null ? null : new Dictionary<string, IArazzoInput>(source.Properties);
         PatternProperties = source.PatternProperties is null ? null : new Dictionary<string, IArazzoInput>(source.PatternProperties);
         MaxProperties = source.MaxProperties;
@@ -65,6 +70,14 @@ public class ArazzoInput : IArazzoInput
         Enum = CloneNodeList(source.Enum);
         UnevaluatedProperties = source.UnevaluatedProperties;
         UnevaluatedPropertiesSchema = source.UnevaluatedPropertiesSchema;
+        ContentEncoding = source.ContentEncoding;
+        ContentMediaType = source.ContentMediaType;
+        ContentSchema = source.ContentSchema;
+        PropertyNames = source.PropertyNames;
+        DependentSchemas = source.DependentSchemas is null ? null : new Dictionary<string, IArazzoInput>(source.DependentSchemas);
+        If = source.If;
+        Then = source.Then;
+        Else = source.Else;
         Deprecated = overrides.Deprecated;
         DependentRequired = CloneDependentRequired(source.DependentRequired);
         Extensions = overrides.Extensions is null ? CloneArazzoExtensions(source.Extensions) : CloneArazzoExtensions(overrides.Extensions);
@@ -93,6 +106,9 @@ public class ArazzoInput : IArazzoInput
 
     /// <inheritdoc />
     public IDictionary<string, IArazzoInput>? Definitions { get; set; }
+
+    /// <inheritdoc />
+    public string? Anchor { get; set; }
 
     /// <inheritdoc />
     public string? ExclusiveMaximum { get; set; }
@@ -167,6 +183,15 @@ public class ArazzoInput : IArazzoInput
     public bool? UniqueItems { get; set; }
 
     /// <inheritdoc />
+    public IArazzoInput? Contains { get; set; }
+
+    /// <inheritdoc />
+    public uint? MaxContains { get; set; }
+
+    /// <inheritdoc />
+    public uint? MinContains { get; set; }
+
+    /// <inheritdoc />
     public IDictionary<string, IArazzoInput>? Properties { get; set; }
 
     /// <inheritdoc />
@@ -195,6 +220,30 @@ public class ArazzoInput : IArazzoInput
 
     /// <inheritdoc />
     public IArazzoInput? UnevaluatedPropertiesSchema { get; set; }
+
+    /// <inheritdoc />
+    public string? ContentEncoding { get; set; }
+
+    /// <inheritdoc />
+    public string? ContentMediaType { get; set; }
+
+    /// <inheritdoc />
+    public IArazzoInput? ContentSchema { get; set; }
+
+    /// <inheritdoc />
+    public IArazzoInput? PropertyNames { get; set; }
+
+    /// <inheritdoc />
+    public IDictionary<string, IArazzoInput>? DependentSchemas { get; set; }
+
+    /// <inheritdoc />
+    public IArazzoInput? If { get; set; }
+
+    /// <inheritdoc />
+    public IArazzoInput? Then { get; set; }
+
+    /// <inheritdoc />
+    public IArazzoInput? Else { get; set; }
 
     /// <inheritdoc />
     public bool Deprecated { get; set; }
@@ -267,6 +316,7 @@ public class ArazzoInput : IArazzoInput
             DynamicRef = schema.DynamicRef,
             DynamicAnchor = schema.DynamicAnchor,
             Definitions = ConvertSchemaMap(schema.Definitions, hostDocument),
+            Anchor = openApiSchema.Anchor,
             ExclusiveMaximum = schema.ExclusiveMaximum,
             ExclusiveMinimum = schema.ExclusiveMinimum,
             Type = schema.Type,
@@ -291,6 +341,9 @@ public class ArazzoInput : IArazzoInput
             MaxItems = schema.MaxItems,
             MinItems = schema.MinItems,
             UniqueItems = schema.UniqueItems,
+            Contains = openApiSchema.Contains is null ? null : ConvertFromOpenApiSchema(openApiSchema.Contains, hostDocument),
+            MaxContains = openApiSchema.MaxContains,
+            MinContains = openApiSchema.MinContains,
             Properties = ConvertSchemaMap(schema.Properties, hostDocument),
             PatternProperties = ConvertSchemaMap(schema.PatternProperties, hostDocument),
             MaxProperties = schema.MaxProperties,
@@ -301,6 +354,14 @@ public class ArazzoInput : IArazzoInput
             Enum = CloneNodeList(schema.Enum),
             UnevaluatedProperties = openApiSchema.UnevaluatedProperties,
             UnevaluatedPropertiesSchema = openApiSchema.UnevaluatedPropertiesSchema is null ? null : ConvertFromOpenApiSchema(openApiSchema.UnevaluatedPropertiesSchema, hostDocument),
+            ContentEncoding = openApiSchema.ContentEncoding,
+            ContentMediaType = openApiSchema.ContentMediaType,
+            ContentSchema = openApiSchema.ContentSchema is null ? null : ConvertFromOpenApiSchema(openApiSchema.ContentSchema, hostDocument),
+            PropertyNames = openApiSchema.PropertyNames is null ? null : ConvertFromOpenApiSchema(openApiSchema.PropertyNames, hostDocument),
+            DependentSchemas = ConvertSchemaMap(openApiSchema.DependentSchemas, hostDocument),
+            If = openApiSchema.If is null ? null : ConvertFromOpenApiSchema(openApiSchema.If, hostDocument),
+            Then = openApiSchema.Then is null ? null : ConvertFromOpenApiSchema(openApiSchema.Then, hostDocument),
+            Else = openApiSchema.Else is null ? null : ConvertFromOpenApiSchema(openApiSchema.Else, hostDocument),
             Deprecated = schema.Deprecated,
             Extensions = ConvertExtensions(openApiSchema.Extensions),
             DependentRequired = CloneDependentRequired(schema.DependentRequired)
@@ -316,7 +377,7 @@ public class ArazzoInput : IArazzoInput
             return reference.ToOpenApiSchemaReference();
         }
 
-        return new OpenApiSchema
+        var schema = new OpenApiSchema
         {
             Title = input.Title,
             Schema = input.Schema,
@@ -325,6 +386,7 @@ public class ArazzoInput : IArazzoInput
             Vocabulary = input.Vocabulary is null ? null : new Dictionary<string, bool>(input.Vocabulary),
             DynamicRef = input.DynamicRef,
             DynamicAnchor = input.DynamicAnchor,
+            Anchor = input.Anchor,
             Definitions = ConvertSchemaMap(input.Definitions),
             ExclusiveMaximum = input.ExclusiveMaximum,
             ExclusiveMinimum = input.ExclusiveMinimum,
@@ -350,6 +412,9 @@ public class ArazzoInput : IArazzoInput
             MaxItems = input.MaxItems,
             MinItems = input.MinItems,
             UniqueItems = input.UniqueItems,
+            Contains = input.Contains is null ? null : ConvertToOpenApiSchema(input.Contains),
+            MaxContains = input.MaxContains,
+            MinContains = input.MinContains,
             Properties = ConvertSchemaMap(input.Properties),
             PatternProperties = ConvertSchemaMap(input.PatternProperties),
             MaxProperties = input.MaxProperties,
@@ -360,10 +425,20 @@ public class ArazzoInput : IArazzoInput
             Enum = CloneNodeList(input.Enum),
             UnevaluatedProperties = input.UnevaluatedProperties,
             UnevaluatedPropertiesSchema = input.UnevaluatedPropertiesSchema is null ? null : ConvertToOpenApiSchema(input.UnevaluatedPropertiesSchema),
+            ContentEncoding = input.ContentEncoding,
+            ContentMediaType = input.ContentMediaType,
+            ContentSchema = input.ContentSchema is null ? null : ConvertToOpenApiSchema(input.ContentSchema),
+            PropertyNames = input.PropertyNames is null ? null : ConvertToOpenApiSchema(input.PropertyNames),
+            DependentSchemas = ConvertSchemaMap(input.DependentSchemas),
+            If = input.If is null ? null : ConvertToOpenApiSchema(input.If),
+            Then = input.Then is null ? null : ConvertToOpenApiSchema(input.Then),
+            Else = input.Else is null ? null : ConvertToOpenApiSchema(input.Else),
             Deprecated = input.Deprecated,
             Extensions = ConvertToOpenApiExtensions(input.Extensions),
             DependentRequired = CloneDependentRequired(input.DependentRequired)
         };
+
+        return schema;
     }
 
     private static void ValidateUnsupportedOpenApiKeywords(OpenApiSchema schema)

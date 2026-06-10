@@ -104,6 +104,13 @@ public class ArazzoInputReference : BaseArazzoReferenceHolder<ArazzoInput, IAraz
     }
 
     /// <inheritdoc />
+    public string? Anchor
+    {
+        get => Target?.Anchor;
+        set => ThrowUnsupportedOverride(nameof(Anchor));
+    }
+
+    /// <inheritdoc />
     public string? ExclusiveMaximum
     {
         get => Target?.ExclusiveMaximum;
@@ -272,6 +279,27 @@ public class ArazzoInputReference : BaseArazzoReferenceHolder<ArazzoInput, IAraz
     }
 
     /// <inheritdoc />
+    public IArazzoInput? Contains
+    {
+        get => Target?.Contains;
+        set => ThrowUnsupportedOverride(nameof(Contains));
+    }
+
+    /// <inheritdoc />
+    public uint? MaxContains
+    {
+        get => Target?.MaxContains;
+        set => ThrowUnsupportedOverride(nameof(MaxContains));
+    }
+
+    /// <inheritdoc />
+    public uint? MinContains
+    {
+        get => Target?.MinContains;
+        set => ThrowUnsupportedOverride(nameof(MinContains));
+    }
+
+    /// <inheritdoc />
     public IDictionary<string, IArazzoInput>? Properties
     {
         get => Target?.Properties;
@@ -339,6 +367,62 @@ public class ArazzoInputReference : BaseArazzoReferenceHolder<ArazzoInput, IAraz
     {
         get => Target?.UnevaluatedPropertiesSchema;
         set => ThrowUnsupportedOverride(nameof(UnevaluatedPropertiesSchema));
+    }
+
+    /// <inheritdoc />
+    public string? ContentEncoding
+    {
+        get => Target?.ContentEncoding;
+        set => ThrowUnsupportedOverride(nameof(ContentEncoding));
+    }
+
+    /// <inheritdoc />
+    public string? ContentMediaType
+    {
+        get => Target?.ContentMediaType;
+        set => ThrowUnsupportedOverride(nameof(ContentMediaType));
+    }
+
+    /// <inheritdoc />
+    public IArazzoInput? ContentSchema
+    {
+        get => Target?.ContentSchema;
+        set => ThrowUnsupportedOverride(nameof(ContentSchema));
+    }
+
+    /// <inheritdoc />
+    public IArazzoInput? PropertyNames
+    {
+        get => Target?.PropertyNames;
+        set => ThrowUnsupportedOverride(nameof(PropertyNames));
+    }
+
+    /// <inheritdoc />
+    public IDictionary<string, IArazzoInput>? DependentSchemas
+    {
+        get => Target?.DependentSchemas;
+        set => ThrowUnsupportedOverride(nameof(DependentSchemas));
+    }
+
+    /// <inheritdoc />
+    public IArazzoInput? If
+    {
+        get => Target?.If;
+        set => ThrowUnsupportedOverride(nameof(If));
+    }
+
+    /// <inheritdoc />
+    public IArazzoInput? Then
+    {
+        get => Target?.Then;
+        set => ThrowUnsupportedOverride(nameof(Then));
+    }
+
+    /// <inheritdoc />
+    public IArazzoInput? Else
+    {
+        get => Target?.Else;
+        set => ThrowUnsupportedOverride(nameof(Else));
     }
 
     /// <inheritdoc />

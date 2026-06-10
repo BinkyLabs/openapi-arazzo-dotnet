@@ -110,6 +110,7 @@ public class ArazzoInputTests
             },
             DynamicRef = "#item",
             DynamicAnchor = "item",
+            Anchor = "shared",
             Definitions = new Dictionary<string, IOpenApiSchema>
             {
                 ["item"] = new OpenApiSchema { Type = JsonSchemaType.String }
@@ -154,6 +155,32 @@ public class ArazzoInputTests
             Enum = [JsonValue.Create("a")!, JsonValue.Create("b")!],
             UnevaluatedProperties = false,
             UnevaluatedPropertiesSchema = new OpenApiSchema { Type = JsonSchemaType.Boolean },
+            Contains = new OpenApiSchema { Type = JsonSchemaType.String },
+            MaxContains = 5,
+            MinContains = 1,
+            ContentEncoding = "base64",
+            ContentMediaType = "application/json",
+            ContentSchema = new OpenApiSchema { Type = JsonSchemaType.String },
+            PropertyNames = new OpenApiSchema { Pattern = "^[a-z]+$" },
+            DependentSchemas = new Dictionary<string, IOpenApiSchema>
+            {
+                ["type"] = new OpenApiSchema { Type = JsonSchemaType.String }
+            },
+            If = new OpenApiSchema { Required = new HashSet<string> { "type" } },
+            Then = new OpenApiSchema
+            {
+                Properties = new Dictionary<string, IOpenApiSchema>
+                {
+                    ["value"] = new OpenApiSchema { Type = JsonSchemaType.String }
+                }
+            },
+            Else = new OpenApiSchema
+            {
+                Properties = new Dictionary<string, IOpenApiSchema>
+                {
+                    ["value"] = new OpenApiSchema { Type = JsonSchemaType.Number }
+                }
+            },
             Deprecated = true,
             Extensions = new Dictionary<string, IOpenApiExtension>
             {
@@ -175,6 +202,7 @@ public class ArazzoInputTests
         Assert.Equal(schema.DynamicRef, input.DynamicRef);
         Assert.Equal(schema.DynamicAnchor, input.DynamicAnchor);
         Assert.Equal(JsonSchemaType.String, input.Definitions?["item"].Type);
+        Assert.Equal("shared", input.Anchor);
         Assert.Equal(schema.ExclusiveMaximum, input.ExclusiveMaximum);
         Assert.Equal(schema.ExclusiveMinimum, input.ExclusiveMinimum);
         Assert.Equal(schema.Type, input.Type);
@@ -209,6 +237,17 @@ public class ArazzoInputTests
         Assert.Equal(2, input.Enum?.Count);
         Assert.False(input.UnevaluatedProperties);
         Assert.Equal(JsonSchemaType.Boolean, input.UnevaluatedPropertiesSchema?.Type);
+        Assert.Equal("base64", input.ContentEncoding);
+        Assert.Equal("application/json", input.ContentMediaType);
+        Assert.Equal(JsonSchemaType.String, input.ContentSchema?.Type);
+        Assert.Equal(JsonSchemaType.String, input.Contains?.Type);
+        Assert.Equal((uint?)5, input.MaxContains);
+        Assert.Equal((uint?)1, input.MinContains);
+        Assert.Equal("^[a-z]+$", input.PropertyNames?.Pattern);
+        Assert.Equal(JsonSchemaType.String, input.DependentSchemas?["type"].Type);
+        Assert.Contains("type", input.If?.Required!);
+        Assert.Equal(JsonSchemaType.String, input.Then?.Properties?["value"].Type);
+        Assert.Equal(JsonSchemaType.Number, input.Else?.Properties?["value"].Type);
         Assert.True(input.Deprecated);
         Assert.Equal(["b", "c"], input.DependentRequired?["a"]);
         Assert.Equal("value", Assert.IsType<JsonNodeExtension>(input.Extensions?["x-extra"]).Node.GetValue<string>());
@@ -250,7 +289,7 @@ public class ArazzoInputTests
     }
 
     [Fact]
-    public void ImplicitConversion_ToOpenApiSchema_CopiesNestedKeywords()
+    public void ImplicitConversion_ToOpenApiSchema_CopiesNestedSchemaProperties()
     {
         var input = new ArazzoInput
         {
@@ -265,6 +304,21 @@ public class ArazzoInputTests
                 ["^x-"] = new ArazzoInput { Type = JsonSchemaType.Boolean }
             },
             UnevaluatedPropertiesSchema = new ArazzoInput { Type = JsonSchemaType.Number },
+            Anchor = "shared",
+            Contains = new ArazzoInput { Type = JsonSchemaType.String },
+            MaxContains = 5,
+            MinContains = 1,
+            ContentEncoding = "base64",
+            ContentMediaType = "application/json",
+            ContentSchema = new ArazzoInput { Type = JsonSchemaType.String },
+            PropertyNames = new ArazzoInput { Pattern = "^[a-z]+$" },
+            DependentSchemas = new Dictionary<string, IArazzoInput>
+            {
+                ["type"] = new ArazzoInput { Type = JsonSchemaType.String }
+            },
+            If = new ArazzoInput { Required = new HashSet<string> { "type" } },
+            Then = new ArazzoInput { Properties = new Dictionary<string, IArazzoInput> { ["value"] = new ArazzoInput { Type = JsonSchemaType.String } } },
+            Else = new ArazzoInput { Properties = new Dictionary<string, IArazzoInput> { ["value"] = new ArazzoInput { Type = JsonSchemaType.Number } } },
             Extensions = new Dictionary<string, IArazzoExtension>
             {
                 ["x-extra"] = new JsonNodeExtension(JsonValue.Create("value")!)
@@ -278,6 +332,18 @@ public class ArazzoInputTests
         Assert.Equal(JsonSchemaType.Integer, schema.AdditionalProperties?.Type);
         Assert.Equal(JsonSchemaType.Boolean, schema.PatternProperties?["^x-"].Type);
         Assert.Equal(JsonSchemaType.Number, schema.UnevaluatedPropertiesSchema?.Type);
+        Assert.Equal("shared", schema.Anchor);
+        Assert.Equal(JsonSchemaType.String, schema.Contains?.Type);
+        Assert.Equal((uint)5, schema.MaxContains);
+        Assert.Equal((uint)1, schema.MinContains);
+        Assert.Equal("base64", schema.ContentEncoding);
+        Assert.Equal("application/json", schema.ContentMediaType);
+        Assert.Equal(JsonSchemaType.String, schema.ContentSchema?.Type);
+        Assert.Equal("^[a-z]+$", schema.PropertyNames?.Pattern);
+        Assert.Equal(JsonSchemaType.String, schema.DependentSchemas?["type"].Type);
+        Assert.Contains("type", schema.If?.Required!);
+        Assert.Equal(JsonSchemaType.String, schema.Then?.Properties?["value"].Type);
+        Assert.Equal(JsonSchemaType.Number, schema.Else?.Properties?["value"].Type);
         Assert.Equal(
             "value",
             Assert.IsType<Microsoft.OpenApi.JsonNodeExtension>(schema.Extensions?["x-extra"]).Node.GetValue<string>());
@@ -598,6 +664,7 @@ public class ArazzoInputTests
         public string? DynamicRef { get; set; }
         public string? DynamicAnchor { get; set; }
         public IDictionary<string, IArazzoInput>? Definitions { get; set; }
+        public string? Anchor { get; set; }
         public string? ExclusiveMaximum { get; set; }
         public string? ExclusiveMinimum { get; set; }
         public JsonSchemaType? Type { get; set; }
@@ -632,9 +699,20 @@ public class ArazzoInputTests
         public IList<JsonNode>? Enum { get; set; }
         public bool UnevaluatedProperties { get; set; }
         public IArazzoInput? UnevaluatedPropertiesSchema { get; set; }
+        public string? ContentEncoding { get; set; }
+        public string? ContentMediaType { get; set; }
+        public IArazzoInput? ContentSchema { get; set; }
+        public IArazzoInput? PropertyNames { get; set; }
+        public IDictionary<string, IArazzoInput>? DependentSchemas { get; set; }
+        public IArazzoInput? If { get; set; }
+        public IArazzoInput? Then { get; set; }
+        public IArazzoInput? Else { get; set; }
         public bool Deprecated { get; set; }
         public IDictionary<string, HashSet<string>>? DependentRequired { get; set; }
         public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
+        public IArazzoInput? Contains { get; set; }
+        public uint? MaxContains { get; set; }
+        public uint? MinContains { get; set; }
 
         public void SerializeAsV1(IOpenApiWriter writer)
         {
