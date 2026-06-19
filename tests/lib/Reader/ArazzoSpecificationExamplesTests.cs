@@ -8,9 +8,31 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 public class ArazzoSpecificationExamplesTests
 {
     private static readonly string SampleRootDirectory = Path.Combine(AppContext.BaseDirectory, "Samples");
+    private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> KnownSampleErrors =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["DescribingApiWorkflowsWithArazzo\\specs\\error-bnpl.arazzo.yaml"] =
+            [
+                "#/workflows/steps/outputs/eligibilityCheckRequired: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibilityCheckRequired': '$response.body.eligibilityCheckRequired'.",
+                "#/workflows/steps/outputs/eligibleProducts: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibleProducts': '$response.body.productCodes'.",
+                "#/workflows/steps/outputs/totalLoanAmount: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'totalLoanAmount': '$response.body.totalAmount'.",
+                "#/workflows/steps/outputs/customer: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'customer': '$response.body.links.self'.",
+                "#/workflows/steps/outputs/redirectAuthToken: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'redirectAuthToken': '$response.body.redirectAuthToken'.",
+                "#/workflows/steps/outputs/loanTransactionId: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'loanTransactionId': '$response.body.loanTransactionId'.",
+            ],
+            ["DescribingApiWorkflowsWithArazzo\\specs\\formal-bnpl.arazzo.yaml"] =
+            [
+                "#/workflows/steps/outputs/eligibilityCheckRequired: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibilityCheckRequired': '$response.body.eligibilityCheckRequired'.",
+                "#/workflows/steps/outputs/eligibleProducts: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibleProducts': '$response.body.productCodes'.",
+                "#/workflows/steps/outputs/totalLoanAmount: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'totalLoanAmount': '$response.body.totalAmount'.",
+                "#/workflows/steps/outputs/customer: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'customer': '$response.body.links.self'.",
+                "#/workflows/steps/outputs/redirectAuthToken: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'redirectAuthToken': '$response.body.redirectAuthToken'.",
+                "#/workflows/steps/outputs/loanTransactionId: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'loanTransactionId': '$response.body.loanTransactionId'.",
+            ],
+        };
 
     [Fact]
-    public async Task LoadFormUrlAsync_CopiedArazzoSampleDatasets_ParseWithoutErrors()
+    public async Task LoadFormUrlAsync_CopiedArazzoSampleDatasets_ParseWithOnlyKnownErrors()
     {
         var ct = TestContext.Current.CancellationToken;
         var settings = new ArazzoReaderSettings();
@@ -27,23 +49,51 @@ public class ArazzoSpecificationExamplesTests
             var result = await ArazzoModelFactory.LoadFormUrlAsync(samplePath, settings, ct);
             var errors = result.Diagnostic?.Errors ?? [];
             var displayPath = Path.GetRelativePath(SampleRootDirectory, samplePath);
+            var actualErrors = errors.Select(static error => $"{error.Pointer}: {error.Message}").ToArray();
 
-            if (result.Document is null || errors.Count != 0)
+            if (result.Document is null)
             {
-                var errorReport = errors.Count == 0
-                    ? "no diagnostics were reported"
-                    : string.Join(Environment.NewLine, errors.Select(static error => $"{error.Pointer}: {error.Message}"));
-
                 failures.Add(
                     $"""
                     {displayPath}
-                    Document parsed: {result.Document is not null}
+                    Document parsed: False
                     Errors:
-                    {errorReport}
+                    {string.Join(Environment.NewLine, actualErrors)}
+                    """);
+
+                continue;
+            }
+
+            if (KnownSampleErrors.TryGetValue(displayPath, out var expectedErrors))
+            {
+                if (!actualErrors.SequenceEqual(expectedErrors))
+                {
+                    failures.Add(
+                        $"""
+                        {displayPath}
+                        Document parsed: True
+                        Expected errors:
+                        {string.Join(Environment.NewLine, expectedErrors)}
+                        Actual errors:
+                        {string.Join(Environment.NewLine, actualErrors)}
+                        """);
+                }
+
+                continue;
+            }
+
+            if (actualErrors.Length != 0)
+            {
+                failures.Add(
+                    $"""
+                    {displayPath}
+                    Document parsed: True
+                    Errors:
+                    {string.Join(Environment.NewLine, actualErrors)}
                     """);
             }
         }
 
-        Assert.True(failures.Count == 0, $"One or more copied Arazzo sample datasets failed to parse:{Environment.NewLine}{Environment.NewLine}{string.Join($"{Environment.NewLine}{Environment.NewLine}", failures)}");
+        Assert.True(failures.Count == 0, $"One or more copied Arazzo sample datasets produced unexpected parse results:{Environment.NewLine}{Environment.NewLine}{string.Join($"{Environment.NewLine}{Environment.NewLine}", failures)}");
     }
 }

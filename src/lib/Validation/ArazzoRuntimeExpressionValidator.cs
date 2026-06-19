@@ -12,7 +12,7 @@ internal static partial class ArazzoRuntimeExpressionValidator
     private const string NamePattern = @"[^\x00\r\n]+";
     private const string JsonPointerPattern = @"(?:/(?:[^~/]|~[01])*)*";
     private const string HeaderReferencePattern = @"headers?\." + TokenPattern;
-    private const string BodyReferencePattern = @"body(?:(?:#" + JsonPointerPattern + @")|(?:\." + NamePattern + @"))?";
+    private const string BodyReferencePattern = @"body(?:#" + JsonPointerPattern + ")?";
     private const string SourcePattern = @"(?:" + HeaderReferencePattern + @"|query\." + NamePattern + @"|path\." + NamePattern + @"|" + BodyReferencePattern + ")";
     private const string RuntimeExpressionPattern =
         @"^\$(?:url|method|statusCode|request\." + SourcePattern + @"|response\." + SourcePattern + @"|inputs\." + NamePattern +
