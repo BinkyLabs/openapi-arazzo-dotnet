@@ -11,7 +11,7 @@ public class ArazzoSpecificationExamplesTests
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> KnownSampleErrors =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
         {
-            ["DescribingApiWorkflowsWithArazzo\\specs\\error-bnpl.arazzo.yaml"] =
+            [Path.Join("DescribingApiWorkflowsWithArazzo", "specs", "error-bnpl.arazzo.yaml")] =
             [
                 "#/workflows/steps/outputs/eligibilityCheckRequired: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibilityCheckRequired': '$response.body.eligibilityCheckRequired'.",
                 "#/workflows/steps/outputs/eligibleProducts: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibleProducts': '$response.body.productCodes'.",
@@ -20,7 +20,7 @@ public class ArazzoSpecificationExamplesTests
                 "#/workflows/steps/outputs/redirectAuthToken: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'redirectAuthToken': '$response.body.redirectAuthToken'.",
                 "#/workflows/steps/outputs/loanTransactionId: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'loanTransactionId': '$response.body.loanTransactionId'.",
             ],
-            ["DescribingApiWorkflowsWithArazzo\\specs\\formal-bnpl.arazzo.yaml"] =
+            [Path.Join("DescribingApiWorkflowsWithArazzo", "specs", "formal-bnpl.arazzo.yaml")] =
             [
                 "#/workflows/steps/outputs/eligibilityCheckRequired: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibilityCheckRequired': '$response.body.eligibilityCheckRequired'.",
                 "#/workflows/steps/outputs/eligibleProducts: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibleProducts': '$response.body.productCodes'.",
