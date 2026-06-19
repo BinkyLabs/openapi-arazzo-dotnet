@@ -124,7 +124,7 @@ public static class ArazzoModelFactory
             readResult.Document.Workspace = workspace;
             var loader = settings.OpenApiSettings.CustomExternalLoader ?? new DefaultStreamLoader(settings.HttpClient);
             var workspaceLoader = new Reader.ArazzoWorkspaceLoader(workspace, loader, settings);
-            await workspaceLoader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, readResult.Document, format, cancellationToken).ConfigureAwait(false);
+            await workspaceLoader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, readResult.Document, cancellationToken).ConfigureAwait(false);
         }
 
         return readResult;

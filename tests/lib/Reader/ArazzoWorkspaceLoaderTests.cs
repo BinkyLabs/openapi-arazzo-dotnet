@@ -77,7 +77,7 @@ public class ArazzoWorkspaceLoaderTests
             }),
             new ArazzoReaderSettings());
 
-        await loader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, mainDocument, OpenApiConstants.Json, TestContext.Current.CancellationToken);
+        await loader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, mainDocument, TestContext.Current.CancellationToken);
 
         Assert.True(workspace.ComponentsCount() >= 1);
         Assert.Same(workspace, mainDocument.Workspace);
@@ -89,7 +89,7 @@ public class ArazzoWorkspaceLoaderTests
         var workspace = new ArazzoWorkspace(new Uri("https://example.com/root/arazzo.json"));
         var loader = new ArazzoWorkspaceLoader(workspace, new TestStreamLoader(new Dictionary<string, string>()), new ArazzoReaderSettings());
 
-        await loader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, null, OpenApiConstants.Json, TestContext.Current.CancellationToken);
+        await loader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, null, TestContext.Current.CancellationToken);
 
         Assert.Equal(0, workspace.ComponentsCount());
     }
@@ -173,6 +173,68 @@ components:
         }
     }
 
+    [Fact]
+    public async Task LoadAsync_ExternalJsonSchemaDocument_RegistersRootDefsAndResolvedSubSchemas()
+    {
+        const string externalSchemaDocument = """
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "object",
+              "$defs": {
+                "shared": {
+                  "type": "string"
+                }
+              },
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/shared"
+                },
+                "count": {
+                  "type": "integer"
+                }
+              }
+            }
+            """;
+
+        var mainDocument = new ArazzoDocument
+        {
+            BaseUri = new Uri("https://example.com/root/arazzo.json"),
+            Workflows =
+            [
+                new ArazzoWorkflow
+                {
+                    WorkflowId = "wf",
+                    Inputs = CreateExternalSchemaReference("shared", "external-schema.json", "#/$defs/shared")
+                }
+            ]
+        };
+        ((ArazzoInputReference)mainDocument.Workflows[0].Inputs!).Reference.EnsureHostDocumentIsSet(mainDocument);
+
+        var workspace = new ArazzoWorkspace(mainDocument.BaseUri);
+        mainDocument.Workspace = workspace;
+        var loader = new ArazzoWorkspaceLoader(
+            workspace,
+            new TestStreamLoader(new Dictionary<string, string>
+            {
+                ["https://example.com/root/external-schema.json"] = externalSchemaDocument
+            }),
+            new ArazzoReaderSettings());
+
+        await loader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, mainDocument, TestContext.Current.CancellationToken);
+
+        var rootSchema = workspace.ResolveReference<IArazzoInput>("https://example.com/root/external-schema.json");
+        var sharedSchema = workspace.ResolveJsonSchemaReference("https://example.com/root/external-schema.json#/$defs/shared");
+        var propertyReference = Assert.IsType<ArazzoInputReference>(
+            workspace.ResolveJsonSchemaReference("https://example.com/root/external-schema.json#/properties/value"));
+        var propertySchema = workspace.ResolveJsonSchemaReference("https://example.com/root/external-schema.json#/properties/count");
+
+        Assert.NotNull(rootSchema);
+        Assert.NotNull(sharedSchema);
+        Assert.Same(sharedSchema, propertyReference.Target);
+        Assert.Equal(JsonSchemaType.Integer, propertySchema?.Type);
+        Assert.Same(sharedSchema, ((ArazzoInputReference)mainDocument.Workflows[0].Inputs!).Target);
+    }
+
     private static IArazzoInput CreateNestedExternalReferenceGraph(ArazzoDocument document)
     {
         return new ArazzoInput
@@ -203,6 +265,13 @@ components:
     {
         var reference = new ArazzoInputReference("shared", document, "external.json");
         reference.Reference.SetJsonPointerPath("https://example.com/root/external.json#/components/inputs/shared", "#");
+        return reference;
+    }
+
+    private static ArazzoInputReference CreateExternalSchemaReference(string referenceId, string externalResource, string pointer)
+    {
+        var reference = new ArazzoInputReference(referenceId, null, externalResource);
+        reference.Reference.SetJsonPointerPath(pointer, "#");
         return reference;
     }
 

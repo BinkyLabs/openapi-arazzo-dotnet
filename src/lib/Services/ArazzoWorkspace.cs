@@ -204,6 +204,15 @@ internal class ArazzoWorkspace
         return true;
     }
 
+    internal void RegisterInputSchema(string location, IArazzoInput input)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(location);
+        ArgumentNullException.ThrowIfNull(input);
+
+        RegisterComponent(location, input);
+        RegisterNestedInputs(input, location.Contains('#', StringComparison.Ordinal) ? location : $"{location}#");
+    }
+
     /// <summary>
     /// Adds a document identifier to the registry.
     /// </summary>

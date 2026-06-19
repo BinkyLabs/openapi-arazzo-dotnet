@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
 
@@ -18,7 +21,6 @@ internal sealed class ArazzoWorkspaceLoader
     internal async Task LoadAsync(
         BaseArazzoReference reference,
         ArazzoDocument? document,
-        string? format = null,
         CancellationToken cancellationToken = default)
     {
         _workspace.AddDocumentId(reference.ExternalResource, document?.BaseUri);
@@ -38,17 +40,58 @@ internal sealed class ArazzoWorkspaceLoader
             var inputUri = new Uri(remoteReference.ExternalResource, UriKind.RelativeOrAbsolute);
             await using var stream = await _loader.LoadAsync(remoteReference.HostDocument!.BaseUri, inputUri, cancellationToken).ConfigureAwait(false);
             var resolvedUri = new Uri(remoteReference.HostDocument.BaseUri, inputUri);
+            await using var bufferedStream = new MemoryStream();
+            await stream.CopyToAsync(bufferedStream, cancellationToken).ConfigureAwait(false);
+            bufferedStream.Position = 0;
             var result = await ArazzoModelFactory.LoadFromStreamAsync(
-                stream,
-                format,
+                bufferedStream,
+                null,
                 _readerSettings,
                 cancellationToken,
                 resolvedUri).ConfigureAwait(false);
 
             if (result.Document is not null)
             {
-                await LoadAsync(remoteReference, result.Document, format, cancellationToken).ConfigureAwait(false);
+                await LoadAsync(remoteReference, result.Document, cancellationToken).ConfigureAwait(false);
+                continue;
             }
+
+            bufferedStream.Position = 0;
+            if (await TryLoadExternalSchemaAsync(bufferedStream, resolvedUri, cancellationToken).ConfigureAwait(false) is { } externalSchema)
+            {
+                _workspace.AddDocumentId(remoteReference.ExternalResource, resolvedUri);
+                _workspace.RegisterInputSchema(resolvedUri.AbsoluteUri, externalSchema);
+            }
+        }
+    }
+
+    private async Task<IArazzoInput?> TryLoadExternalSchemaAsync(Stream stream, Uri resolvedUri, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var node = await JsonNode.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (node is null)
+            {
+                return null;
+            }
+
+            var schema = new OpenApiJsonReader().ReadFragment<OpenApiSchema>(node, OpenApiSpecVersion.OpenApi3_2, new(), out var _);
+            if (schema is not OpenApiSchema openApiSchema)
+            {
+                return null;
+            }
+
+            var hostDocument = new ArazzoDocument
+            {
+                BaseUri = resolvedUri,
+                Workspace = _workspace
+            };
+
+            return ArazzoInput.ConvertFromOpenApiSchema(openApiSchema, hostDocument);
+        }
+        catch (JsonException)
+        {
+            return null;
         }
     }
 
