@@ -241,6 +241,45 @@ public class ArazzoStepTests
     }
 
     [Fact]
+    public void SerializeAsV1_WithInvalidOutputValue_ThrowsArazzoSerializationException()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "invalidOutputValueStep",
+            Outputs = new Dictionary<string, string>
+            {
+                ["userId"] = "not-a-runtime-expression"
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
+
+        Assert.Contains("Invalid value for key 'userId': 'not-a-runtime-expression'", exception.Message);
+    }
+
+    [Fact]
+    public void Deserialize_WithInvalidOutputValue_AddsDiagnosticError()
+    {
+        var json = """
+        {
+            "stepId": "invalidOutputValueStep",
+            "outputs": {
+                "userId": "not-a-runtime-expression"
+            }
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var step = ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+
+        Assert.NotNull(step.Outputs);
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Invalid value for key 'userId': 'not-a-runtime-expression'", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void SerializeAsV1_WithReferences_WritesReferenceObjects()
     {
         var step = new ArazzoStep

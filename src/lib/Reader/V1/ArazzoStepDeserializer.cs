@@ -21,9 +21,11 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoStepOutputs, static (o, v, c) =>
         {
             ArazzoKeyValidator.ValidateDeserializationKeys(v, c, $"{nameof(ArazzoStep)}.{nameof(ArazzoStep.Outputs)}");
-            o.Outputs = v.CreateSimpleMap(static n => n.GetScalarValue(), c)
+            var outputs = v.CreateSimpleMap(static n => n.GetScalarValue(), c)
                 .Where(static x => x.Value is not null)
                 .ToDictionary(static x => x.Key, static x => x.Value!);
+            ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressions(outputs, c, $"{nameof(ArazzoStep)}.{nameof(ArazzoStep.Outputs)}");
+            o.Outputs = outputs;
         } }
     };
 

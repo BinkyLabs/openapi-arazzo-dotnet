@@ -62,8 +62,9 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
 
     /// <summary>
     /// Gets or sets the output expressions.
+    /// Values must be valid runtime expressions as defined by
+    /// <see href="https://spec.openapis.org/arazzo/v1.0.1.html#runtime-expressions">the Arazzo specification</see>.
     /// </summary>
-    // TODO: Implement ABNF parsing of the output expressions
     public IDictionary<string, string>? Outputs { get; set; }
 
     /// <inheritdoc/>
@@ -79,6 +80,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
 
         ArgumentException.ThrowIfNullOrEmpty(StepId);
         ArazzoKeyValidator.ValidateSerializationKeys(Outputs?.Keys, $"{nameof(ArazzoStep)}.{nameof(Outputs)}");
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressions(Outputs, $"{nameof(ArazzoStep)}.{nameof(Outputs)}");
 
         writer.WriteStartObject();
 

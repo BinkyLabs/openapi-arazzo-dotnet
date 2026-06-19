@@ -108,7 +108,7 @@ public class SerializationErrorPathTests
             SuccessCriteria = [new ArazzoCriterion { Condition = "true" }],
             OnSuccess = [new ArazzoSuccessAction { Name = "n", Type = ArazzoSuccessType.End }],
             OnFailure = [new ArazzoFailureAction { Name = "n", Type = ArazzoFailureType.End }],
-            Outputs = new Dictionary<string, string> { ["k"] = "$.v" }
+            Outputs = new Dictionary<string, string> { ["k"] = "$response.body#/v" }
         };
         var w = MakeWriter(out var sw);
         step.SerializeAsV1(w);
