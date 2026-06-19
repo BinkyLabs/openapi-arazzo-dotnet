@@ -48,4 +48,33 @@ public class ArazzoRuntimeExpressionValidatorTests
     {
         Assert.False(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression));
     }
+
+    [Theory]
+    [InlineData("$components.parameters.page", ReferenceType.Parameter)]
+    [InlineData("$components.successActions.notify", ReferenceType.SuccessAction)]
+    [InlineData("$components.failureActions.retry", ReferenceType.FailureAction)]
+    public void IsReusableObjectReference_WithMatchingComponentType_ReturnsTrue(string reference, ReferenceType referenceType)
+    {
+        Assert.True(ArazzoReusableObjectReferenceValidator.IsReusableObjectReference(reference, referenceType));
+    }
+
+    [Theory]
+    [InlineData("$components.parameters.page")]
+    [InlineData("$components.successActions.notify")]
+    [InlineData("$components.failureActions.retry")]
+    public void IsReusableObjectReference_WithReusableComponentReference_ReturnsTrue(string reference)
+    {
+        Assert.True(ArazzoReusableObjectReferenceValidator.IsReusableObjectReference(reference));
+    }
+
+    [Theory]
+    [InlineData("$steps.getUser.outputs.userId", null)]
+    [InlineData("$components.inputs.user", null)]
+    [InlineData("$components.parameters.page", ReferenceType.SuccessAction)]
+    [InlineData("$components.parameters", ReferenceType.Parameter)]
+    [InlineData("external.json#$components.parameters.page", ReferenceType.Parameter)]
+    public void IsReusableObjectReference_WithInvalidReference_ReturnsFalse(string reference, ReferenceType? referenceType)
+    {
+        Assert.False(ArazzoReusableObjectReferenceValidator.IsReusableObjectReference(reference, referenceType));
+    }
 }

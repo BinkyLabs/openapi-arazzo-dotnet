@@ -113,6 +113,24 @@ internal static partial class ArazzoV1Deserializer
         }
     }
 
+    internal static TReference CreateLocalReusableReference<TReference>(
+        string referenceString,
+        ParsingContext context,
+        ReferenceType referenceType,
+        string elementName,
+        Func<string, ArazzoDocument?, TReference> createReference)
+        where TReference : IArazzoReferenceHolder<BaseArazzoReference>
+    {
+        ThrowIfExternalReferenceNotSupported(referenceString, elementName);
+        ArazzoReusableObjectReferenceValidator.ValidateDeserializationReference(referenceString, context, referenceType, elementName);
+
+        var hostDocument = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
+        var reference = createReference(GetReferenceId(referenceString), hostDocument);
+        reference.Reference.EnsureHostDocumentIsSet(hostDocument ?? new ArazzoDocument());
+        reference.Reference.SetJsonPointerPath(referenceString, context.GetLocation());
+        return reference;
+    }
+
     internal static bool TryGetReferenceObject(JsonNode node, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out JsonObject? jsonObject, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? referenceString)
     {
         jsonObject = node as JsonObject;

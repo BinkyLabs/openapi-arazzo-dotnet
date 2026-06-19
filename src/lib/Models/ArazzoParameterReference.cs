@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
+
 using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo;
@@ -71,6 +73,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
     public override void SerializeAsV1(IOpenApiWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
+        ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference.ReferenceV1, ReferenceType.Parameter, nameof(ArazzoParameterReference));
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoReusableObjectReference, Reference.ReferenceV1);

@@ -202,6 +202,24 @@ public class ArazzoSuccessActionTests
         Assert.Null(successAction.Criteria);
     }
 
+    [Theory]
+    [InlineData("$components.parameters.shared")]
+    [InlineData("$components.successActions")]
+    public void Deserialize_WithInvalidReusableReference_AddsDiagnosticError(string reference)
+    {
+        var json = $$"""
+        {
+            "reference": "{{reference}}"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = Assert.IsType<ArazzoSuccessActionReference>(ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext));
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("$components.successActions.<name>", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void Deserialize_WithExternalReference_ThrowsOpenApiException()
     {

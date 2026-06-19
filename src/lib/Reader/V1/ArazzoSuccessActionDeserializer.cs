@@ -29,12 +29,12 @@ internal static partial class ArazzoV1Deserializer
     {
         if (TryGetReferenceObject(node, out _, out var referenceString))
         {
-            ThrowIfExternalReferenceNotSupported(referenceString, "Success action");
-            var hostDocument = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
-            var reference = new ArazzoSuccessActionReference(GetReferenceId(referenceString), hostDocument, GetExternalResource(referenceString));
-            reference.Reference.EnsureHostDocumentIsSet(hostDocument ?? new ArazzoDocument());
-            reference.Reference.SetJsonPointerPath(referenceString, context.GetLocation());
-            return reference;
+            return CreateLocalReusableReference(
+                referenceString,
+                context,
+                ReferenceType.SuccessAction,
+                "Success action",
+                static (referenceId, hostDocument) => new ArazzoSuccessActionReference(referenceId, hostDocument));
         }
 
         return LoadSuccessActionObject(node, context);

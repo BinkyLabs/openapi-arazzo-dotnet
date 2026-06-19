@@ -5,6 +5,8 @@ using System;
 using System.Linq;
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
+
 using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo;
@@ -129,6 +131,12 @@ public class BaseArazzoReference : IArazzoSerializable
         var referencePropertyName = Type == ReferenceType.Input
             ? OpenApiConstants.DollarRef
             : ArazzoConstants.ArazzoReusableObjectReference;
+
+        if (Type != ReferenceType.Input)
+        {
+            ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(ReferenceV1, Type, nameof(BaseArazzoReference));
+        }
+
         writer.WriteProperty(referencePropertyName, ReferenceV1);
 
         writer.WriteEndObject();

@@ -487,6 +487,115 @@ public class ArazzoReferenceWorkspaceTests
     }
 
     [Fact]
+    public async Task ParseAsync_ReusableObjectReferences_ResolveCurrentDocumentComponents()
+    {
+        const string json =
+            """
+            {
+              "arazzo": "1.0.1",
+              "info": {
+                "title": "Reusable references",
+                "version": "1.0.0"
+              },
+              "sourceDescriptions": [],
+              "workflows": [
+                {
+                  "workflowId": "wf",
+                  "steps": [
+                    {
+                      "stepId": "getUser",
+                      "operationId": "getUser",
+                      "parameters": [
+                        {
+                          "reference": "$components.parameters.userId",
+                          "value": "42"
+                        }
+                      ],
+                      "onSuccess": [
+                        {
+                          "reference": "$components.successActions.done"
+                        }
+                      ],
+                      "onFailure": [
+                        {
+                          "reference": "$components.failureActions.retry"
+                        }
+                      ]
+                    }
+                  ],
+                  "successActions": [
+                    {
+                      "reference": "$components.successActions.done"
+                    }
+                  ],
+                  "failureActions": [
+                    {
+                      "reference": "$components.failureActions.retry"
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "reference": "$components.parameters.userId",
+                      "value": "24"
+                    }
+                  ]
+                }
+              ],
+              "components": {
+                "parameters": {
+                  "userId": {
+                    "name": "userId",
+                    "in": "path",
+                    "value": "$inputs.userId"
+                  }
+                },
+                "successActions": {
+                  "done": {
+                    "name": "done",
+                    "type": "end"
+                  }
+                },
+                "failureActions": {
+                  "retry": {
+                    "name": "retry",
+                    "type": "retry",
+                    "retryAfter": 1,
+                    "retryLimit": 2
+                  }
+                }
+              }
+            }
+            """;
+
+        var result = await ArazzoDocument.ParseAsync(json, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+
+        var workflow = Assert.Single(result.Document!.Workflows!);
+        var workflowParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!));
+        var workflowSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!));
+        var workflowFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!));
+        var step = Assert.Single(workflow.Steps!);
+        var stepParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(step.Parameters!));
+        var stepSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(step.OnSuccess!));
+        var stepFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(step.OnFailure!));
+
+        Assert.Equal("userId", stepParameter.Name);
+        Assert.Equal(ParameterLocation.Path, stepParameter.In);
+        Assert.Equal("42", stepParameter.Value?.GetValue<string>());
+        Assert.Equal("userId", workflowParameter.Name);
+        Assert.Equal("24", workflowParameter.Value?.GetValue<string>());
+        Assert.Equal("done", stepSuccessAction.Name);
+        Assert.Equal(ArazzoSuccessType.End, stepSuccessAction.Type);
+        Assert.Equal("done", workflowSuccessAction.Name);
+        Assert.Equal("retry", stepFailureAction.Name);
+        Assert.Equal(ArazzoFailureType.Retry, stepFailureAction.Type);
+        Assert.Equal(1m, stepFailureAction.RetryAfter);
+        Assert.Equal(2ul, workflowFailureAction.RetryLimit);
+    }
+
+    [Fact]
     public void BaseArazzoReferenceHolder_CopyConstructor_ClonesReference()
     {
         var original = new TestReferenceHolder("shared");

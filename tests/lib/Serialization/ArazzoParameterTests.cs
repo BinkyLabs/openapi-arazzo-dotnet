@@ -105,6 +105,25 @@ public class ArazzoParameterTests
         Assert.Equal("25", parameter.Value?.GetValue<string>());
     }
 
+    [Theory]
+    [InlineData("$steps.getUser.outputs.userId")]
+    [InlineData("$components.successActions.shared")]
+    [InlineData("$components.parameters")]
+    public void Deserialize_WithInvalidReusableReference_AddsDiagnosticError(string reference)
+    {
+        var json = $$"""
+        {
+            "reference": "{{reference}}"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = Assert.IsType<ArazzoParameterReference>(ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext));
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("$components.parameters.<name>", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void Deserialize_WithExternalReference_ThrowsOpenApiException()
     {

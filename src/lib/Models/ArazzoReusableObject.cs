@@ -1,3 +1,4 @@
+using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -27,6 +28,7 @@ public class ArazzoReusableObject : IArazzoSerializable
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentException.ThrowIfNullOrEmpty(Reference);
+        ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference, null, nameof(ArazzoReusableObject));
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoReusableObjectReference, Reference);

@@ -29,11 +29,12 @@ internal static partial class ArazzoV1Deserializer
     {
         if (TryGetReferenceObject(node, out var jsonObject, out var referenceString))
         {
-            ThrowIfExternalReferenceNotSupported(referenceString, "Parameter");
-            var hostDocument = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
-            var reference = new ArazzoParameterReference(GetReferenceId(referenceString), hostDocument, GetExternalResource(referenceString));
-            reference.Reference.EnsureHostDocumentIsSet(hostDocument ?? new ArazzoDocument());
-            reference.Reference.SetJsonPointerPath(referenceString, context.GetLocation());
+            var reference = CreateLocalReusableReference(
+                referenceString,
+                context,
+                ReferenceType.Parameter,
+                "Parameter",
+                static (referenceId, hostDocument) => new ArazzoParameterReference(referenceId, hostDocument));
 
             if (jsonObject.TryGetPropertyValue(ArazzoConstants.ArazzoParameterValue, out var valueNode))
             {

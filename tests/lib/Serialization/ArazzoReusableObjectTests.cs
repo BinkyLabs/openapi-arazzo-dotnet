@@ -14,7 +14,7 @@ public class ArazzoReusableObjectTests
     {
         var reusableObject = new ArazzoReusableObject
         {
-            Reference = "$steps.getUser.outputs.userId",
+            Reference = "$components.parameters.userId",
             Value = "42"
         };
         using var textWriter = new StringWriter();
@@ -23,7 +23,7 @@ public class ArazzoReusableObjectTests
         var expectedJson =
         """
         {
-            "reference": "$steps.getUser.outputs.userId",
+            "reference": "$components.parameters.userId",
             "value": "42"
         }
         """;
@@ -40,7 +40,7 @@ public class ArazzoReusableObjectTests
     {
         var reusableObject = new ArazzoReusableObject
         {
-            Reference = "$steps.getUser.outputs.userId"
+            Reference = "$components.successActions.notify"
         };
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
@@ -48,7 +48,7 @@ public class ArazzoReusableObjectTests
         var expectedJson =
         """
         {
-            "reference": "$steps.getUser.outputs.userId"
+            "reference": "$components.successActions.notify"
         }
         """;
 
@@ -64,7 +64,7 @@ public class ArazzoReusableObjectTests
     {
         var reusableObject = new ArazzoReusableObject
         {
-            Reference = "$steps.getUser.outputs.userId"
+            Reference = "$components.parameters.userId"
         };
 
         Assert.Throws<ArgumentNullException>(() => reusableObject.SerializeAsV1(null!));
@@ -80,12 +80,30 @@ public class ArazzoReusableObjectTests
         Assert.Throws<ArgumentNullException>(() => reusableObject.SerializeAsV1(writer));
     }
 
+    [Theory]
+    [InlineData("$steps.getUser.outputs.userId")]
+    [InlineData("$components.inputs.user")]
+    [InlineData("external.json#$components.parameters.userId")]
+    public void SerializeAsV1_ThrowsWhenReferenceDoesNotTargetReusableComponent(string reference)
+    {
+        var reusableObject = new ArazzoReusableObject
+        {
+            Reference = reference
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => reusableObject.SerializeAsV1(writer));
+
+        Assert.Contains("must be a valid runtime expression", exception.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Deserialize_ShouldSetProperties()
     {
         var json = """
         {
-            "reference": "$steps.getUser.outputs.userId",
+            "reference": "$components.parameters.userId",
             "value": "99"
         }
         """;
@@ -94,7 +112,7 @@ public class ArazzoReusableObjectTests
 
         var reusableObject = ArazzoV1Deserializer.LoadReusableObject(jsonNode, parsingContext);
 
-        Assert.Equal("$steps.getUser.outputs.userId", reusableObject.Reference);
+        Assert.Equal("$components.parameters.userId", reusableObject.Reference);
         Assert.Equal("99", reusableObject.Value);
         Assert.Empty(parsingContext.Diagnostic.Errors);
     }
@@ -104,7 +122,7 @@ public class ArazzoReusableObjectTests
     {
         var json = """
         {
-            "reference": "$steps.getUser.outputs.userId"
+            "reference": "$components.failureActions.retry"
         }
         """;
         var jsonNode = JsonNode.Parse(json)!;
@@ -112,9 +130,31 @@ public class ArazzoReusableObjectTests
 
         var reusableObject = ArazzoV1Deserializer.LoadReusableObject(jsonNode, parsingContext);
 
-        Assert.Equal("$steps.getUser.outputs.userId", reusableObject.Reference);
+        Assert.Equal("$components.failureActions.retry", reusableObject.Reference);
         Assert.Null(reusableObject.Value);
         Assert.Empty(parsingContext.Diagnostic.Errors);
+    }
+
+    [Theory]
+    [InlineData("$steps.getUser.outputs.userId")]
+    [InlineData("$components.inputs.user")]
+    [InlineData(null)]
+    public void Deserialize_WithInvalidReference_AddsDiagnosticError(string? reference)
+    {
+        var json = reference is null
+            ? "{}"
+            : $$"""
+              {
+                  "reference": "{{reference}}"
+              }
+              """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var reusableObject = ArazzoV1Deserializer.LoadReusableObject(jsonNode, parsingContext);
+
+        Assert.Equal(reference, reusableObject.Reference);
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("must be a valid runtime expression", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -122,7 +162,7 @@ public class ArazzoReusableObjectTests
     {
         var json = """
         {
-            "reference": "$steps.getUser.outputs.userId",
+            "reference": "$components.parameters.userId",
             "x-flag": true
         }
         """;
@@ -131,7 +171,7 @@ public class ArazzoReusableObjectTests
 
         var reusableObject = ArazzoV1Deserializer.LoadReusableObject(jsonNode, parsingContext);
 
-        Assert.Equal("$steps.getUser.outputs.userId", reusableObject.Reference);
+        Assert.Equal("$components.parameters.userId", reusableObject.Reference);
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("x-flag is not a valid property"));
     }
 }
