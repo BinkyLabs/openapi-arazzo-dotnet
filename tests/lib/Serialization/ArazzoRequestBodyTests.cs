@@ -158,4 +158,37 @@ public class ArazzoRequestBodyTests
 
         Assert.Empty(json);
     }
+
+    [Fact]
+    public void SerializeAsV1_WithInvalidEmbeddedRuntimeExpressionInPayload_ThrowsArazzoSerializationException()
+    {
+        var requestBody = new ArazzoRequestBody
+        {
+            Payload = JsonNode.Parse("""{ "id": "{$response.statusCode}" }""")
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => requestBody.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoRequestBody.Payload contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Deserialize_WithInvalidEmbeddedRuntimeExpressionInPayload_AddsDiagnosticError()
+    {
+        var jsonNode = JsonNode.Parse(
+            """
+            {
+                "payload": {
+                    "id": "{$response.statusCode}"
+                }
+            }
+            """)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadRequestBody(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoRequestBody.Payload contains an invalid runtime expression", StringComparison.Ordinal));
+    }
 }

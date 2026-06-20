@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
+
 using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
@@ -39,6 +41,7 @@ internal static partial class ArazzoV1Deserializer
             if (jsonObject.TryGetPropertyValue(ArazzoConstants.ArazzoParameterValue, out var valueNode))
             {
                 reference.Value = valueNode?.DeepClone();
+                ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(reference.Value, context, $"{nameof(ArazzoParameterReference)}.{nameof(ArazzoParameterReference.Value)}");
             }
 
             return reference;
@@ -52,6 +55,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("Parameter", context);
         var parameter = new ArazzoParameter();
         mapNode.ParseMap(parameter, ParameterFixedFields, ParameterPatternFields, context);
+        ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(parameter.Value, context, $"{nameof(ArazzoParameter)}.{nameof(ArazzoParameter.Value)}");
 
         return parameter;
     }

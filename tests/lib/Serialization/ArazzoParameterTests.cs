@@ -164,4 +164,39 @@ public class ArazzoParameterTests
 
         Assert.Contains("do not support external resources", exception.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void SerializeAsV1_WithInvalidRuntimeExpressionValue_ThrowsArazzoSerializationException()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "id",
+            In = ParameterLocation.Query,
+            Value = "$response.statusCode"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => parameter.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoParameter.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Deserialize_WithInvalidRuntimeExpressionValue_AddsDiagnosticError()
+    {
+        var jsonNode = JsonNode.Parse(
+            """
+            {
+                "name": "id",
+                "in": "query",
+                "value": "$response.statusCode"
+            }
+            """)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoParameter.Value contains an invalid runtime expression", StringComparison.Ordinal));
+    }
 }

@@ -33,6 +33,7 @@ internal static partial class ArazzoV1Deserializer
             o.Outputs = v.CreateSimpleMap(static n => n.GetScalarValue(), c)
                 .Where(static x => x.Value is not null)
                 .ToDictionary(static x => x.Key, static x => x.Value!);
+            ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressions(o.Outputs, c, $"{nameof(ArazzoWorkflow)}.{nameof(ArazzoWorkflow.Outputs)}");
         } },
         { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
     };

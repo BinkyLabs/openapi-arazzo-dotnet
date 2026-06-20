@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
+
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
@@ -21,6 +23,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("RequestBody", context);
         var requestBody = new ArazzoRequestBody();
         mapNode.ParseMap(requestBody, RequestBodyFixedFields, RequestBodyPatternFields, context);
+        ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(requestBody.Payload, context, $"{nameof(ArazzoRequestBody)}.{nameof(ArazzoRequestBody.Payload)}");
 
         return requestBody;
     }

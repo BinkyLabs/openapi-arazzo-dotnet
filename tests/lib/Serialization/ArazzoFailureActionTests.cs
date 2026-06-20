@@ -23,7 +23,7 @@ public class ArazzoFailureActionTests
             {
                 new ArazzoCriterion
                 {
-                    Context = "$response.statusCode",
+                    Context = "$statusCode",
                     Condition = "500"
                 }
             },
@@ -45,7 +45,7 @@ public class ArazzoFailureActionTests
             "retryLimit": 3,
             "criteria": [
                 {
-                    "context": "$response.statusCode",
+                    "context": "$statusCode",
                     "condition": "500"
                 }
             ],

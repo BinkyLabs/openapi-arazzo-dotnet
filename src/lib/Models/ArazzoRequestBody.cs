@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -35,6 +36,7 @@ public class ArazzoRequestBody : IArazzoSerializable, IArazzoExtensible
     public void SerializeAsV1(IOpenApiWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Payload, $"{nameof(ArazzoRequestBody)}.{nameof(Payload)}");
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoRequestBodyContentType, ContentType);

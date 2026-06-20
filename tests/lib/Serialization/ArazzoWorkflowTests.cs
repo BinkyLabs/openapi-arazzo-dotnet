@@ -272,6 +272,29 @@ public class ArazzoWorkflowTests
     }
 
     [Fact]
+    public void SerializeAsV1_WithInvalidOutputExpression_ThrowsArazzoSerializationException()
+    {
+        var workflow = new ArazzoWorkflow
+        {
+            WorkflowId = "invalidOutputWorkflow",
+            Steps = new List<ArazzoStep>
+            {
+                new ArazzoStep { StepId = "step1" }
+            },
+            Outputs = new Dictionary<string, string>
+            {
+                ["userId"] = "response.body#/id"
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => workflow.SerializeAsV1(writer));
+
+        Assert.Contains("Values in ArazzoWorkflow.Outputs must be valid runtime expressions", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SerializeAsV1_WithNullSteps_ShouldThrowArazzoSerializationException()
     {
         var workflow = new ArazzoWorkflow
@@ -436,6 +459,26 @@ public class ArazzoWorkflowTests
 
         Assert.NotNull(workflow.Outputs);
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Invalid key: 'invalid key'", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Deserialize_WithInvalidOutputExpression_AddsDiagnosticError()
+    {
+        var json = """
+        {
+            "workflowId": "invalidOutputWorkflow",
+            "outputs": {
+                "userId": "response.body#/id"
+            }
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var workflow = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+
+        Assert.NotNull(workflow.Outputs);
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Values in ArazzoWorkflow.Outputs must be valid runtime expressions", StringComparison.Ordinal));
     }
 
     [Fact]

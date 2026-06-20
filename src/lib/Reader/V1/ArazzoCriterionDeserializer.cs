@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
+
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
@@ -36,6 +38,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("Criterion", context);
         var criterion = new ArazzoCriterion();
         mapNode.ParseMap(criterion, CriterionFixedFields, CriterionPatternFields, context);
+        ArazzoRuntimeExpressionValidator.ValidateDeserializationExpression(criterion.Context, context, $"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Context)}");
 
         return criterion;
     }

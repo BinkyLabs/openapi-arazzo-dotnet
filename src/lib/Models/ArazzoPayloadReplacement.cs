@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -33,6 +34,7 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
 
         ArgumentException.ThrowIfNullOrEmpty(Target);
         ArgumentNullException.ThrowIfNull(Value);
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Value, $"{nameof(ArazzoPayloadReplacement)}.{nameof(Value)}");
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoPayloadReplacementTarget, Target);

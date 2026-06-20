@@ -21,7 +21,7 @@ public class ArazzoSuccessActionTests
             {
                 new ArazzoCriterion
                 {
-                    Context = "$response.statusCode",
+                    Context = "$statusCode",
                     Condition = "200"
                 }
             },
@@ -41,7 +41,7 @@ public class ArazzoSuccessActionTests
             "stepId": "step456",
             "criteria": [
                 {
-                    "context": "$response.statusCode",
+                    "context": "$statusCode",
                     "condition": "200"
                 }
             ],

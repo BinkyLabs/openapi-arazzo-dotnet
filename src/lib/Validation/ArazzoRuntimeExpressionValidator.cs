@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
@@ -21,6 +22,9 @@ internal static partial class ArazzoRuntimeExpressionValidator
 
     [GeneratedRegex(RuntimeExpressionPattern, RegexOptions.CultureInvariant)]
     private static partial Regex RuntimeExpressionRegex();
+
+    [GeneratedRegex(@"\{(\$[^{}]+)\}", RegexOptions.CultureInvariant)]
+    private static partial Regex BracedRuntimeExpressionRegex();
 
     /// <summary>
     /// Determines whether the supplied value matches the Arazzo runtime-expression ABNF translated to a regular expression.
@@ -49,6 +53,22 @@ internal static partial class ArazzoRuntimeExpressionValidator
         }
     }
 
+    internal static void ValidateSerializationExpression(string? expression, string elementName)
+    {
+        if (!string.IsNullOrEmpty(expression) && !IsRuntimeExpression(expression))
+        {
+            throw new ArazzoSerializationException($"{elementName} must be a valid runtime expression. Invalid value: '{expression}'.");
+        }
+    }
+
+    internal static void ValidateSerializationExpressionStrings(JsonNode? node, string elementName)
+    {
+        foreach (var error in ValidateExpressionStrings(node, elementName))
+        {
+            throw new ArazzoSerializationException(error);
+        }
+    }
+
     internal static void ValidateDeserializationExpressions(IEnumerable<KeyValuePair<string, string>>? expressions, ParsingContext context, string collectionName)
     {
         if (expressions is null)
@@ -61,6 +81,79 @@ internal static partial class ArazzoRuntimeExpressionValidator
             if (!IsRuntimeExpression(value))
             {
                 context.Diagnostic.Errors.Add(new OpenApiError($"{context.GetLocation()}/{EscapePointerSegment(key)}", $"Values in {collectionName} must be valid runtime expressions. Invalid value for key '{key}': '{value}'."));
+            }
+        }
+    }
+
+    internal static void ValidateDeserializationExpression(string? expression, ParsingContext context, string elementName)
+    {
+        if (!string.IsNullOrEmpty(expression) && !IsRuntimeExpression(expression))
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{elementName} must be a valid runtime expression. Invalid value: '{expression}'."));
+        }
+    }
+
+    internal static void ValidateDeserializationExpressionStrings(JsonNode? node, ParsingContext context, string elementName)
+    {
+        foreach (var error in ValidateExpressionStrings(node, elementName))
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
+        }
+    }
+
+    private static IEnumerable<string> ValidateExpressionStrings(JsonNode? node, string elementName)
+    {
+        if (node is null)
+        {
+            yield break;
+        }
+
+        if (node is JsonValue value && value.TryGetValue<string>(out var stringValue))
+        {
+            foreach (var error in ValidateExpressionString(stringValue, elementName))
+            {
+                yield return error;
+            }
+            yield break;
+        }
+
+        if (node is JsonArray array)
+        {
+            foreach (var item in array)
+            {
+                foreach (var error in ValidateExpressionStrings(item, elementName))
+                {
+                    yield return error;
+                }
+            }
+            yield break;
+        }
+
+        if (node is JsonObject jsonObject)
+        {
+            foreach (var item in jsonObject.Select(static property => property.Value))
+            {
+                foreach (var error in ValidateExpressionStrings(item, elementName))
+                {
+                    yield return error;
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<string> ValidateExpressionString(string value, string elementName)
+    {
+        if (value.StartsWith("$", StringComparison.Ordinal) && !IsRuntimeExpression(value))
+        {
+            yield return $"{elementName} contains an invalid runtime expression: '{value}'.";
+        }
+
+        foreach (Match match in BracedRuntimeExpressionRegex().Matches(value))
+        {
+            var expression = match.Groups[1].Value;
+            if (!IsRuntimeExpression(expression))
+            {
+                yield return $"{elementName} contains an invalid runtime expression: '{expression}'.";
             }
         }
     }

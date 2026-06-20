@@ -63,4 +63,37 @@ public class ArazzoPayloadReplacementTests
         var extension = Assert.IsType<JsonNodeExtension>(replacement.Extensions!["x-flag"]);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("true"), extension.Node));
     }
+
+    [Fact]
+    public void SerializeAsV1_WithInvalidRuntimeExpressionValue_ThrowsArazzoSerializationException()
+    {
+        var replacement = new ArazzoPayloadReplacement
+        {
+            Target = "/data/id",
+            Value = JsonNode.Parse("\"$response.statusCode\"")
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => replacement.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoPayloadReplacement.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Deserialize_WithInvalidRuntimeExpressionValue_AddsDiagnosticError()
+    {
+        var jsonNode = JsonNode.Parse(
+            """
+            {
+                "target": "/data/id",
+                "value": "$response.statusCode"
+            }
+            """)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadPayloadReplacement(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoPayloadReplacement.Value contains an invalid runtime expression", StringComparison.Ordinal));
+    }
 }

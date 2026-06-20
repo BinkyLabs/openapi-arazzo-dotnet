@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -32,6 +33,7 @@ public class ArazzoParameter : IArazzoParameter, IArazzoExtensible
 
         ArgumentException.ThrowIfNullOrEmpty(Name);
         ArgumentNullException.ThrowIfNull(Value);
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Value, $"{nameof(ArazzoParameter)}.{nameof(Value)}");
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterName, Name);

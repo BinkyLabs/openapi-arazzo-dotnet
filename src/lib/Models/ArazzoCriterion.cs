@@ -1,3 +1,4 @@
+using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -37,6 +38,7 @@ public class ArazzoCriterion : IArazzoSerializable, IArazzoExtensible
         ArgumentNullException.ThrowIfNull(writer);
 
         ArgumentException.ThrowIfNullOrEmpty(Condition);
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context, $"{nameof(ArazzoCriterion)}.{nameof(Context)}");
 
         writer.WriteStartObject();
 

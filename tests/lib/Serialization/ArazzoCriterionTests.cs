@@ -14,7 +14,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "response",
+            Context = "$response.body",
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.Simple,
@@ -32,7 +32,7 @@ public class ArazzoCriterionTests
         var expectedJson =
         """
         {
-            "context": "response",
+            "context": "$response.body",
             "type": "simple",
             "condition": "$.status == 200",
             "x-extra": {
@@ -53,7 +53,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "response",
+            Context = "$response.body",
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.Regex,
@@ -67,7 +67,7 @@ public class ArazzoCriterionTests
         var expectedJson =
         """
         {
-            "context": "response",
+            "context": "$response.body",
             "type": "regex",
             "condition": "/^[0-9]{3}$/"
         }
@@ -85,7 +85,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "response",
+            Context = "$response.body",
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.JsonPath,
@@ -99,7 +99,7 @@ public class ArazzoCriterionTests
         var expectedJson =
         """
         {
-            "context": "response",
+            "context": "$response.body",
             "type": {
                 "type": "jsonpath",
                 "version": "draft-goessner-dispatch-jsonpath-00"
@@ -120,7 +120,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "response",
+            Context = "$response.body",
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.XPath,
@@ -134,7 +134,7 @@ public class ArazzoCriterionTests
         var expectedJson =
         """
         {
-            "context": "response",
+            "context": "$response.body",
             "type": {
                 "type": "xpath",
                 "version": "xpath-30"
@@ -217,7 +217,7 @@ public class ArazzoCriterionTests
     {
         var json = """
         {
-            "context": "response",
+            "context": "$response.body",
             "type": "simple",
             "condition": "$.status == 200",
             "x-flag": true
@@ -228,7 +228,7 @@ public class ArazzoCriterionTests
 
         var criterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
-        Assert.Equal("response", criterion.Context);
+        Assert.Equal("$response.body", criterion.Context);
         Assert.NotNull(criterion.Type);
         Assert.Equal(ArazzoCriterionExpressionTypeType.Simple, criterion.Type.Type);
         Assert.Null(criterion.Type.Version);
@@ -264,7 +264,7 @@ public class ArazzoCriterionTests
     {
         var json = """
         {
-            "context": "response",
+            "context": "$response.body",
             "type": {
                 "type": "jsonpath",
                 "version": "draft-goessner-dispatch-jsonpath-00"
@@ -277,7 +277,7 @@ public class ArazzoCriterionTests
 
         var criterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
-        Assert.Equal("response", criterion.Context);
+        Assert.Equal("$response.body", criterion.Context);
         Assert.NotNull(criterion.Type);
         Assert.Equal(ArazzoCriterionExpressionTypeType.JsonPath, criterion.Type.Type);
         Assert.Equal(ArazzoCriterionExpressionVersion.DraftGoessnerDispatchJsonPath00, criterion.Type.Version);
@@ -332,7 +332,7 @@ public class ArazzoCriterionTests
         // Serialize
         var originalCriterion = new ArazzoCriterion
         {
-            Context = "response",
+            Context = "$response.body",
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.Simple,
@@ -363,7 +363,7 @@ public class ArazzoCriterionTests
         // Serialize
         var originalCriterion = new ArazzoCriterion
         {
-            Context = "response",
+            Context = "$response.body",
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.JsonPath,
@@ -387,5 +387,38 @@ public class ArazzoCriterionTests
         Assert.Equal(originalCriterion.Type.Type, deserializedCriterion.Type.Type);
         Assert.Equal(originalCriterion.Type.Version, deserializedCriterion.Type.Version);
         Assert.Equal(originalCriterion.Condition, deserializedCriterion.Condition);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithInvalidContext_ThrowsArazzoSerializationException()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Context = "response",
+            Condition = "true"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoCriterion.Context must be a valid runtime expression", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Deserialize_WithInvalidContext_AddsDiagnosticError()
+    {
+        var jsonNode = JsonNode.Parse(
+            """
+            {
+                "context": "response",
+                "condition": "true"
+            }
+            """)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoCriterion.Context must be a valid runtime expression", StringComparison.Ordinal));
     }
 }
