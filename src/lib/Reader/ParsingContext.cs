@@ -286,6 +286,7 @@ public class ParsingContext
                 ValidateWorkflowStepIds(doc.Workflows);
                 ValidateStepOperationReferenceFields(doc.Workflows);
                 ValidateResultActionReferenceFields(doc.Workflows);
+                ArazzoSemanticReferenceValidator.ValidateDeserialization(doc, this);
             }
 
             ValidateWorkflowParameters(doc);

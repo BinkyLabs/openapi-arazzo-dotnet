@@ -183,6 +183,120 @@ public class ArazzoDocumentTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "The serialized JSON does not match the expected JSON.");
     }
 
+    [Theory]
+    [MemberData(nameof(UnresolvedSemanticReferenceDocuments))]
+    public void SerializeAsV1_WithUnresolvedSemanticReference_ShouldThrowArazzoSerializationException(ArazzoDocument document, string expectedMessage)
+    {
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1(writer));
+
+        Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
+    }
+
+    public static IEnumerable<object[]> UnresolvedSemanticReferenceDocuments()
+    {
+        yield return
+        [
+            CreateDocument(new ArazzoStep { StepId = "step1", WorkflowId = "missingWorkflow" }),
+            "references unknown workflowId 'missingWorkflow'"
+        ];
+        yield return
+        [
+            CreateDocument(
+                new ArazzoStep { StepId = "step1" },
+                successActions: [new ArazzoSuccessAction { Name = "goto", Type = ArazzoSuccessType.Goto, StepId = "missingStep" }]),
+            "references unknown stepId 'missingStep'"
+        ];
+        yield return
+        [
+            CreateDocument(
+                new ArazzoStep
+                {
+                    StepId = "step1",
+                    Parameters = [new ArazzoParameterReference("missing")]
+                }),
+            "reference '$components.parameters.missing' does not resolve"
+        ];
+        yield return
+        [
+            CreateDocument(new ArazzoStep { StepId = "step1", OperationPath = "{$sourceDescriptions.missing.url}#/paths/~1users/get" }),
+            "references unknown sourceDescription 'missing'"
+        ];
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithResolvedSemanticReferences_ShouldSerialize()
+    {
+        var document = CreateDocument(
+            new ArazzoStep
+            {
+                StepId = "step1",
+                OperationPath = "{$sourceDescriptions.source1.url}#/paths/~1users/get",
+                Parameters = [new ArazzoParameterReference("shared")]
+            },
+            successActions: [new ArazzoSuccessAction { Name = "goto", Type = ArazzoSuccessType.Goto, StepId = "step1" }],
+            parameters: new Dictionary<string, ArazzoParameter>
+            {
+                ["shared"] = new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "1" }
+            });
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        document.SerializeAsV1(writer);
+        var json = JsonNode.Parse(textWriter.ToString())!;
+
+        Assert.NotNull(json["workflows"]);
+    }
+
+    private static ArazzoDocument CreateDocument(
+        ArazzoStep step,
+        IList<IArazzoSuccessAction>? successActions = null,
+        IDictionary<string, ArazzoParameter>? parameters = null)
+    {
+        return new ArazzoDocument
+        {
+            Info = new ArazzoInfo
+            {
+                Title = "Test Arazzo",
+                Version = "1.0.0"
+            },
+            SourceDescriptions = new List<ArazzoSourceDescription>
+            {
+                new ArazzoSourceDescription
+                {
+                    Name = "source1",
+                    Url = new Uri("https://example.com/api"),
+                    Type = ArazzoDescriptionType.OpenAPI
+                }
+            },
+            Workflows = new List<ArazzoWorkflow>
+            {
+                new ArazzoWorkflow
+                {
+                    WorkflowId = "workflow1",
+                    Steps = new List<ArazzoStep> { step },
+                    SuccessActions = successActions
+                },
+                new ArazzoWorkflow
+                {
+                    WorkflowId = "child",
+                    Steps = new List<ArazzoStep>
+                    {
+                        new ArazzoStep { StepId = "childStep" }
+                    }
+                }
+            },
+            Components = parameters is null
+                ? null
+                : new ArazzoComponent
+                {
+                    Parameters = parameters
+                }
+        };
+    }
+
     [Fact]
     public void Deserialize_ShouldSetPropertiesCorrectly()
     {
