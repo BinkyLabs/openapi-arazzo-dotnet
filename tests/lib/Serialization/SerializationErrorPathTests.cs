@@ -132,7 +132,7 @@ public class SerializationErrorPathTests
     {
         var c = new ArazzoCriterion { Condition = "" };
         var w = MakeWriter(out _);
-        Assert.Throws<ArgumentException>(() => c.SerializeAsV1(w));
+        Assert.Throws<ArazzoSerializationException>(() => c.SerializeAsV1(w));
     }
 
     [Fact]
@@ -140,6 +140,7 @@ public class SerializationErrorPathTests
     {
         var c = new ArazzoCriterion
         {
+            Context = "$response.body",
             Condition = "x==1",
             Type = new ArazzoCriterionExpressionType
             {
@@ -156,6 +157,7 @@ public class SerializationErrorPathTests
     {
         var c = new ArazzoCriterion
         {
+            Context = "$response.body",
             Condition = "x==1",
             Type = new ArazzoCriterionExpressionType { Type = ArazzoCriterionExpressionTypeType.Simple }
         };
@@ -170,6 +172,7 @@ public class SerializationErrorPathTests
     {
         var c = new ArazzoCriterion
         {
+            Context = "$response.body",
             Condition = "$.a == 1",
             Type = new ArazzoCriterionExpressionType
             {

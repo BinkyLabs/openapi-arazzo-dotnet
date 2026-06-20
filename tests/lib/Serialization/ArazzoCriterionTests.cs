@@ -179,6 +179,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
+            Context = "$response.body",
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.Simple,
@@ -198,6 +199,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
+            Context = "$response.body",
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.Regex,
@@ -243,6 +245,7 @@ public class ArazzoCriterionTests
     {
         var json = """
         {
+            "context": "$response.body",
             "type": "regex",
             "condition": "/^[0-9]+$/"
         }
@@ -252,7 +255,7 @@ public class ArazzoCriterionTests
 
         var criterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
-        Assert.Null(criterion.Context);
+        Assert.Equal("$response.body", criterion.Context);
         Assert.NotNull(criterion.Type);
         Assert.Equal(ArazzoCriterionExpressionTypeType.Regex, criterion.Type.Type);
         Assert.Null(criterion.Type.Version);
@@ -289,6 +292,7 @@ public class ArazzoCriterionTests
     {
         var json = """
         {
+            "context": "$response.body",
             "type": {
                 "type": "xpath",
                 "version": "xpath-20"
@@ -301,7 +305,7 @@ public class ArazzoCriterionTests
 
         var criterion = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
-        Assert.Null(criterion.Context);
+        Assert.Equal("$response.body", criterion.Context);
         Assert.NotNull(criterion.Type);
         Assert.Equal(ArazzoCriterionExpressionTypeType.XPath, criterion.Type.Type);
         Assert.Equal(ArazzoCriterionExpressionVersion.XPath20, criterion.Type.Version);
@@ -406,6 +410,37 @@ public class ArazzoCriterionTests
     }
 
     [Fact]
+    public void SerializeAsV1_WithoutCondition_ThrowsArazzoSerializationException()
+    {
+        var criterion = new ArazzoCriterion();
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoCriterion.Condition is required", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithTypeAndNoContext_ThrowsArazzoSerializationException()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Type = new ArazzoCriterionExpressionType
+            {
+                Type = ArazzoCriterionExpressionTypeType.Regex
+            },
+            Condition = "/^[0-9]+$/"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoCriterion.Context is required when ArazzoCriterion.Type is specified", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Deserialize_WithInvalidContext_AddsDiagnosticError()
     {
         var jsonNode = JsonNode.Parse(
@@ -420,5 +455,33 @@ public class ArazzoCriterionTests
         _ = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoCriterion.Context must be a valid runtime expression", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Deserialize_WithoutCondition_AddsDiagnosticError()
+    {
+        var jsonNode = JsonNode.Parse("{}")!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoCriterion.Condition is required", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Deserialize_WithTypeAndNoContext_AddsDiagnosticError()
+    {
+        var jsonNode = JsonNode.Parse(
+            """
+            {
+                "type": "regex",
+                "condition": "/^[0-9]+$/"
+            }
+            """)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadCriterion(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoCriterion.Context is required when ArazzoCriterion.Type is specified", StringComparison.Ordinal));
     }
 }

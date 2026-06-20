@@ -37,7 +37,7 @@ public class ArazzoCriterion : IArazzoSerializable, IArazzoExtensible
     {
         ArgumentNullException.ThrowIfNull(writer);
 
-        ArgumentException.ThrowIfNullOrEmpty(Condition);
+        ArazzoCriterionValidator.ValidateSerialization(this);
         ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context, $"{nameof(ArazzoCriterion)}.{nameof(Context)}");
 
         writer.WriteStartObject();

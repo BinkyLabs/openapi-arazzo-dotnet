@@ -38,6 +38,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("Criterion", context);
         var criterion = new ArazzoCriterion();
         mapNode.ParseMap(criterion, CriterionFixedFields, CriterionPatternFields, context);
+        ArazzoCriterionValidator.ValidateDeserialization(criterion, context);
         ArazzoRuntimeExpressionValidator.ValidateDeserializationExpression(criterion.Context, context, $"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Context)}");
 
         return criterion;
