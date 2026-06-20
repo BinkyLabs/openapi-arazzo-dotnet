@@ -6,7 +6,7 @@ namespace BinkyLabs.OpenApi.Arazzo.Validation;
 
 internal static class ArazzoReusableObjectReferenceValidator
 {
-    private static readonly ReferenceType[] ReusableReferenceTypes =
+    private static readonly HashSet<ReferenceType> ReusableReferenceTypes =
     [
         ReferenceType.Parameter,
         ReferenceType.SuccessAction,
@@ -16,7 +16,8 @@ internal static class ArazzoReusableObjectReferenceValidator
     internal static bool IsReusableObjectReference(string? reference, ReferenceType? referenceType = null)
     {
         if (!ArazzoRuntimeExpressionValidator.IsRuntimeExpression(reference) ||
-            !reference!.StartsWith("$components.", StringComparison.Ordinal))
+            string.IsNullOrEmpty(reference) ||
+            !reference.StartsWith("$components.", StringComparison.Ordinal))
         {
             return false;
         }
