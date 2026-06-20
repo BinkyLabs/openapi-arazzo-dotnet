@@ -12,7 +12,14 @@ public class ArazzoYamlReaderTests
         info:
           title: T
           version: '1'
-        sourceDescriptions: []
+        sourceDescriptions:
+          - name: source1
+            url: https://example.com/api
+            type: openapi
+        workflows:
+          - workflowId: workflow1
+            steps:
+              - stepId: step1
         """;
 
     [Fact]

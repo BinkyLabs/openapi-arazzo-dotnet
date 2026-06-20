@@ -14,7 +14,23 @@ public sealed partial class ArazzoModelFactoryTests
             "title": "Sample Arazzo",
             "version": "1.0.0"
           },
-          "sourceDescriptions": []
+          "sourceDescriptions": [
+            {
+              "name": "source1",
+              "url": "https://example.com/api",
+              "type": "openapi"
+            }
+          ],
+          "workflows": [
+            {
+              "workflowId": "workflow1",
+              "steps": [
+                {
+                  "stepId": "step1"
+                }
+              ]
+            }
+          ]
         }
         """;
 
@@ -24,7 +40,14 @@ public sealed partial class ArazzoModelFactoryTests
         info:
           title: Sample Arazzo
           version: 1.0.0
-        sourceDescriptions: []
+        sourceDescriptions:
+          - name: source1
+            url: https://example.com/api
+            type: openapi
+        workflows:
+          - workflowId: workflow1
+            steps:
+              - stepId: step1
         """;
 
     [Fact]

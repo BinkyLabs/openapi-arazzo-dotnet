@@ -37,6 +37,9 @@ public class ArazzoInfo : IArazzoSerializable, IArazzoExtensible
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
+        ArgumentException.ThrowIfNullOrEmpty(Title);
+        ArgumentException.ThrowIfNullOrEmpty(Version);
+
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoInfoTitle, Title);
         writer.WriteProperty(ArazzoConstants.ArazzoInfoVersion, Version);

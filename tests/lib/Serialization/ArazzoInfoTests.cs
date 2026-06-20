@@ -71,4 +71,30 @@ public class ArazzoInfoTests
         Assert.Equal("A concise summary", arazzoInfo.Summary);
         Assert.Equal("A longer description", arazzoInfo.Description);
     }
+
+    [Fact]
+    public void SerializeAsV1_WithMissingTitle_ShouldThrowArgumentNullException()
+    {
+        var arazzoInfo = new ArazzoInfo
+        {
+            Version = "1.0.0"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => arazzoInfo.SerializeAsV1(writer));
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithMissingVersion_ShouldThrowArgumentNullException()
+    {
+        var arazzoInfo = new ArazzoInfo
+        {
+            Title = "Test Arazzo"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => arazzoInfo.SerializeAsV1(writer));
+    }
 }

@@ -121,7 +121,11 @@ public class ArazzoWorkflowTests
     {
         var workflow = new ArazzoWorkflow
         {
-            WorkflowId = "minimalWorkflow"
+            WorkflowId = "minimalWorkflow",
+            Steps = new List<ArazzoStep>
+            {
+                new ArazzoStep { StepId = "step1" }
+            }
         };
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
@@ -129,7 +133,12 @@ public class ArazzoWorkflowTests
         var expectedJson =
         """
         {
-            "workflowId": "minimalWorkflow"
+            "workflowId": "minimalWorkflow",
+            "steps": [
+                {
+                    "stepId": "step1"
+                }
+            ]
         }
         """;
 
@@ -206,11 +215,15 @@ public class ArazzoWorkflowTests
     }
 
     [Fact]
-    public void SerializeAsV1_ShouldHandleNullCollections()
+    public void SerializeAsV1_ShouldHandleNullOptionalCollections()
     {
         var workflow = new ArazzoWorkflow
         {
-            WorkflowId = "emptyWorkflow"
+            WorkflowId = "emptyWorkflow",
+            Steps = new List<ArazzoStep>
+            {
+                new ArazzoStep { StepId = "step1" }
+            }
         };
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
@@ -218,7 +231,12 @@ public class ArazzoWorkflowTests
         var expectedJson =
         """
         {
-            "workflowId": "emptyWorkflow"
+            "workflowId": "emptyWorkflow",
+            "steps": [
+                {
+                    "stepId": "step1"
+                }
+            ]
         }
         """;
 
@@ -236,6 +254,10 @@ public class ArazzoWorkflowTests
         var workflow = new ArazzoWorkflow
         {
             WorkflowId = "invalidOutputWorkflow",
+            Steps = new List<ArazzoStep>
+            {
+                new ArazzoStep { StepId = "step1" }
+            },
             Outputs = new Dictionary<string, string>
             {
                 ["invalid key"] = "$response.body#/id"
@@ -247,6 +269,37 @@ public class ArazzoWorkflowTests
         var exception = Assert.Throws<ArazzoSerializationException>(() => workflow.SerializeAsV1(writer));
 
         Assert.Contains("Invalid key: 'invalid key'", exception.Message);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithNullSteps_ShouldThrowArazzoSerializationException()
+    {
+        var workflow = new ArazzoWorkflow
+        {
+            WorkflowId = "missingStepsWorkflow"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => workflow.SerializeAsV1(writer));
+
+        Assert.Equal("Steps is required and must contain at least one element for ArazzoWorkflow serialization.", exception.Message);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithEmptySteps_ShouldThrowArazzoSerializationException()
+    {
+        var workflow = new ArazzoWorkflow
+        {
+            WorkflowId = "emptyStepsWorkflow",
+            Steps = new List<ArazzoStep>()
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => workflow.SerializeAsV1(writer));
+
+        Assert.Equal("Steps is required and must contain at least one element for ArazzoWorkflow serialization.", exception.Message);
     }
 
     [Fact]

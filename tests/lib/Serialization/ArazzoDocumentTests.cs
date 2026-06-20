@@ -36,7 +36,11 @@ public class ArazzoDocumentTests
                 new ArazzoWorkflow
                 {
                     WorkflowId = "testWorkflow",
-                    Summary = "Test workflow"
+                    Summary = "Test workflow",
+                    Steps = new List<ArazzoStep>
+                    {
+                        new ArazzoStep { StepId = "step1" }
+                    }
                 }
             },
             Components = new ArazzoComponent
@@ -77,7 +81,12 @@ public class ArazzoDocumentTests
             "workflows": [
                 {
                     "workflowId": "testWorkflow",
-                    "summary": "Test workflow"
+                    "summary": "Test workflow",
+                    "steps": [
+                        {
+                            "stepId": "step1"
+                        }
+                    ]
                 }
             ],
             "components": {
@@ -124,7 +133,14 @@ public class ArazzoDocumentTests
             },
             Workflows = new List<ArazzoWorkflow>
             {
-                new ArazzoWorkflow { WorkflowId = "workflow1" }
+                new ArazzoWorkflow
+                {
+                    WorkflowId = "workflow1",
+                    Steps = new List<ArazzoStep>
+                    {
+                        new ArazzoStep { StepId = "step1" }
+                    }
+                }
             }
         };
         using var textWriter = new StringWriter();
@@ -147,7 +163,12 @@ public class ArazzoDocumentTests
             ],
             "workflows": [
                 {
-                    "workflowId": "workflow1"
+                    "workflowId": "workflow1",
+                    "steps": [
+                        {
+                            "stepId": "step1"
+                        }
+                    ]
                 }
             ]
         }
@@ -384,8 +405,23 @@ public class ArazzoDocumentTests
                 "title": "Loaded from stream",
                 "version": "1.0.0"
               },
-              "sourceDescriptions": [],
-              "workflows": []
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api",
+                  "type": "openapi"
+                }
+              ],
+              "workflows": [
+                {
+                  "workflowId": "workflow1",
+                  "steps": [
+                    {
+                      "stepId": "step1"
+                    }
+                  ]
+                }
+              ]
             }
             """;
 
@@ -408,8 +444,23 @@ public class ArazzoDocumentTests
                 "title": "Parsed document",
                 "version": "1.0.0"
               },
-              "sourceDescriptions": [],
-              "workflows": []
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api",
+                  "type": "openapi"
+                }
+              ],
+              "workflows": [
+                {
+                  "workflowId": "workflow1",
+                  "steps": [
+                    {
+                      "stepId": "step1"
+                    }
+                  ]
+                }
+              ]
             }
             """;
 
@@ -430,8 +481,23 @@ public class ArazzoDocumentTests
                 "title": "Loaded from file",
                 "version": "1.0.0"
               },
-              "sourceDescriptions": [],
-              "workflows": []
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api",
+                  "type": "openapi"
+                }
+              ],
+              "workflows": [
+                {
+                  "workflowId": "workflow1",
+                  "steps": [
+                    {
+                      "stepId": "step1"
+                    }
+                  ]
+                }
+              ]
             }
             """;
 

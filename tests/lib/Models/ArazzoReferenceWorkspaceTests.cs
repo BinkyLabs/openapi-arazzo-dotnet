@@ -497,7 +497,13 @@ public class ArazzoReferenceWorkspaceTests
                 "title": "Reusable references",
                 "version": "1.0.0"
               },
-              "sourceDescriptions": [],
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api",
+                  "type": "openapi"
+                }
+              ],
               "workflows": [
                 {
                   "workflowId": "wf",

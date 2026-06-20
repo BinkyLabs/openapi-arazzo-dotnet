@@ -128,7 +128,23 @@ public class ParsingContextTests
             {
               "arazzo": "1.0.0",
               "info": { "title": "T", "version": "1" },
-              "sourceDescriptions": []
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api",
+                  "type": "openapi"
+                }
+              ],
+              "workflows": [
+                {
+                  "workflowId": "wf",
+                  "steps": [
+                    {
+                      "stepId": "step1"
+                    }
+                  ]
+                }
+              ]
             }
             """)!;
 
@@ -147,7 +163,23 @@ public class ParsingContextTests
             {
               "arazzo": "1.0.1",
               "info": { "title": "T", "version": "1" },
-              "sourceDescriptions": []
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api",
+                  "type": "openapi"
+                }
+              ],
+              "workflows": [
+                {
+                  "workflowId": "wf",
+                  "steps": [
+                    {
+                      "stepId": "step1"
+                    }
+                  ]
+                }
+              ]
             }
             """)!;
 
@@ -165,7 +197,23 @@ public class ParsingContextTests
         var jsonNode = JsonNode.Parse("""
             {
               "arazzo": "1.0.0",
-              "sourceDescriptions": []
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api",
+                  "type": "openapi"
+                }
+              ],
+              "workflows": [
+                {
+                  "workflowId": "wf",
+                  "steps": [
+                    {
+                      "stepId": "step1"
+                    }
+                  ]
+                }
+              ]
             }
             """)!;
 
@@ -182,10 +230,21 @@ public class ParsingContextTests
             {
               "arazzo": "1.0.0",
               "info": { "title": "T", "version": "1" },
-              "sourceDescriptions": [],
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api",
+                  "type": "openapi"
+                }
+              ],
               "workflows": [
                 {
                   "workflowId": "wf",
+                  "steps": [
+                    {
+                      "stepId": "step1"
+                    }
+                  ],
                   "parameters": [
                     { "name": "token", "in": "header", "value": "one" },
                     { "name": "token", "in": "query", "value": "two" }
@@ -199,6 +258,25 @@ public class ParsingContextTests
 
         Assert.NotNull(document);
         Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains("duplicate parameter name 'token'", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "Info.Title is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "Info.Version is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "SourceDescriptions is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "SourceDescriptions is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }] }""", "Workflows is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [] }""", "Workflows is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf" }] }""", "steps is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [] }] }""", "steps is a REQUIRED field")]
+    public void Parse_MissingRequiredFields_AddsDiagnosticError(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
     }
 
     [Fact]

@@ -260,8 +260,50 @@ public class ParsingContext
             {
                 Diagnostic.Errors.Add(new OpenApiError("", $"Info is a REQUIRED field at {GetLocation()}"));
             }
+            else
+            {
+                ValidateInfoRequiredFields(doc.Info);
+            }
+
+            if (doc.SourceDescriptions is not { Count: > 0 })
+            {
+                Diagnostic.Errors.Add(new OpenApiError("", $"SourceDescriptions is a REQUIRED field and MUST contain at least one entry at {GetLocation()}"));
+            }
+
+            if (doc.Workflows is not { Count: > 0 })
+            {
+                Diagnostic.Errors.Add(new OpenApiError("", $"Workflows is a REQUIRED field and MUST contain at least one entry at {GetLocation()}"));
+            }
+            else
+            {
+                ValidateWorkflowRequiredFields(doc.Workflows);
+            }
 
             ValidateWorkflowParameters(doc);
+        }
+    }
+
+    private void ValidateInfoRequiredFields(ArazzoInfo info)
+    {
+        if (string.IsNullOrEmpty(info.Title))
+        {
+            Diagnostic.Errors.Add(new OpenApiError("", $"Info.Title is a REQUIRED field at {GetLocation()}"));
+        }
+
+        if (string.IsNullOrEmpty(info.Version))
+        {
+            Diagnostic.Errors.Add(new OpenApiError("", $"Info.Version is a REQUIRED field at {GetLocation()}"));
+        }
+    }
+
+    private void ValidateWorkflowRequiredFields(IEnumerable<ArazzoWorkflow> workflows)
+    {
+        foreach (var workflow in workflows)
+        {
+            if (workflow.Steps is not { Count: > 0 })
+            {
+                Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' steps is a REQUIRED field and MUST contain at least one entry."));
+            }
         }
     }
 

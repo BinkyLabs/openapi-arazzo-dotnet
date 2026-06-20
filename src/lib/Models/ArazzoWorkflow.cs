@@ -74,6 +74,10 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         ArgumentNullException.ThrowIfNull(writer);
 
         ArgumentException.ThrowIfNullOrEmpty(WorkflowId);
+        if (Steps is not { Count: > 0 })
+        {
+            throw new ArazzoSerializationException("Steps is required and must contain at least one element for ArazzoWorkflow serialization.");
+        }
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoWorkflowWorkflowId, WorkflowId);
