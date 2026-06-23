@@ -1,5 +1,7 @@
 using BinkyLabs.OpenApi.Arazzo.Reader;
 
+using System.Linq;
+
 using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo.Validation;
@@ -32,9 +34,8 @@ internal static class ArazzoActionListValidator
         }
 
         var actionKeys = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var action in actions)
+        foreach (var actionKey in actions.Select(GetActionKey))
         {
-            var actionKey = GetActionKey(action);
             if (string.IsNullOrEmpty(actionKey))
             {
                 continue;
