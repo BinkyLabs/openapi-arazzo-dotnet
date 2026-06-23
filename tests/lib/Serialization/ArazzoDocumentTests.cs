@@ -224,6 +224,21 @@ public class ArazzoDocumentTests
             CreateDocument(new ArazzoStep { StepId = "step1", OperationPath = "{$sourceDescriptions.missing.url}#/paths/~1users/get" }),
             "references unknown sourceDescription 'missing'"
         ];
+        yield return
+        [
+            CreateDocument(new ArazzoStep { StepId = "step1" }, dependsOn: new HashSet<string> { "missingWorkflow" }),
+            "dependsOn references unknown workflowId 'missingWorkflow'"
+        ];
+        yield return
+        [
+            CreateDocument(new ArazzoStep { StepId = "step1" }, dependsOn: new HashSet<string> { "$sourceDescriptions.missing.externalWorkflow" }),
+            "dependsOn value '$sourceDescriptions.missing.externalWorkflow' references unknown sourceDescription 'missing'"
+        ];
+        yield return
+        [
+            CreateDocument(new ArazzoStep { StepId = "step1" }, dependsOn: new HashSet<string> { "$steps.step1" }),
+            "dependsOn value '$steps.step1' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'"
+        ];
     }
 
     [Fact]
@@ -240,7 +255,8 @@ public class ArazzoDocumentTests
             parameters: new Dictionary<string, ArazzoParameter>
             {
                 ["shared"] = new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "1" }
-            });
+            },
+            dependsOn: new HashSet<string> { "child", "$sourceDescriptions.source1.externalWorkflow" });
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
 
@@ -253,7 +269,8 @@ public class ArazzoDocumentTests
     private static ArazzoDocument CreateDocument(
         ArazzoStep step,
         IList<IArazzoSuccessAction>? successActions = null,
-        IDictionary<string, ArazzoParameter>? parameters = null)
+        IDictionary<string, ArazzoParameter>? parameters = null,
+        ISet<string>? dependsOn = null)
     {
         return new ArazzoDocument
         {
@@ -276,6 +293,7 @@ public class ArazzoDocumentTests
                 new ArazzoWorkflow
                 {
                     WorkflowId = "workflow1",
+                    DependsOn = dependsOn,
                     Steps = new List<ArazzoStep> { step },
                     SuccessActions = successActions
                 },

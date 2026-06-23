@@ -355,6 +355,9 @@ public class ParsingContextTests
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }], "successActions": [{ "name": "goto", "type": "goto", "stepId": "missingStep" }] }] }""", "references unknown stepId 'missingStep'")]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "parameters": [{ "reference": "$components.parameters.missing" }] }] }] }""", "reference '$components.parameters.missing' does not resolve")]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationPath": "{$sourceDescriptions.missing.url}#/paths/~1users/get" }] }] }""", "references unknown sourceDescription 'missing'")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "dependsOn": ["missingWorkflow"], "steps": [{ "stepId": "step1" }] }] }""", "dependsOn references unknown workflowId 'missingWorkflow'")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "dependsOn": ["$sourceDescriptions.missing.externalWorkflow"], "steps": [{ "stepId": "step1" }] }] }""", "dependsOn value '$sourceDescriptions.missing.externalWorkflow' references unknown sourceDescription 'missing'")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "dependsOn": ["$steps.step1"], "steps": [{ "stepId": "step1" }] }] }""", "dependsOn value '$steps.step1' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'")]
     public void Parse_UnresolvedSemanticReferences_AddsDiagnosticError(string json, string expectedMessage)
     {
         var ctx = CreateContext();
@@ -377,6 +380,7 @@ public class ParsingContextTests
               "workflows": [
                 {
                   "workflowId": "wf",
+                  "dependsOn": ["child", "$sourceDescriptions.source1.externalWorkflow"],
                   "steps": [
                     {
                       "stepId": "step1",
