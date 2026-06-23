@@ -207,6 +207,7 @@ public class ArazzoStepTests
         var step = new ArazzoStep
         {
             StepId = "invalidOutputStep",
+            OperationId = "getUser",
             Outputs = new Dictionary<string, string>
             {
                 ["invalid key"] = "$response.body#/id"
@@ -235,6 +236,72 @@ public class ArazzoStepTests
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
 
         Assert.Contains("can define only one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithWorkflowIdAndOperationId_ShouldThrowArazzoSerializationException()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "conflictingStep",
+            WorkflowId = "childWorkflow",
+            OperationId = "getUser"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
+
+        Assert.Contains("can define only one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithWorkflowIdAndOperationPath_ShouldThrowArazzoSerializationException()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "conflictingStep",
+            WorkflowId = "childWorkflow",
+            OperationPath = "$sourceDescriptions.source1.url#/paths/~1users/get"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
+
+        Assert.Contains("can define only one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithoutTarget_ShouldThrowArazzoSerializationException()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "untargetedStep"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
+
+        Assert.Contains("must define exactly one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithWorkflowTargetAndRequestBody_ShouldThrowArazzoSerializationException()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "workflowRequestStep",
+            WorkflowId = "childWorkflow",
+            RequestBody = new ArazzoRequestBody()
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
+
+        Assert.Contains("requestBody can only be specified when the step targets operationId or operationPath", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -347,6 +414,7 @@ public class ArazzoStepTests
         var step = new ArazzoStep
         {
             StepId = "invalidOutputValueStep",
+            OperationId = "getUser",
             Outputs = new Dictionary<string, string>
             {
                 ["userId"] = "not-a-runtime-expression"
@@ -381,11 +449,82 @@ public class ArazzoStepTests
     }
 
     [Fact]
+    public void Deserialize_WithoutTarget_AddsDiagnosticError()
+    {
+        var json = """
+        {
+            "stepId": "untargetedStep"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("must define exactly one of operationId, operationPath, or workflowId", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Deserialize_WithWorkflowIdAndOperationId_AddsDiagnosticError()
+    {
+        var json = """
+        {
+            "stepId": "conflictingStep",
+            "workflowId": "childWorkflow",
+            "operationId": "getUser"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("can define only one of operationId, operationPath, or workflowId", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Deserialize_WithWorkflowIdAndOperationPath_AddsDiagnosticError()
+    {
+        var json = """
+        {
+            "stepId": "conflictingStep",
+            "workflowId": "childWorkflow",
+            "operationPath": "$sourceDescriptions.source1.url#/paths/~1users/get"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("can define only one of operationId, operationPath, or workflowId", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Deserialize_WithWorkflowTargetAndRequestBody_AddsDiagnosticError()
+    {
+        var json = """
+        {
+            "stepId": "workflowRequestStep",
+            "workflowId": "childWorkflow",
+            "requestBody": {}
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("requestBody can only be specified when the step targets operationId or operationPath", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void SerializeAsV1_WithReferences_WritesReferenceObjects()
     {
         var step = new ArazzoStep
         {
             StepId = "referenceStep",
+            WorkflowId = "childWorkflow",
             Parameters = [new ArazzoParameterReference("userId") { Value = JsonValue.Create("7") }],
             OnSuccess = [new ArazzoSuccessActionReference("nextAction")],
             OnFailure = [new ArazzoFailureActionReference("retryAction")]

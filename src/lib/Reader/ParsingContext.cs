@@ -452,10 +452,20 @@ public class ParsingContext
         {
             foreach (var step in workflow.Steps ?? [])
             {
-                var referenceCount = CountNonEmpty(step.OperationId, step.OperationPath, step.WorkflowId);
+                var referenceCount = step.CountTargetFields();
                 if (referenceCount > 1)
                 {
                     Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' can define only one of operationId, operationPath, or workflowId."));
+                }
+
+                if (referenceCount == 0)
+                {
+                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' must define exactly one of operationId, operationPath, or workflowId."));
+                }
+
+                if (step.RequestBody is not null && !step.CanHaveRequestBody())
+                {
+                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' requestBody can only be specified when the step targets operationId or operationPath."));
                 }
             }
         }
@@ -490,11 +500,6 @@ public class ParsingContext
                 Diagnostic.Errors.Add(new OpenApiError("", $"{elementName} '{action.Name}' can define only one of workflowId or stepId."));
             }
         }
-    }
-
-    private static int CountNonEmpty(params string?[] values)
-    {
-        return values.Count(static value => !string.IsNullOrEmpty(value));
     }
 
     private void ValidateWorkflowParameters(ArazzoDocument doc)

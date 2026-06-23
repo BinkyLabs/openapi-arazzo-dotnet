@@ -80,6 +80,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
 
         ArgumentException.ThrowIfNullOrEmpty(StepId);
         ValidateOperationReferenceFields();
+        ValidateRequestBodyApplicability();
         ValidateParameters();
         ArazzoKeyValidator.ValidateSerializationKeys(Outputs?.Keys, $"{nameof(ArazzoStep)}.{nameof(Outputs)}");
         ArazzoRuntimeExpressionValidator.ValidateSerializationExpressions(Outputs, $"{nameof(ArazzoStep)}.{nameof(Outputs)}");
@@ -132,25 +133,24 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
 
     private void ValidateOperationReferenceFields()
     {
-        var operationReferenceCount = 0;
-        if (!string.IsNullOrEmpty(OperationId))
-        {
-            operationReferenceCount++;
-        }
-
-        if (!string.IsNullOrEmpty(OperationPath))
-        {
-            operationReferenceCount++;
-        }
-
-        if (!string.IsNullOrEmpty(WorkflowId))
-        {
-            operationReferenceCount++;
-        }
+        var operationReferenceCount = CountTargetFields();
 
         if (operationReferenceCount > 1)
         {
             throw new ArazzoSerializationException($"{nameof(ArazzoStep)} '{StepId}' can define only one of operationId, operationPath, or workflowId.");
+        }
+
+        if (operationReferenceCount == 0)
+        {
+            throw new ArazzoSerializationException($"{nameof(ArazzoStep)} '{StepId}' must define exactly one of operationId, operationPath, or workflowId.");
+        }
+    }
+
+    private void ValidateRequestBodyApplicability()
+    {
+        if (RequestBody is not null && !CanHaveRequestBody())
+        {
+            throw new ArazzoSerializationException($"{nameof(ArazzoStep)} '{StepId}' requestBody can only be specified when the step targets operationId or operationPath.");
         }
     }
 
@@ -165,4 +165,28 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
 
     private bool IsOperationTargeted() =>
         !string.IsNullOrEmpty(OperationId) || !string.IsNullOrEmpty(OperationPath);
+
+    internal int CountTargetFields()
+    {
+        var targetCount = 0;
+        if (!string.IsNullOrEmpty(OperationId))
+        {
+            targetCount++;
+        }
+
+        if (!string.IsNullOrEmpty(OperationPath))
+        {
+            targetCount++;
+        }
+
+        if (!string.IsNullOrEmpty(WorkflowId))
+        {
+            targetCount++;
+        }
+
+        return targetCount;
+    }
+
+    internal bool CanHaveRequestBody() =>
+        CountTargetFields() == 1 && IsOperationTargeted();
 }

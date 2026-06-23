@@ -2,6 +2,8 @@ using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Validation;
 
+using Microsoft.OpenApi;
+
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
@@ -39,7 +41,27 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("Step", context);
         var step = new ArazzoStep();
         mapNode.ParseMap(step, StepFixedFields, StepPatternFields, context);
+        ValidateStepTargetFields(step, context);
 
         return step;
+    }
+
+    private static void ValidateStepTargetFields(ArazzoStep step, ParsingContext context)
+    {
+        var referenceCount = step.CountTargetFields();
+        if (referenceCount > 1)
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' can define only one of operationId, operationPath, or workflowId."));
+        }
+
+        if (referenceCount == 0)
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' must define exactly one of operationId, operationPath, or workflowId."));
+        }
+
+        if (step.RequestBody is not null && !step.CanHaveRequestBody())
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' requestBody can only be specified when the step targets operationId or operationPath."));
+        }
     }
 }

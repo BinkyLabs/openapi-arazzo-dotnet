@@ -124,7 +124,7 @@ public class ArazzoWorkflowTests
             WorkflowId = "minimalWorkflow",
             Steps = new List<ArazzoStep>
             {
-                new ArazzoStep { StepId = "step1" }
+                new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             }
         };
         using var textWriter = new StringWriter();
@@ -136,7 +136,8 @@ public class ArazzoWorkflowTests
             "workflowId": "minimalWorkflow",
             "steps": [
                 {
-                    "stepId": "step1"
+                    "stepId": "step1",
+                    "operationId": "getUser"
                 }
             ]
         }
@@ -222,7 +223,7 @@ public class ArazzoWorkflowTests
             WorkflowId = "emptyWorkflow",
             Steps = new List<ArazzoStep>
             {
-                new ArazzoStep { StepId = "step1" }
+                new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             }
         };
         using var textWriter = new StringWriter();
@@ -234,7 +235,8 @@ public class ArazzoWorkflowTests
             "workflowId": "emptyWorkflow",
             "steps": [
                 {
-                    "stepId": "step1"
+                    "stepId": "step1",
+                    "operationId": "getUser"
                 }
             ]
         }
@@ -256,7 +258,7 @@ public class ArazzoWorkflowTests
             WorkflowId = "invalidOutputWorkflow",
             Steps = new List<ArazzoStep>
             {
-                new ArazzoStep { StepId = "step1" }
+                new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
             Outputs = new Dictionary<string, string>
             {
@@ -279,7 +281,7 @@ public class ArazzoWorkflowTests
             WorkflowId = "invalidOutputWorkflow",
             Steps = new List<ArazzoStep>
             {
-                new ArazzoStep { StepId = "step1" }
+                new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
             Outputs = new Dictionary<string, string>
             {
@@ -333,8 +335,8 @@ public class ArazzoWorkflowTests
             WorkflowId = "duplicateStepWorkflow",
             Steps = new List<ArazzoStep>
             {
-                new ArazzoStep { StepId = "step1" },
-                new ArazzoStep { StepId = "step1" }
+                new ArazzoStep { StepId = "step1", OperationId = "getUser" },
+                new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             }
         };
         using var textWriter = new StringWriter();
