@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.RegularExpressions;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
@@ -180,15 +181,12 @@ internal static partial class ArazzoSemanticReferenceValidator
 
     private static IEnumerable<string> ValidateReusableReferences<T>(IEnumerable<T>? items, string elementName, ArazzoDocument document)
     {
-        foreach (var item in items ?? [])
+        foreach (var referenceHolder in (items ?? []).OfType<IArazzoReferenceHolder<BaseArazzoReference>>())
         {
-            if (item is IArazzoReferenceHolder<BaseArazzoReference> referenceHolder)
+            referenceHolder.Reference.EnsureHostDocumentIsSet(document);
+            if (referenceHolder.UnresolvedReference && !DoesComponentReferenceResolve(document, referenceHolder.Reference))
             {
-                referenceHolder.Reference.EnsureHostDocumentIsSet(document);
-                if (referenceHolder.UnresolvedReference && !DoesComponentReferenceResolve(document, referenceHolder.Reference))
-                {
-                    yield return $"{elementName} reference '{referenceHolder.Reference.ReferenceV1}' does not resolve to a component in the current Arazzo document.";
-                }
+                yield return $"{elementName} reference '{referenceHolder.Reference.ReferenceV1}' does not resolve to a component in the current Arazzo document.";
             }
         }
     }
