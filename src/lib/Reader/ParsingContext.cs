@@ -371,13 +371,8 @@ public class ParsingContext
 
     private void ValidateParameterRequiredFields(IEnumerable<IArazzoParameter>? parameters)
     {
-        foreach (var parameter in parameters ?? [])
+        foreach (var parameter in (parameters ?? []).OfType<ArazzoParameter>())
         {
-            if (parameter is not ArazzoParameter)
-            {
-                continue;
-            }
-
             AddRequiredFieldErrorIfMissing(parameter.Name, nameof(ArazzoParameter), nameof(ArazzoParameter.Name));
             AddRequiredFieldErrorIfMissing(parameter.Value, nameof(ArazzoParameter), nameof(ArazzoParameter.Value));
         }
@@ -397,13 +392,8 @@ public class ParsingContext
         where TInterface : IArazzoResultAction<TType>
         where TType : struct, Enum
     {
-        foreach (var action in actions ?? [])
+        foreach (var action in (actions ?? []).OfType<TAction>())
         {
-            if (action is not TAction)
-            {
-                continue;
-            }
-
             AddRequiredFieldErrorIfMissing(action.Name, elementName, nameof(IArazzoResultAction.Name));
             AddRequiredFieldErrorIfMissing(action.Type, elementName, nameof(IArazzoResultAction<ArazzoSuccessType>.Type));
         }
