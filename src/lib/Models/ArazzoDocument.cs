@@ -1,3 +1,4 @@
+using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -89,6 +90,7 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 
         ValidateUniqueSourceDescriptionNames();
         ValidateUniqueWorkflowIds();
+        ArazzoSemanticReferenceValidator.ValidateSerialization(this);
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, "1.0.1");

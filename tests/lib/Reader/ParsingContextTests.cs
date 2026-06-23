@@ -350,6 +350,60 @@ public class ParsingContextTests
         Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "workflowId": "missingWorkflow" }] }] }""", "references unknown workflowId 'missingWorkflow'")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }], "successActions": [{ "name": "goto", "type": "goto", "stepId": "missingStep" }] }] }""", "references unknown stepId 'missingStep'")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "parameters": [{ "reference": "$components.parameters.missing" }] }] }] }""", "reference '$components.parameters.missing' does not resolve")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationPath": "{$sourceDescriptions.missing.url}#/paths/~1users/get" }] }] }""", "references unknown sourceDescription 'missing'")]
+    public void Parse_UnresolvedSemanticReferences_AddsDiagnosticError(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Parse_ResolvedSemanticReferences_DoesNotAddDiagnosticError()
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse("""
+            {
+              "arazzo": "1.0.1",
+              "info": { "title": "T", "version": "1" },
+              "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }],
+              "workflows": [
+                {
+                  "workflowId": "wf",
+                  "steps": [
+                    {
+                      "stepId": "step1",
+                      "operationPath": "{$sourceDescriptions.source1.url}#/paths/~1users/get",
+                      "parameters": [{ "reference": "$components.parameters.shared" }]
+                    }
+                  ],
+                  "successActions": [{ "name": "goto", "type": "goto", "stepId": "step1" }]
+                },
+                {
+                  "workflowId": "child",
+                  "steps": [{ "stepId": "childStep" }]
+                }
+              ],
+              "components": {
+                "parameters": {
+                  "shared": { "name": "id", "in": "query", "value": "1" }
+                }
+              }
+            }
+            """)!;
+
+        ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.DoesNotContain(ctx.Diagnostic.Errors, e => e.Message.Contains("unknown", StringComparison.OrdinalIgnoreCase) || e.Message.Contains("does not resolve", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Fact]
     public void Parse_MissingVersion_ThrowsOpenApiException()
     {
