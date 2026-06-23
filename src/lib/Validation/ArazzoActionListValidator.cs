@@ -31,25 +31,17 @@ internal static class ArazzoActionListValidator
     {
         if (actions is null)
         {
-            yield break;
+            return [];
         }
 
         var actionKeys = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var actionKey in actions.Select(GetActionKey))
-        {
-            if (string.IsNullOrEmpty(actionKey))
-            {
-                continue;
-            }
-
-            if (!actionKeys.Add(actionKey))
-            {
-                yield return $"{elementName} contains duplicate action '{actionKey}'.";
-            }
-        }
+        return actions
+                .Select(GetActionKey)
+                .Where(key => !string.IsNullOrEmpty(key) && !actionKeys.Contains(key!))
+                .Select(x => $"{elementName} contains duplicate action '{x}'.");
     }
 
-    private static string? GetActionKey(IArazzoResultAction action) =>
+    private static string? GetActionKey<T>(T action) where T : IArazzoResultAction =>
         action is IArazzoReferenceHolder<BaseArazzoReference> referenceHolder
             ? referenceHolder.Reference.ReferenceV1
             : action.Name;
