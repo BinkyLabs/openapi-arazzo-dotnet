@@ -272,6 +272,7 @@ public class ParsingContext
             }
             else
             {
+                ValidateSourceDescriptionRequiredFields(doc.SourceDescriptions);
                 ValidateUniqueSourceDescriptionNames(doc.SourceDescriptions);
             }
 
@@ -283,12 +284,15 @@ public class ParsingContext
             {
                 ValidateUniqueWorkflowIds(doc.Workflows);
                 ValidateWorkflowRequiredFields(doc.Workflows);
+                ValidateStepRequiredFields(doc.Workflows);
+                ValidateWorkflowActionRequiredFields(doc.Workflows);
                 ValidateWorkflowStepIds(doc.Workflows);
                 ValidateStepOperationReferenceFields(doc.Workflows);
                 ValidateResultActionReferenceFields(doc.Workflows);
                 ArazzoSemanticReferenceValidator.ValidateDeserialization(doc, this);
             }
 
+            ValidateComponentRequiredFields(doc.Components);
             ValidateWorkflowParameters(doc);
         }
     }
@@ -310,10 +314,96 @@ public class ParsingContext
     {
         foreach (var workflow in workflows)
         {
+            AddRequiredFieldErrorIfMissing(workflow.WorkflowId, nameof(ArazzoWorkflow), nameof(ArazzoWorkflow.WorkflowId));
+
             if (workflow.Steps is not { Count: > 0 })
             {
                 Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' steps is a REQUIRED field and MUST contain at least one entry."));
             }
+        }
+    }
+
+    private void ValidateSourceDescriptionRequiredFields(IEnumerable<ArazzoSourceDescription> sourceDescriptions)
+    {
+        foreach (var sourceDescription in sourceDescriptions)
+        {
+            AddRequiredFieldErrorIfMissing(sourceDescription.Name, nameof(ArazzoSourceDescription), nameof(ArazzoSourceDescription.Name));
+            AddRequiredFieldErrorIfMissing(sourceDescription.Url, nameof(ArazzoSourceDescription), nameof(ArazzoSourceDescription.Url));
+        }
+    }
+
+    private void ValidateStepRequiredFields(IEnumerable<ArazzoWorkflow> workflows)
+    {
+        foreach (var workflow in workflows)
+        {
+            foreach (var step in workflow.Steps ?? [])
+            {
+                AddRequiredFieldErrorIfMissing(step.StepId, nameof(ArazzoStep), nameof(ArazzoStep.StepId));
+                ValidateParameterRequiredFields(step.Parameters);
+                ValidatePayloadReplacementRequiredFields(step.RequestBody?.Replacements);
+                ValidateActionRequiredFields<ArazzoSuccessAction, IArazzoSuccessAction, ArazzoSuccessType>(step.OnSuccess, nameof(ArazzoSuccessAction));
+                ValidateActionRequiredFields<ArazzoFailureAction, IArazzoFailureAction, ArazzoFailureType>(step.OnFailure, nameof(ArazzoFailureAction));
+            }
+        }
+    }
+
+    private void ValidateWorkflowActionRequiredFields(IEnumerable<ArazzoWorkflow> workflows)
+    {
+        foreach (var workflow in workflows)
+        {
+            ValidateParameterRequiredFields(workflow.Parameters);
+            ValidateActionRequiredFields<ArazzoSuccessAction, IArazzoSuccessAction, ArazzoSuccessType>(workflow.SuccessActions, nameof(ArazzoSuccessAction));
+            ValidateActionRequiredFields<ArazzoFailureAction, IArazzoFailureAction, ArazzoFailureType>(workflow.FailureActions, nameof(ArazzoFailureAction));
+        }
+    }
+
+    private void ValidateComponentRequiredFields(ArazzoComponent? components)
+    {
+        if (components is null)
+        {
+            return;
+        }
+
+        ValidateParameterRequiredFields(components.Parameters?.Values);
+        ValidateActionRequiredFields<ArazzoSuccessAction, ArazzoSuccessAction, ArazzoSuccessType>(components.SuccessActions?.Values, nameof(ArazzoSuccessAction));
+        ValidateActionRequiredFields<ArazzoFailureAction, ArazzoFailureAction, ArazzoFailureType>(components.FailureActions?.Values, nameof(ArazzoFailureAction));
+    }
+
+    private void ValidateParameterRequiredFields(IEnumerable<IArazzoParameter>? parameters)
+    {
+        foreach (var parameter in (parameters ?? []).OfType<ArazzoParameter>())
+        {
+            AddRequiredFieldErrorIfMissing(parameter.Name, nameof(ArazzoParameter), nameof(ArazzoParameter.Name));
+            AddRequiredFieldErrorIfMissing(parameter.Value, nameof(ArazzoParameter), nameof(ArazzoParameter.Value));
+        }
+    }
+
+    private void ValidatePayloadReplacementRequiredFields(IEnumerable<ArazzoPayloadReplacement>? replacements)
+    {
+        foreach (var replacement in replacements ?? [])
+        {
+            AddRequiredFieldErrorIfMissing(replacement.Target, nameof(ArazzoPayloadReplacement), nameof(ArazzoPayloadReplacement.Target));
+            AddRequiredFieldErrorIfMissing(replacement.Value, nameof(ArazzoPayloadReplacement), nameof(ArazzoPayloadReplacement.Value));
+        }
+    }
+
+    private void ValidateActionRequiredFields<TAction, TInterface, TType>(IEnumerable<TInterface>? actions, string elementName)
+        where TAction : class, IArazzoResultAction<TType>
+        where TInterface : IArazzoResultAction<TType>
+        where TType : struct, Enum
+    {
+        foreach (var action in (actions ?? []).OfType<TAction>())
+        {
+            AddRequiredFieldErrorIfMissing(action.Name, elementName, nameof(IArazzoResultAction.Name));
+            AddRequiredFieldErrorIfMissing(action.Type, elementName, nameof(IArazzoResultAction<ArazzoSuccessType>.Type));
+        }
+    }
+
+    private void AddRequiredFieldErrorIfMissing(object? value, string elementName, string fieldName)
+    {
+        if (value is null || value is string stringValue && string.IsNullOrEmpty(stringValue))
+        {
+            Diagnostic.Errors.Add(new OpenApiError("", $"{elementName}.{fieldName} is a REQUIRED field."));
         }
     }
 
