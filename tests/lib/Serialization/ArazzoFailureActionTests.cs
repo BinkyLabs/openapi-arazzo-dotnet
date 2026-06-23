@@ -216,6 +216,39 @@ public class ArazzoFailureActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_WithEndAndTargetField_ShouldThrowArazzoSerializationException()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "endAction",
+            Type = ArazzoFailureType.End,
+            StepId = "step1"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1(writer));
+
+        Assert.Contains("type=end must not define workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithGotoAndNoTargetField_ShouldThrowArazzoSerializationException()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "gotoAction",
+            Type = ArazzoFailureType.Goto
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1(writer));
+
+        Assert.Contains("type=goto must define exactly one of workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SerializeAsV1_ShouldThrowException_WhenTypeIsNull()
     {
         var failureAction = new ArazzoFailureAction
@@ -236,7 +269,6 @@ public class ArazzoFailureActionTests
             "name": "retryAction",
             "type": "retry",
             "workflowId": "mainWorkflow",
-            "stepId": "retryStep",
             "retryAfter": 10.5,
             "retryLimit": 5,
             "criteria": [
@@ -256,7 +288,7 @@ public class ArazzoFailureActionTests
         Assert.Equal("retryAction", failureAction.Name);
         Assert.Equal(ArazzoFailureType.Retry, failureAction.Type);
         Assert.Equal("mainWorkflow", failureAction.WorkflowId);
-        Assert.Equal("retryStep", failureAction.StepId);
+        Assert.Null(failureAction.StepId);
         Assert.Equal(10.5m, failureAction.RetryAfter);
         Assert.Equal(5ul, failureAction.RetryLimit);
         Assert.NotNull(failureAction.Criteria);
@@ -403,6 +435,20 @@ public class ArazzoFailureActionTests
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("retryLimit must be a non-negative integer", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData("""{ "name": "endAction", "type": "end", "stepId": "step1" }""", "type=end must not define workflowId or stepId")]
+    [InlineData("""{ "name": "gotoAction", "type": "goto" }""", "type=goto must define exactly one of workflowId or stepId")]
+    [InlineData("""{ "name": "retryAction", "type": "retry", "workflowId": "workflow1", "stepId": "step1" }""", "can define only one of workflowId or stepId")]
+    public void Deserialize_WithInvalidTypeDependentTargetFields_AddsDiagnosticError(string json, string expectedMessage)
+    {
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
     [Fact]
     public void Deserialize_ShouldHandleGotoType()
     {
@@ -410,7 +456,6 @@ public class ArazzoFailureActionTests
         {
             "name": "gotoFailure",
             "type": "goto",
-            "workflowId": "errorWorkflow",
             "stepId": "errorHandler"
         }
         """;
@@ -421,7 +466,7 @@ public class ArazzoFailureActionTests
 
         Assert.Equal("gotoFailure", failureAction.Name);
         Assert.Equal(ArazzoFailureType.Goto, failureAction.Type);
-        Assert.Equal("errorWorkflow", failureAction.WorkflowId);
+        Assert.Null(failureAction.WorkflowId);
         Assert.Equal("errorHandler", failureAction.StepId);
         Assert.Null(failureAction.RetryAfter);
         Assert.Equal(1ul, failureAction.RetryLimit);

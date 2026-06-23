@@ -34,6 +34,8 @@ internal static class ArazzoFailureActionValidator
         ArgumentNullException.ThrowIfNull(action);
         ArgumentNullException.ThrowIfNull(context);
 
+        ArazzoResultActionValidator.ValidateDeserialization(action, context);
+
         if (action.RetryAfter < 0)
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoFailureAction)} '{action.Name}' retryAfter must be a non-negative decimal."));
