@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -73,16 +74,13 @@ internal sealed class CompareCommandHandler : AsynchronousCommandLineAction
                 continue;
             }
 
-            foreach (var comparisonPolicy in comparisonPolicies)
+            foreach (var comparisonPolicy in comparisonPolicies.Where(policy => !policy.Equals(existingBenchmarkResult.Value, newBenchmarkResult)))
             {
-                if (!comparisonPolicy.Equals(existingBenchmarkResult.Value, newBenchmarkResult))
-                {
-                    logger.LogError(
-                        "Benchmark result for {BenchmarkName} does not match the existing benchmark result. {ErrorMessage}",
-                        existingBenchmarkResult.Key,
-                        comparisonPolicy.GetErrorMessage(existingBenchmarkResult.Value, newBenchmarkResult));
-                    hasErrors = true;
-                }
+                logger.LogError(
+                    "Benchmark result for {BenchmarkName} does not match the existing benchmark result. {ErrorMessage}",
+                    existingBenchmarkResult.Key,
+                    comparisonPolicy.GetErrorMessage(existingBenchmarkResult.Value, newBenchmarkResult));
+                hasErrors = true;
             }
         }
 
