@@ -116,6 +116,39 @@ public class ArazzoSuccessActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_WithEndAndTargetField_ShouldThrowArazzoSerializationException()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Name = "endAction",
+            Type = ArazzoSuccessType.End,
+            WorkflowId = "workflow1"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => successAction.SerializeAsV1(writer));
+
+        Assert.Contains("type=end must not define workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithGotoAndNoTargetField_ShouldThrowArazzoSerializationException()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Name = "gotoAction",
+            Type = ArazzoSuccessType.Goto
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => successAction.SerializeAsV1(writer));
+
+        Assert.Contains("type=goto must define exactly one of workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SerializeAsV1_ShouldThrowException_WhenTypeIsNull()
     {
         var successAction = new ArazzoSuccessAction
@@ -136,7 +169,6 @@ public class ArazzoSuccessActionTests
             "name": "gotoAction",
             "type": "goto",
             "workflowId": "mainWorkflow",
-            "stepId": "nextStep",
             "criteria": [
                 {
                     "context": "$response.body#/success",
@@ -154,7 +186,7 @@ public class ArazzoSuccessActionTests
         Assert.Equal("gotoAction", successAction.Name);
         Assert.Equal(ArazzoSuccessType.Goto, successAction.Type);
         Assert.Equal("mainWorkflow", successAction.WorkflowId);
-        Assert.Equal("nextStep", successAction.StepId);
+        Assert.Null(successAction.StepId);
         Assert.NotNull(successAction.Criteria);
         Assert.Single(successAction.Criteria);
         Assert.Equal("$response.body#/success", successAction.Criteria[0].Context);
@@ -184,6 +216,20 @@ public class ArazzoSuccessActionTests
         Assert.Null(successAction.StepId);
         Assert.Null(successAction.Criteria);
         Assert.Null(successAction.Extensions);
+    }
+
+    [Theory]
+    [InlineData("""{ "name": "endAction", "type": "end", "workflowId": "workflow1" }""", "type=end must not define workflowId or stepId")]
+    [InlineData("""{ "name": "gotoAction", "type": "goto" }""", "type=goto must define exactly one of workflowId or stepId")]
+    [InlineData("""{ "name": "gotoAction", "type": "goto", "workflowId": "workflow1", "stepId": "step1" }""", "can define only one of workflowId or stepId")]
+    public void Deserialize_WithInvalidTypeDependentTargetFields_AddsDiagnosticError(string json, string expectedMessage)
+    {
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
     }
 
     [Fact]

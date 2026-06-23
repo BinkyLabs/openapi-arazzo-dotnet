@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
+
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
@@ -45,6 +47,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("SuccessAction", context);
         var successAction = new ArazzoSuccessAction();
         mapNode.ParseMap(successAction, SuccessActionFixedFields, SuccessActionPatternFields, context);
+        ArazzoResultActionValidator.ValidateDeserialization(successAction, context);
 
         return successAction;
     }
