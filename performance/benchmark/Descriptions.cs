@@ -24,15 +24,33 @@ public class Descriptions
     }
 
     [Benchmark]
+    public async Task<ArazzoDocument?> BnplJson()
+    {
+        return await ParseDocumentAsync(BnplJsonPath, OpenApiConstants.Json).ConfigureAwait(false);
+    }
+
+    [Benchmark]
     public async Task<ArazzoDocument?> FormalBnplYaml()
     {
         return await ParseDocumentAsync(FormalBnplYamlPath).ConfigureAwait(false);
     }
 
     [Benchmark]
+    public async Task<ArazzoDocument?> FormalBnplJson()
+    {
+        return await ParseDocumentAsync(FormalBnplJsonPath, OpenApiConstants.Json).ConfigureAwait(false);
+    }
+
+    [Benchmark]
     public async Task<ArazzoDocument?> FapiParYaml()
     {
         return await ParseDocumentAsync(FapiParYamlPath).ConfigureAwait(false);
+    }
+
+    [Benchmark]
+    public async Task<ArazzoDocument?> FapiParJson()
+    {
+        return await ParseDocumentAsync(FapiParJsonPath, OpenApiConstants.Json).ConfigureAwait(false);
     }
 
     [Benchmark]
@@ -49,8 +67,11 @@ public class Descriptions
         _readerSettings.OpenApiSettings.LeaveStreamOpen = true;
 
         await LoadDocumentFromAssemblyIntoStreamsAsync(BnplYamlPath).ConfigureAwait(false);
+        await LoadDocumentFromAssemblyIntoStreamsAsync(BnplJsonPath).ConfigureAwait(false);
         await LoadDocumentFromAssemblyIntoStreamsAsync(FormalBnplYamlPath).ConfigureAwait(false);
+        await LoadDocumentFromAssemblyIntoStreamsAsync(FormalBnplJsonPath).ConfigureAwait(false);
         await LoadDocumentFromAssemblyIntoStreamsAsync(FapiParYamlPath).ConfigureAwait(false);
+        await LoadDocumentFromAssemblyIntoStreamsAsync(FapiParJsonPath).ConfigureAwait(false);
         await LoadDocumentFromAssemblyIntoStreamsAsync(MinimalJsonPath).ConfigureAwait(false);
     }
 
@@ -66,8 +87,11 @@ public class Descriptions
     }
 
     private const string BnplYamlPath = "bnpl-arazzo.yaml";
+    private const string BnplJsonPath = "bnpl-arazzo.json";
     private const string FormalBnplYamlPath = "formal-bnpl.arazzo.yaml";
+    private const string FormalBnplJsonPath = "formal-bnpl.arazzo.json";
     private const string FapiParYamlPath = "FAPI-PAR.arazzo.yaml";
+    private const string FapiParJsonPath = "FAPI-PAR.arazzo.json";
     private const string MinimalJsonPath = "minimal-arazzo.json";
 
     private async Task<ArazzoDocument?> ParseDocumentAsync(string fileName, string format = OpenApiConstants.Yaml)

@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>performance.Descriptions-20260622-211830</title>
+<title>performance.Descriptions-20260624-065445</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -24,12 +24,15 @@ WarmupCount=3
 </code></pre>
 
 <table>
-<thead><tr><th>Method  </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Gen0</th><th>Allocated</th>
+<thead><tr><th>Method  </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Gen0</th><th>Gen1</th><th>Allocated</th>
 </tr>
-</thead><tbody><tr><td>BnplYaml</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td>
-</tr><tr><td>FormalBnplYaml</td><td>335.51 &mu;s</td><td>53.773 &mu;s</td><td>2.947 &mu;s</td><td>92.2852</td><td>378.23 KB</td>
-</tr><tr><td>FapiParYaml</td><td>257.98 &mu;s</td><td>28.064 &mu;s</td><td>1.538 &mu;s</td><td>85.9375</td><td>351.38 KB</td>
-</tr><tr><td>MinimalJson</td><td>11.23 &mu;s</td><td>3.051 &mu;s</td><td>0.167 &mu;s</td><td>5.2338</td><td>21.38 KB</td>
+</thead><tbody><tr><td>BnplYaml</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td>
+</tr><tr><td>BnplJson</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td>
+</tr><tr><td>FormalBnplYaml</td><td>331.32 &mu;s</td><td>41.120 &mu;s</td><td>2.254 &mu;s</td><td>92.2852</td><td>-</td><td>378.23 KB</td>
+</tr><tr><td>FormalBnplJson</td><td>123.15 &mu;s</td><td>33.005 &mu;s</td><td>1.809 &mu;s</td><td>57.4951</td><td>11.7188</td><td>234.96 KB</td>
+</tr><tr><td>FapiParYaml</td><td>250.01 &mu;s</td><td>14.075 &mu;s</td><td>0.772 &mu;s</td><td>85.9375</td><td>-</td><td>351.38 KB</td>
+</tr><tr><td>FapiParJson</td><td>92.89 &mu;s</td><td>11.905 &mu;s</td><td>0.653 &mu;s</td><td>59.0820</td><td>1.9531</td><td>242.17 KB</td>
+</tr><tr><td>MinimalJson</td><td>10.52 &mu;s</td><td>0.779 &mu;s</td><td>0.043 &mu;s</td><td>5.2338</td><td>-</td><td>21.38 KB</td>
 </tr></tbody></table>
 </body>
 </html>

@@ -29,11 +29,20 @@
     <EmbeddedResource Include="..\..\tests\lib\Samples\ArazzoSpecification\1.0.0\bnpl-arazzo.yaml">
       <LogicalName>bnpl-arazzo.yaml</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tests\lib\Samples\ArazzoSpecification\1.0.0\bnpl-arazzo.json">
+      <LogicalName>bnpl-arazzo.json</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="..\..\tests\lib\Samples\DescribingApiWorkflowsWithArazzo\specs\formal-bnpl.arazzo.yaml">
       <LogicalName>formal-bnpl.arazzo.yaml</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tests\lib\Samples\DescribingApiWorkflowsWithArazzo\specs\formal-bnpl.arazzo.json">
+      <LogicalName>formal-bnpl.arazzo.json</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="..\..\tests\lib\Samples\ArazzoSpecification\1.0.0\FAPI-PAR.arazzo.yaml">
       <LogicalName>FAPI-PAR.arazzo.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tests\lib\Samples\ArazzoSpecification\1.0.0\FAPI-PAR.arazzo.json">
+      <LogicalName>FAPI-PAR.arazzo.json</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Samples\minimal-arazzo.json">
       <LogicalName>minimal-arazzo.json</LogicalName>

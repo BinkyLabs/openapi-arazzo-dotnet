@@ -10,12 +10,16 @@ Job=ShortRun  IterationCount=3  LaunchCount=1
 WarmupCount=3  
 
 ```
-| Method         | Mean      | Error     | StdDev   | Gen0    | Allocated |
-|--------------- |----------:|----------:|---------:|--------:|----------:|
-| BnplYaml       |        NA |        NA |       NA |      NA |        NA |
-| FormalBnplYaml | 335.51 μs | 53.773 μs | 2.947 μs | 92.2852 | 378.23 KB |
-| FapiParYaml    | 257.98 μs | 28.064 μs | 1.538 μs | 85.9375 | 351.38 KB |
-| MinimalJson    |  11.23 μs |  3.051 μs | 0.167 μs |  5.2338 |  21.38 KB |
+| Method         | Mean      | Error     | StdDev   | Gen0    | Gen1    | Allocated |
+|--------------- |----------:|----------:|---------:|--------:|--------:|----------:|
+| BnplYaml       |        NA |        NA |       NA |      NA |      NA |        NA |
+| BnplJson       |        NA |        NA |       NA |      NA |      NA |        NA |
+| FormalBnplYaml | 331.32 μs | 41.120 μs | 2.254 μs | 92.2852 |       - | 378.23 KB |
+| FormalBnplJson | 123.15 μs | 33.005 μs | 1.809 μs | 57.4951 | 11.7188 | 234.96 KB |
+| FapiParYaml    | 250.01 μs | 14.075 μs | 0.772 μs | 85.9375 |       - | 351.38 KB |
+| FapiParJson    |  92.89 μs | 11.905 μs | 0.653 μs | 59.0820 |  1.9531 | 242.17 KB |
+| MinimalJson    |  10.52 μs |  0.779 μs | 0.043 μs |  5.2338 |       - |  21.38 KB |
 
 Benchmarks with issues:
   Descriptions.BnplYaml: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
+  Descriptions.BnplJson: ShortRun(IterationCount=3, LaunchCount=1, WarmupCount=3)
