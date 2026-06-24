@@ -31,6 +31,7 @@ internal class ArazzoV1VersionService : BaseArazzoVersionService
         [typeof(ArazzoRequestBody)] = ArazzoV1Deserializer.LoadRequestBody,
         [typeof(ArazzoComponent)] = ArazzoV1Deserializer.LoadComponent,
         [typeof(ArazzoSourceDescription)] = ArazzoV1Deserializer.LoadSourceDescription,
+        [typeof(ArazzoStep)] = ArazzoV1Deserializer.LoadStep,
         [typeof(ArazzoSuccessAction)] = ArazzoV1Deserializer.LoadSuccessActionObject,
         [typeof(ArazzoFailureAction)] = ArazzoV1Deserializer.LoadFailureActionObject,
         [typeof(ArazzoWorkflow)] = ArazzoV1Deserializer.LoadWorkflow,
