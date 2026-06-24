@@ -18,18 +18,6 @@ public class Descriptions
     private ArazzoReaderSettings _readerSettings = null!;
 
     [Benchmark]
-    public async Task<ArazzoDocument?> BnplYaml()
-    {
-        return await ParseDocumentAsync(BnplYamlPath).ConfigureAwait(false);
-    }
-
-    [Benchmark]
-    public async Task<ArazzoDocument?> BnplJson()
-    {
-        return await ParseDocumentAsync(BnplJsonPath, OpenApiConstants.Json).ConfigureAwait(false);
-    }
-
-    [Benchmark]
     public async Task<ArazzoDocument?> FormalBnplYaml()
     {
         return await ParseDocumentAsync(FormalBnplYamlPath).ConfigureAwait(false);
@@ -66,8 +54,6 @@ public class Descriptions
         _readerSettings.OpenApiSettings.RuleSet = ValidationRuleSet.GetEmptyRuleSet();
         _readerSettings.OpenApiSettings.LeaveStreamOpen = true;
 
-        await LoadDocumentFromAssemblyIntoStreamsAsync(BnplYamlPath).ConfigureAwait(false);
-        await LoadDocumentFromAssemblyIntoStreamsAsync(BnplJsonPath).ConfigureAwait(false);
         await LoadDocumentFromAssemblyIntoStreamsAsync(FormalBnplYamlPath).ConfigureAwait(false);
         await LoadDocumentFromAssemblyIntoStreamsAsync(FormalBnplJsonPath).ConfigureAwait(false);
         await LoadDocumentFromAssemblyIntoStreamsAsync(FapiParYamlPath).ConfigureAwait(false);
@@ -86,8 +72,6 @@ public class Descriptions
         _streams.Clear();
     }
 
-    private const string BnplYamlPath = "bnpl-arazzo.yaml";
-    private const string BnplJsonPath = "bnpl-arazzo.json";
     private const string FormalBnplYamlPath = "formal-bnpl.arazzo.yaml";
     private const string FormalBnplJsonPath = "formal-bnpl.arazzo.json";
     private const string FapiParYamlPath = "FAPI-PAR.arazzo.yaml";

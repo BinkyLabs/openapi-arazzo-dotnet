@@ -26,12 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\..\tests\lib\Samples\ArazzoSpecification\1.0.0\bnpl-arazzo.yaml">
-      <LogicalName>bnpl-arazzo.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\..\tests\lib\Samples\ArazzoSpecification\1.0.0\bnpl-arazzo.json">
-      <LogicalName>bnpl-arazzo.json</LogicalName>
-    </EmbeddedResource>
     <EmbeddedResource Include="..\..\tests\lib\Samples\DescribingApiWorkflowsWithArazzo\specs\formal-bnpl.arazzo.yaml">
       <LogicalName>formal-bnpl.arazzo.yaml</LogicalName>
     </EmbeddedResource>
