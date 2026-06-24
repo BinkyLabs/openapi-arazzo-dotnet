@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>performance.EmptyModels-20260622-211912</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26200.8655/25H2/2025Update/HudsonValley2)
+Snapdragon X 12-core X1E80100 3.40 GHz (Max: 3.42GHz), 1 CPU, 12 logical and 12 physical cores
+.NET SDK 10.0.301
+  [Host]   : .NET 8.0.28 (8.0.28, 8.0.2826.26413), Arm64 RyuJIT armv8.0-a
+  ShortRun : .NET 8.0.28 (8.0.28, 8.0.2826.26413), Arm64 RyuJIT armv8.0-a
+</code></pre>
+<pre><code>Job=ShortRun  IterationCount=3  LaunchCount=1  
+WarmupCount=3  
+</code></pre>
+
+<table>
+<thead><tr><th>Method                </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Gen0</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>EmptyComponent</td><td>2.205 ns</td><td>1.5938 ns</td><td>0.0874 ns</td><td>0.0134</td><td>56 B</td>
+</tr><tr><td>EmptyCriterion</td><td>2.037 ns</td><td>0.5599 ns</td><td>0.0307 ns</td><td>0.0115</td><td>48 B</td>
+</tr><tr><td>EmptyCriterionExpressionType</td><td>1.792 ns</td><td>0.0841 ns</td><td>0.0046 ns</td><td>0.0096</td><td>40 B</td>
+</tr><tr><td>EmptyDocument</td><td>246.087 ns</td><td>15.7372 ns</td><td>0.8626 ns</td><td>0.1817</td><td>760 B</td>
+</tr><tr><td>EmptyFailureAction</td><td>3.171 ns</td><td>0.1501 ns</td><td>0.0082 ns</td><td>0.0249</td><td>104 B</td>
+</tr><tr><td>EmptyFailureActionReference</td><td>28.892 ns</td><td>6.6464 ns</td><td>0.3643 ns</td><td>0.0325</td><td>136 B</td>
+</tr><tr><td>EmptyInfo</td><td>2.249 ns</td><td>0.5538 ns</td><td>0.0304 ns</td><td>0.0134</td><td>56 B</td>
+</tr><tr><td>EmptyInput</td><td>10.300 ns</td><td>1.8936 ns</td><td>0.1038 ns</td><td>0.1090</td><td>456 B</td>
+</tr><tr><td>EmptyInputReference</td><td>28.389 ns</td><td>1.8389 ns</td><td>0.1008 ns</td><td>0.0440</td><td>184 B</td>
+</tr><tr><td>EmptyParameter</td><td>2.003 ns</td><td>0.4904 ns</td><td>0.0269 ns</td><td>0.0115</td><td>48 B</td>
+</tr><tr><td>EmptyParameterReference</td><td>28.272 ns</td><td>2.1701 ns</td><td>0.1189 ns</td><td>0.0344</td><td>144 B</td>
+</tr><tr><td>EmptyPayloadReplacement</td><td>1.969 ns</td><td>1.0541 ns</td><td>0.0578 ns</td><td>0.0096</td><td>40 B</td>
+</tr><tr><td>EmptyRequestBody</td><td>2.033 ns</td><td>1.9218 ns</td><td>0.1053 ns</td><td>0.0115</td><td>48 B</td>
+</tr><tr><td>EmptySourceDescription</td><td>2.026 ns</td><td>0.1368 ns</td><td>0.0075 ns</td><td>0.0115</td><td>48 B</td>
+</tr><tr><td>EmptyStep</td><td>3.189 ns</td><td>2.2342 ns</td><td>0.1225 ns</td><td>0.0268</td><td>112 B</td>
+</tr><tr><td>EmptySuccessAction</td><td>2.583 ns</td><td>1.4973 ns</td><td>0.0821 ns</td><td>0.0153</td><td>64 B</td>
+</tr><tr><td>EmptySuccessActionReference</td><td>29.734 ns</td><td>7.2575 ns</td><td>0.3978 ns</td><td>0.0325</td><td>136 B</td>
+</tr><tr><td>EmptyWorkflow</td><td>3.426 ns</td><td>0.2352 ns</td><td>0.0129 ns</td><td>0.0249</td><td>104 B</td>
+</tr></tbody></table>
+</body>
+</html>

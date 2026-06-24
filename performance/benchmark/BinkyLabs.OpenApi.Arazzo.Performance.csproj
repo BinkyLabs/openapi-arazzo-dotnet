@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <Configuration>Release</Configuration>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+    <!-- https://github.com/dotnet/BenchmarkDotNet/issues/2863 -->
+    <NoWarn>CA1822;CS9057</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\lib\BinkyLabs.OpenApi.Arazzo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\tests\lib\Samples\DescribingApiWorkflowsWithArazzo\specs\formal-bnpl.arazzo.yaml">
+      <LogicalName>formal-bnpl.arazzo.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tests\lib\Samples\DescribingApiWorkflowsWithArazzo\specs\formal-bnpl.arazzo.json">
+      <LogicalName>formal-bnpl.arazzo.json</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tests\lib\Samples\ArazzoSpecification\1.0.0\FAPI-PAR.arazzo.yaml">
+      <LogicalName>FAPI-PAR.arazzo.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tests\lib\Samples\ArazzoSpecification\1.0.0\FAPI-PAR.arazzo.json">
+      <LogicalName>FAPI-PAR.arazzo.json</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Samples\minimal-arazzo.json">
+      <LogicalName>minimal-arazzo.json</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

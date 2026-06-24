@@ -7,4 +7,11 @@
   <Folder Name="/tests/lib/">
     <Project Path="tests/lib/BinkyLabs.OpenApi.Arazzo.Tests.csproj" />
   </Folder>
+  <Folder Name="/performance/" />
+  <Folder Name="/performance/benchmark/">
+    <Project Path="performance/benchmark/BinkyLabs.OpenApi.Arazzo.Performance.csproj" />
+  </Folder>
+  <Folder Name="/performance/resultsComparer/">
+    <Project Path="performance/resultsComparer/resultsComparer.csproj" />
+  </Folder>
 </Solution>

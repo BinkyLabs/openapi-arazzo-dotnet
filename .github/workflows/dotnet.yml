@@ -60,7 +60,49 @@ jobs:
       - name:  Publish coverage report to GitHub Step Summary
         run: |
            cat reports/coverage/Summary.md >>  $GITHUB_STEP_SUMMARY
-  
+
+  validate-performance:
+    name: Validate performance of the library
+    runs-on: ubuntu-latest
+    needs: [dotnet-build]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.x
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.x
+      - name: Copy committed results
+        run: |
+          mkdir -p ./performanceResults
+          cp -r ./performance/benchmark/BenchmarkDotNet.Artifacts/results/* ./performanceResults
+      - name: Run performance tests
+        run: dotnet run -c Release
+        working-directory: ./performance/benchmark
+      - name: Publish benchmark results
+        uses: actions/upload-artifact@v7
+        with:
+          if-no-files-found: error
+          name: benchmark-results
+          path: ${{ github.workspace }}/performance/benchmark/BenchmarkDotNet.Artifacts/results
+      - name: Run comparison tool for empty models
+        run: dotnet run -c Release --project ./performance/resultsComparer/resultsComparer.csproj -- compare $OLD_REPORT $NEW_REPORT -p IdenticalMemoryUsage
+        shell: bash
+        env:
+          NEW_REPORT: ${{ github.workspace }}/performance/benchmark/BenchmarkDotNet.Artifacts/results/performance.EmptyModels-report.json
+          OLD_REPORT: ${{ github.workspace }}/performanceResults/performance.EmptyModels-report.json
+      - name: Run comparison tool for descriptions
+        run: dotnet run -c Release --project ./performance/resultsComparer/resultsComparer.csproj -- compare $OLD_REPORT $NEW_REPORT -p ZeroPointTwoPercentDifferenceMemoryUsage
+        shell: bash
+        env:
+          NEW_REPORT: ${{ github.workspace }}/performance/benchmark/BenchmarkDotNet.Artifacts/results/performance.Descriptions-report.json
+          OLD_REPORT: ${{ github.workspace }}/performanceResults/performance.Descriptions-report.json
+
   publish-release-to-nuget:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest

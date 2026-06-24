@@ -1,0 +1,37 @@
+{
+  "arazzo": "1.0.1",
+  "info": {
+    "title": "Minimal benchmark workflow",
+    "version": "1.0.0"
+  },
+  "sourceDescriptions": [
+    {
+      "name": "MinimalApi",
+      "url": "https://example.com/openapi.yaml",
+      "type": "openapi"
+    }
+  ],
+  "workflows": [
+    {
+      "workflowId": "minimalWorkflow",
+      "steps": [
+        {
+          "stepId": "getWidget",
+          "operationPath": "{$sourceDescriptions.MinimalApi.url}#/paths/~1widgets~1{id}/get",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "value": "42"
+            }
+          ],
+          "successCriteria": [
+            {
+              "condition": "$statusCode == 200"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
