@@ -641,4 +641,64 @@ public class ArazzoWorkflowTests
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains($"{propertyName} contains duplicate action '{reference}'", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SerializeAsV1_WithDistinctActionNames_ShouldNotThrow(bool useSuccessActions)
+    {
+        var workflow = new ArazzoWorkflow
+        {
+            WorkflowId = "distinctActionWorkflow",
+            Steps = [new ArazzoStep { StepId = "step1", OperationId = "getUser" }]
+        };
+        if (useSuccessActions)
+        {
+            workflow.SuccessActions =
+            [
+                new ArazzoSuccessAction { Name = "firstAction", Type = ArazzoSuccessType.End },
+                new ArazzoSuccessAction { Name = "secondAction", Type = ArazzoSuccessType.End }
+            ];
+        }
+        else
+        {
+            workflow.FailureActions =
+            [
+                new ArazzoFailureAction { Name = "firstAction", Type = ArazzoFailureType.End },
+                new ArazzoFailureAction { Name = "secondAction", Type = ArazzoFailureType.End }
+            ];
+        }
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        workflow.SerializeAsV1(writer);
+    }
+
+    [Theory]
+    [InlineData("successActions")]
+    [InlineData("failureActions")]
+    public void Deserialize_WithDistinctActionNames_DoesNotAddDiagnosticError(string propertyName)
+    {
+        var json = $$"""
+        {
+            "workflowId": "distinctActionWorkflow",
+            "{{propertyName}}": [
+                {
+                    "name": "firstAction",
+                    "type": "end"
+                },
+                {
+                    "name": "secondAction",
+                    "type": "end"
+                }
+            ]
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+
+        Assert.DoesNotContain(parsingContext.Diagnostic.Errors, error => error.Message.Contains("contains duplicate action", StringComparison.Ordinal));
+    }
+
 }
