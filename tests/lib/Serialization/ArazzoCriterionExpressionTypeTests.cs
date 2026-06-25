@@ -126,6 +126,20 @@ public class ArazzoCriterionExpressionTypeTests
         Assert.Equal(ArazzoCriterionExpressionVersion.XPath10, expressionType.Version);
     }
 
+    [Theory]
+    [InlineData("""{ "version": "xpath-30" }""", "ArazzoCriterionExpressionType.Type is a REQUIRED field.")]
+    [InlineData("""{ "type": "xpath" }""", "ArazzoCriterionExpressionType.Version is a REQUIRED field.")]
+    public void ParseFragment_MissingRequiredFields_AddsDiagnosticError(string json, string expectedMessage)
+    {
+        var jsonNode = JsonNode.Parse(json)!;
+        var diagnostic = new ArazzoDiagnostic();
+        var parsingContext = new ParsingContext(diagnostic);
+
+        parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Contains(diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
     [Fact]
     public void SerializeAsV1_WithoutTypeThrowsException()
     {
@@ -195,11 +209,11 @@ public class ArazzoCriterionExpressionTypeTests
         var diagnostic = new ArazzoDiagnostic();
         var parsingContext = new ParsingContext(diagnostic);
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
+        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
 
         // Verify that the object was deserialized
-        Assert.Equal(ArazzoCriterionExpressionTypeType.Simple, expressionType.Type);
-        Assert.Equal(ArazzoCriterionExpressionVersion.XPath10, expressionType.Version);
+        Assert.Equal(ArazzoCriterionExpressionTypeType.Simple, expressionType?.Type);
+        Assert.Equal(ArazzoCriterionExpressionVersion.XPath10, expressionType?.Version);
 
         // Verify that an error was logged to diagnostics
         Assert.Single(diagnostic.Errors);
@@ -219,11 +233,11 @@ public class ArazzoCriterionExpressionTypeTests
         var diagnostic = new ArazzoDiagnostic();
         var parsingContext = new ParsingContext(diagnostic);
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
+        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
 
         // Verify that the object was deserialized
-        Assert.Equal(ArazzoCriterionExpressionTypeType.Regex, expressionType.Type);
-        Assert.Equal(ArazzoCriterionExpressionVersion.XPath30, expressionType.Version);
+        Assert.Equal(ArazzoCriterionExpressionTypeType.Regex, expressionType?.Type);
+        Assert.Equal(ArazzoCriterionExpressionVersion.XPath30, expressionType?.Version);
 
         // Verify that an error was logged to diagnostics
         Assert.Single(diagnostic.Errors);

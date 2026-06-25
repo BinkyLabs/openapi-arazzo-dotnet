@@ -36,6 +36,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("CriterionExpressionType", context);
         var expressionType = new ArazzoCriterionExpressionType();
         mapNode.ParseMap(expressionType, CriterionExpressionTypeFixedFields, CriterionExpressionTypePatternFields, context);
+        ValidateCriterionExpressionTypeRequiredFields(expressionType, context);
 
         // Validate that Simple and Regex types are not deserialized as they are not supported by the specification
         if (expressionType.Type == ArazzoCriterionExpressionTypeType.Simple || expressionType.Type == ArazzoCriterionExpressionTypeType.Regex)
@@ -45,5 +46,18 @@ internal static partial class ArazzoV1Deserializer
         }
 
         return expressionType;
+    }
+
+    private static void ValidateCriterionExpressionTypeRequiredFields(ArazzoCriterionExpressionType expressionType, ParsingContext context)
+    {
+        if (!expressionType.Type.HasValue)
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoCriterionExpressionType)}.{nameof(ArazzoCriterionExpressionType.Type)} is a REQUIRED field."));
+        }
+
+        if (!expressionType.Version.HasValue)
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoCriterionExpressionType)}.{nameof(ArazzoCriterionExpressionType.Version)} is a REQUIRED field."));
+        }
     }
 }
