@@ -49,10 +49,19 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("Step", context);
         var step = new ArazzoStep();
         mapNode.ParseMap(step, StepFixedFields, StepPatternFields, context);
+        ValidateStepRequiredFields(step, context);
         ValidateStepTargetFields(step, context);
         ArazzoSemanticReferenceValidator.ValidateOperationPathDeserialization(step.OperationPath, context, $"{nameof(ArazzoStep)} '{step.StepId}'");
 
         return step;
+    }
+
+    private static void ValidateStepRequiredFields(ArazzoStep step, ParsingContext context)
+    {
+        if (string.IsNullOrEmpty(step.StepId))
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)}.{nameof(ArazzoStep.StepId)} is a REQUIRED field."));
+        }
     }
 
     private static void ValidateStepTargetFields(ArazzoStep step, ParsingContext context)

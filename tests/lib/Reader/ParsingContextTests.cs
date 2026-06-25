@@ -327,6 +327,8 @@ public class ParsingContextTests
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoSourceDescription.Url is a REQUIRED field")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "steps": [{ "stepId": "step1" }] }] }""", "ArazzoWorkflow.WorkflowId is a REQUIRED field")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "operationId": "getPet" }] }] }""", "ArazzoStep.StepId is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "operationId": "getPet" }] }] }""", "ArazzoStep.StepId is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "", "operationId": "getPet" }] }] }""", "ArazzoStep.StepId is a REQUIRED field")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "parameters": [{ "value": "1" }], "steps": [{ "stepId": "step1", "operationId": "getPet" }] }] }""", "ArazzoParameter.Name is a REQUIRED field")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "parameters": [{ "name": "id" }], "steps": [{ "stepId": "step1", "operationId": "getPet" }] }] }""", "ArazzoParameter.Value is a REQUIRED field")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getPet" }], "successActions": [{ "type": "goto", "stepId": "step1" }] }] }""", "ArazzoSuccessAction.Name is a REQUIRED field")]
@@ -343,6 +345,19 @@ public class ParsingContextTests
         ctx.Parse(jsonNode, new Uri("https://example.com/"));
 
         Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{ "operationId": "getPet" }""")]
+    [InlineData("""{ "stepId": "", "operationId": "getPet" }""")]
+    public void ParseFragment_MissingOrEmptyStepId_AddsDiagnosticError(string json)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.ParseFragment<ArazzoStep>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains("ArazzoStep.StepId is a REQUIRED field", StringComparison.Ordinal));
     }
 
     [Theory]

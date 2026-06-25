@@ -338,7 +338,6 @@ public class ParsingContext
         {
             foreach (var step in workflow.Steps ?? [])
             {
-                AddRequiredFieldErrorIfMissing(step.StepId, nameof(ArazzoStep), nameof(ArazzoStep.StepId));
                 ValidateParameterRequiredFields(step.Parameters);
                 ValidatePayloadReplacementRequiredFields(step.RequestBody?.Replacements);
                 ValidateActionRequiredFields<ArazzoSuccessAction, IArazzoSuccessAction, ArazzoSuccessType>(step.OnSuccess, nameof(ArazzoSuccessAction));
