@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.0-preview.2](https://github.com/BinkyLabs/openapi-arazzo-dotnet/compare/v1.0.0-preview.1...v1.0.0-preview.2) (2026-06-25)
+
+
+### Features
+
+* adds a cli in addition to the library ([5732eb5](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/5732eb594a190765cbcf514093c88dd49f61e4c6))
+* adds a cli in addition to the library ([b3dcdd5](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/b3dcdd54f1c5859b229f90affd927225e282ea8a))
+
+
+### Bug Fixes
+
+* remove public APIs for cli app ([bda8e19](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/bda8e1927effb901b19d08d553188cd7e2698e15))
+* remove public APIs for cli app ([699cdb0](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/699cdb0a5a0bba9bf05900c659c47c1051839afa))
+
 ## [1.0.0-preview.1](https://github.com/BinkyLabs/openapi-arazzo-dotnet/compare/v1.0.0-preview.0...v1.0.0-preview.1) (2026-06-25)
 
 
