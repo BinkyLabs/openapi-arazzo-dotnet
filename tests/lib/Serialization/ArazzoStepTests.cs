@@ -166,6 +166,29 @@ public class ArazzoStepTests
     }
 
     [Fact]
+    public void SerializeAsV1_WithOperationPathAndRequestBody_ShouldWriteRequestBody()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "updateUser",
+            OperationPath = "{$sourceDescriptions.source1.url}#/paths/~1users~1{id}/patch",
+            RequestBody = new ArazzoRequestBody
+            {
+                ContentType = "application/json",
+                Payload = JsonNode.Parse("""{ "name": "Jane" }""")!
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        step.SerializeAsV1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("application/json", jsonResultObject?[ArazzoConstants.ArazzoStepRequestBody]?[ArazzoConstants.ArazzoRequestBodyContentType]?.GetValue<string>());
+        Assert.Equal("Jane", jsonResultObject?[ArazzoConstants.ArazzoStepRequestBody]?[ArazzoConstants.ArazzoRequestBodyPayload]?["name"]?.GetValue<string>());
+    }
+
+    [Fact]
     public void SerializeAsV1_WithPlainOperationPath_ShouldThrowArazzoSerializationException()
     {
         var step = new ArazzoStep
@@ -376,6 +399,22 @@ public class ArazzoStepTests
         var step = new ArazzoStep
         {
             StepId = "untargetedStep"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
+
+        Assert.Contains("must define exactly one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithoutTargetAndRequestBody_ShouldThrowArazzoSerializationException()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "untargetedRequestStep",
+            RequestBody = new ArazzoRequestBody()
         };
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
@@ -614,6 +653,36 @@ public class ArazzoStepTests
         ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("requestBody can only be specified when the step targets operationId or operationPath", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Deserialize_WithoutTargetAndRequestBody_AddsDiagnosticError()
+    {
+        var json = """
+        {
+            "stepId": "untargetedRequestStep",
+            "requestBody": {}
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("requestBody can only be specified when the step targets operationId or operationPath", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{ "stepId": "operationIdRequestStep", "operationId": "updateUser", "requestBody": {} }""")]
+    [InlineData("""{ "stepId": "operationPathRequestStep", "operationPath": "$sourceDescriptions.source1.url#/paths/~1users~1{id}/patch", "requestBody": {} }""")]
+    public void Deserialize_WithOperationTargetAndRequestBody_DoesNotAddRequestBodyDiagnostic(string json)
+    {
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+
+        Assert.DoesNotContain(parsingContext.Diagnostic.Errors, error => error.Message.Contains("requestBody can only be specified", StringComparison.Ordinal));
     }
 
     [Fact]

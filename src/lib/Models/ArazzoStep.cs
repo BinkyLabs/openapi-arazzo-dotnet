@@ -204,7 +204,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     }
 
     internal bool CanHaveRequestBody() =>
-        CountTargetFields() == 1 && IsOperationTargeted();
+        IsOperationTargeted();
 
     private void ValidateActions()
     {
