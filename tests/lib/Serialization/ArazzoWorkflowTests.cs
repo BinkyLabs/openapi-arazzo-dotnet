@@ -24,7 +24,7 @@ public class ArazzoWorkflowTests
                 new ArazzoStep
                 {
                     StepId = "step1",
-                    OperationPath = "/users/{id}"
+                    OperationPath = "{$sourceDescriptions.source1.url}#/paths/~1users~1{id}/get"
                 }
             },
             SuccessActions = new List<IArazzoSuccessAction>
@@ -80,7 +80,7 @@ public class ArazzoWorkflowTests
             "steps": [
                 {
                     "stepId": "step1",
-                    "operationPath": "/users/{id}"
+                    "operationPath": "{$sourceDescriptions.source1.url}#/paths/~1users~1{id}/get"
                 }
             ],
             "successActions": [

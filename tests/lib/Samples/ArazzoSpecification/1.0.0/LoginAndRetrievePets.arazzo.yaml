@@ -43,7 +43,7 @@ workflows:
       sessionToken: $response.body
   - stepId: getPetStep
     description: retrieve a pet by status from the GET pets endpoint
-    operationPath: '{$sourceDescriptions.petStoreDescription.url}#/paths/~1pet~1findByStatus'
+    operationPath: '{$sourceDescriptions.petStoreDescription.url}#/paths/~1pet~1findByStatus/get'
     parameters:
       - name: status
         in: query

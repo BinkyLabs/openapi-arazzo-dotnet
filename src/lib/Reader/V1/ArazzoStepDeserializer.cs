@@ -50,6 +50,7 @@ internal static partial class ArazzoV1Deserializer
         var step = new ArazzoStep();
         mapNode.ParseMap(step, StepFixedFields, StepPatternFields, context);
         ValidateStepTargetFields(step, context);
+        ArazzoSemanticReferenceValidator.ValidateOperationPathDeserialization(step.OperationPath, context, $"{nameof(ArazzoStep)} '{step.StepId}'");
 
         return step;
     }

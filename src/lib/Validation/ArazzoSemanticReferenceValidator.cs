@@ -12,7 +12,7 @@ internal static partial class ArazzoSemanticReferenceValidator
     [GeneratedRegex(@"\$sourceDescriptions\.([^\.\}\s#]+)\.url", RegexOptions.CultureInvariant)]
     private static partial Regex SourceDescriptionUrlExpressionRegex();
 
-    [GeneratedRegex(@"^\{?\$sourceDescriptions\.([^\.\}\s#]+)\.url\}?(#(?:/(?:[^~/]|~[01])*)*)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^\{\$sourceDescriptions\.([^\.\}\s#]+)\.url\}(#/paths/(?:[^~/]|~[01])+/(?:get|put|post|delete|options|head|patch|trace|query))$", RegexOptions.CultureInvariant)]
     private static partial Regex OperationPathRegex();
 
     [GeneratedRegex(@"^\$sourceDescriptions\.([^\.\s#]+)\.(.+)$", RegexOptions.CultureInvariant)]
@@ -36,6 +36,24 @@ internal static partial class ArazzoSemanticReferenceValidator
         foreach (var error in Validate(document))
         {
             context.Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));
+        }
+    }
+
+    internal static void ValidateOperationPathSerialization(string? operationPath, string elementName)
+    {
+        if (GetOperationPathSyntaxError(operationPath, elementName) is string error)
+        {
+            throw new ArazzoSerializationException(error);
+        }
+    }
+
+    internal static void ValidateOperationPathDeserialization(string? operationPath, ParsingContext context, string elementName)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (GetOperationPathSyntaxError(operationPath, elementName) is string error)
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
         }
     }
 
@@ -272,13 +290,13 @@ internal static partial class ArazzoSemanticReferenceValidator
 
     private static IEnumerable<string> ValidateOperationPathResolution(string operationPath, ArazzoDocument document, string elementName)
     {
-        var match = OperationPathRegex().Match(operationPath);
-        if (!match.Success)
+        if (GetOperationPathSyntaxError(operationPath, elementName) is string error)
         {
-            yield return $"{elementName} operationPath '{operationPath}' must reference a sourceDescription URL runtime expression followed by a JSON Pointer.";
+            yield return error;
             yield break;
         }
 
+        var match = OperationPathRegex().Match(operationPath);
         var sourceDescriptionName = match.Groups[1].Value;
         if (document.Workspace?.TryGetSourceDescription(sourceDescriptionName, out var sourceDescription) != true)
         {
@@ -295,6 +313,13 @@ internal static partial class ArazzoSemanticReferenceValidator
         {
             yield return $"{elementName} operationPath '{operationPath}' does not resolve to an operation in sourceDescription '{sourceDescriptionName}'.";
         }
+    }
+
+    private static string? GetOperationPathSyntaxError(string? operationPath, string elementName)
+    {
+        return string.IsNullOrEmpty(operationPath) || OperationPathRegex().IsMatch(operationPath)
+            ? null
+            : $"{elementName} operationPath '{operationPath}' must reference a sourceDescription URL runtime expression followed by a JSON Pointer to an operation path.";
     }
 
     private static IEnumerable<string> ValidateOperationIdResolution(string operationId, ArazzoDocument document, string elementName)
