@@ -264,6 +264,23 @@ public class ArazzoSuccessActionTests
         Assert.Null(successAction.Criteria);
     }
 
+    [Fact]
+    public void Deserialize_WithDollarRef_ReturnsSuccessActionObject()
+    {
+        var json = """
+        {
+            "$ref": "$components.successActions.shared"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var successAction = Assert.IsType<ArazzoSuccessAction>(ArazzoV1Deserializer.LoadSuccessAction(jsonNode, parsingContext));
+
+        Assert.Null(successAction.Name);
+        Assert.Null(successAction.Type);
+    }
+
     [Theory]
     [InlineData("$components.parameters.shared")]
     [InlineData("$components.successActions")]

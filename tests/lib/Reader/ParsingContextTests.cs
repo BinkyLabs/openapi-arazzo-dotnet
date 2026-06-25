@@ -580,6 +580,71 @@ public class ParsingContextTests
     }
 
     [Theory]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser", "parameters": [{ "$ref": "$components.parameters.shared" }] }] }], "components": { "parameters": { "shared": { "name": "id", "value": "1" } } } }""", "ArazzoParameter.Name is a REQUIRED field.")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser", "onSuccess": [{ "$ref": "$components.successActions.shared" }] }] }], "components": { "successActions": { "shared": { "name": "done", "type": "end" } } } }""", "ArazzoSuccessAction.Name is a REQUIRED field.")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser", "onFailure": [{ "$ref": "$components.failureActions.shared" }] }] }], "components": { "failureActions": { "shared": { "name": "retry", "type": "retry" } } } }""", "ArazzoFailureAction.Name is a REQUIRED field.")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "parameters": [{ "$ref": "$components.parameters.shared" }], "steps": [{ "stepId": "step1", "operationId": "getUser" }] }], "components": { "parameters": { "shared": { "name": "id", "value": "1" } } } }""", "ArazzoParameter.Name is a REQUIRED field.")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }], "successActions": [{ "$ref": "$components.successActions.shared" }] }], "components": { "successActions": { "shared": { "name": "done", "type": "end" } } } }""", "ArazzoSuccessAction.Name is a REQUIRED field.")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }], "failureActions": [{ "$ref": "$components.failureActions.shared" }] }], "components": { "failureActions": { "shared": { "name": "retry", "type": "retry" } } } }""", "ArazzoFailureAction.Name is a REQUIRED field.")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }] }], "components": { "parameters": { "shared": { "$ref": "$components.parameters.other" } } } }""", "ArazzoParameter.Name is a REQUIRED field.")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }] }], "components": { "successActions": { "shared": { "$ref": "$components.successActions.other" } } } }""", "ArazzoSuccessAction.Name is a REQUIRED field.")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }] }], "components": { "failureActions": { "shared": { "$ref": "$components.failureActions.other" } } } }""", "ArazzoFailureAction.Name is a REQUIRED field.")]
+    public void Parse_DollarRefReusableParameterOrAction_AddsRequiredFieldDiagnostic(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Parse_ReusableReferenceKeyword_ResolvesStepAndWorkflowParameterAndActions()
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse("""
+            {
+              "arazzo": "1.0.1",
+              "info": { "title": "T", "version": "1" },
+              "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }],
+              "workflows": [
+                {
+                  "workflowId": "wf",
+                  "parameters": [{ "reference": "$components.parameters.shared" }],
+                  "steps": [
+                    {
+                      "stepId": "step1",
+                      "operationId": "getUser",
+                      "parameters": [{ "reference": "$components.parameters.shared" }],
+                      "onSuccess": [{ "reference": "$components.successActions.done" }],
+                      "onFailure": [{ "reference": "$components.failureActions.retry" }]
+                    }
+                  ],
+                  "successActions": [{ "reference": "$components.successActions.done" }],
+                  "failureActions": [{ "reference": "$components.failureActions.retry" }]
+                }
+              ],
+              "components": {
+                "parameters": { "shared": { "name": "id", "in": "query", "value": "1" } },
+                "successActions": { "done": { "name": "done", "type": "end" } },
+                "failureActions": { "retry": { "name": "retry", "type": "retry" } }
+              }
+            }
+            """)!;
+
+        var document = ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Empty(ctx.Diagnostic.Errors);
+        Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Parameters![0]);
+        Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Steps![0].Parameters![0]);
+        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].SuccessActions![0]);
+        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].Steps![0].OnSuccess![0]);
+        Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].FailureActions![0]);
+        Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].Steps![0].OnFailure![0]);
+    }
+
+    [Theory]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "workflowId": "missingWorkflow" }] }] }""", "references unknown workflowId 'missingWorkflow'")]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "workflowId": "$inputs.foo" }] }] }""", "workflowId value '$inputs.foo' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'")]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "workflowId": "$sourceDescriptions.missing.externalWorkflow" }] }] }""", "workflowId value '$sourceDescriptions.missing.externalWorkflow' references unknown sourceDescription 'missing'")]

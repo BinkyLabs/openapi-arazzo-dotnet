@@ -506,6 +506,23 @@ public class ArazzoFailureActionTests
         Assert.Null(failureAction.Criteria);
     }
 
+    [Fact]
+    public void Deserialize_WithDollarRef_ReturnsFailureActionObject()
+    {
+        var json = """
+        {
+            "$ref": "$components.failureActions.shared"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var failureAction = Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+
+        Assert.Null(failureAction.Name);
+        Assert.Null(failureAction.Type);
+    }
+
     [Theory]
     [InlineData("$components.parameters.shared")]
     [InlineData("$components.failureActions")]
