@@ -28,6 +28,48 @@ The following example illustrates how you can load or parse an Arazzo document f
 var (arazzoDocument) = await ArazzoDocument.LoadFromUrlAsync("https://source/arazzo.json");
 ```
 
+## CLI
+
+### Installing the CLI
+
+You can install the Arazzo CLI as a dotnet tool.
+
+```bash
+dotnet tool install -g BinkyLabs.OpenApi.Arazzo.Tool
+```
+
+### Validating an Arazzo document
+
+The validate command loads an Arazzo document and prints any errors or warnings.
+
+```bash
+clia validate pathOrUrlToArazzoDescription
+```
+
+Use `--warnings-as-errors` to return an error exit code when warnings are present.
+
+```bash
+clia validate pathOrUrlToArazzoDescription --warnings-as-errors
+```
+
+### Using the GitHub Action
+
+```yaml
+- uses: BinkyLabs/openapi-arazzo-dotnet@v1
+  with:
+    input: 'arazzo/arazzo.yaml'
+    warnings-as-errors: 'true'
+```
+
+### Using the container image
+
+```bash
+docker run --rm \
+  -v $(pwd)/arazzo:/app/arazzo:ro \
+  ghcr.io/binkylabs/openapi-arazzo-dotnet:1 \
+  validate /app/arazzo/arazzo.yaml
+```
+
 #### Serializing an Arazzo document
 
 The following example illustrates how you can serialize an Arazzo document, built by the application or previously parsed, to JSON.

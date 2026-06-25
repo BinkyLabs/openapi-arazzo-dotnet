@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  clia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: validate /app/samples/arazzo.yaml
+
+  clia-custom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount your Arazzo document
+      - ./examples/arazzo.yaml:/app/arazzo.yaml:ro
+    command: validate /app/arazzo.yaml

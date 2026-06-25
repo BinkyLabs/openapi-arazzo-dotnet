@@ -1,0 +1,13 @@
+arazzo: 1.0.1
+info:
+  title: Sample Arazzo
+  version: 1.0.0
+sourceDescriptions:
+  - name: sampleApi
+    url: https://example.com/openapi.yaml
+    type: openapi
+workflows:
+  - workflowId: sampleWorkflow
+    steps:
+      - stepId: sampleStep
+        operationId: getSample
