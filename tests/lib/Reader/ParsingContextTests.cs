@@ -462,6 +462,47 @@ public class ParsingContextTests
     }
 
     [Theory]
+    [InlineData("""{ "url": "https://example.com/api" }""")]
+    [InlineData("""{ "name": "", "url": "https://example.com/api" }""")]
+    public void ParseFragment_MissingOrEmptySourceDescriptionName_AddsDiagnosticError(string json)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.ParseFragment<ArazzoSourceDescription>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains("ArazzoSourceDescription.Name is a REQUIRED field", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{ "name": "source1" }""")]
+    [InlineData("""{ "name": "source1", "url": null }""")]
+    public void ParseFragment_MissingOrNullSourceDescriptionUrl_AddsDiagnosticError(string json)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.ParseFragment<ArazzoSourceDescription>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains("ArazzoSourceDescription.Url is a REQUIRED field", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoSourceDescription.Name is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoSourceDescription.Name is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoSourceDescription.Url is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": null }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoSourceDescription.Url is a REQUIRED field")]
+    public void Parse_MissingSourceDescriptionRequiredFields_AddsOneDiagnosticError(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Single(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Theory]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api1" }, { "name": "source1", "url": "https://example.com/api2" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }] }] }""", "duplicate name 'source1'")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }] }, { "workflowId": "wf", "steps": [{ "stepId": "step2", "operationId": "getUser" }] }] }""", "duplicate workflowId 'wf'")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }, { "stepId": "step1", "operationId": "listUsers" }] }] }""", "duplicate stepId 'step1'")]

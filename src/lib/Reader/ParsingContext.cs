@@ -268,7 +268,6 @@ public class ParsingContext
             }
             else
             {
-                ValidateSourceDescriptionRequiredFields(doc.SourceDescriptions);
                 ValidateUniqueSourceDescriptionNames(doc.SourceDescriptions);
             }
 
@@ -302,15 +301,6 @@ public class ParsingContext
         if (string.IsNullOrEmpty(info.Version))
         {
             Diagnostic.Errors.Add(new OpenApiError("", $"Info.Version is a REQUIRED field at {GetLocation()}"));
-        }
-    }
-
-    private void ValidateSourceDescriptionRequiredFields(IEnumerable<ArazzoSourceDescription> sourceDescriptions)
-    {
-        foreach (var sourceDescription in sourceDescriptions)
-        {
-            AddRequiredFieldErrorIfMissing(sourceDescription.Name, nameof(ArazzoSourceDescription), nameof(ArazzoSourceDescription.Name));
-            AddRequiredFieldErrorIfMissing(sourceDescription.Url, nameof(ArazzoSourceDescription), nameof(ArazzoSourceDescription.Url));
         }
     }
 
