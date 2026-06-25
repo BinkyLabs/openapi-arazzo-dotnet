@@ -23,6 +23,11 @@
           "type": "xml",
           "path": "src/lib/BinkyLabs.OpenApi.Arazzo.csproj",
           "xpath": "//Project/PropertyGroup/Version"
+        },
+        {
+          "type": "xml",
+          "path": "src/tool/BinkyLabs.OpenApi.Arazzo.Cli.csproj",
+          "xpath": "//Project/PropertyGroup/Version"
         }
       ]
     }
