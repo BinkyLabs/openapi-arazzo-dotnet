@@ -1,0 +1,43 @@
+name: 'OpenAPI Arazzo'
+description: 'Validate OpenAPI Arazzo documents using the BinkyLabs OpenAPI Arazzo CLI'
+author: 'BinkyLabs'
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  input:
+    description: 'Path to the input Arazzo document (YAML or JSON)'
+    required: true
+  warnings-as-errors:
+    description: 'Treat warnings as errors'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Pull or build Docker image
+      shell: bash
+      run: docker pull ghcr.io/binkylabs/openapi-arazzo-dotnet:1 || docker build -t ghcr.io/binkylabs/openapi-arazzo-dotnet:1 "$GITHUB_ACTION_PATH"
+
+    - name: Validate OpenAPI Arazzo document
+      shell: bash
+      run: |
+        WARNINGS_AS_ERRORS_FLAG=""
+        if [ "${{ inputs.warnings-as-errors }}" = "true" ]; then
+          WARNINGS_AS_ERRORS_FLAG="--warnings-as-errors"
+        fi
+
+        docker run --rm \
+          --user "$(id -u):$(id -g)" \
+          -v "$GITHUB_WORKSPACE:/workspace" \
+          -w /workspace \
+          -e DOTNET_NOLOGO=1 \
+          -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+          --entrypoint dotnet \
+          ghcr.io/binkylabs/openapi-arazzo-dotnet:1 \
+          /app/BinkyLabs.OpenApi.Arazzo.Cli.dll \
+          validate \
+          /workspace/${{ inputs.input }} \
+          $WARNINGS_AS_ERRORS_FLAG

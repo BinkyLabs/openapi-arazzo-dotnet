@@ -1,0 +1,3 @@
+#nullable enable
+BinkyLabs.OpenApi.Arazzo.Cli.ArazzoCliApp
+static BinkyLabs.OpenApi.Arazzo.Cli.ArazzoCliApp.RunAsync(string![]! args, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!

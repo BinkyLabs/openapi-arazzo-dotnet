@@ -1,0 +1,50 @@
+name: Test GitHub Action
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'action.yml'
+      - 'Dockerfile'
+      - '.github/workflows/test-action.yml'
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    name: Test OpenAPI Arazzo Action
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Create test Arazzo file
+        run: |
+          mkdir -p test-data
+          cat > test-data/arazzo.yaml << 'EOF'
+          arazzo: 1.0.1
+          info:
+            title: Test Arazzo
+            version: 1.0.0
+          sourceDescriptions:
+            - name: testApi
+              url: https://example.com/openapi.yaml
+              type: openapi
+          workflows:
+            - workflowId: testWorkflow
+              steps:
+                - stepId: testStep
+                  operationId: getTest
+          EOF
+
+      - name: Test Action - Validate
+        uses: ./
+        with:
+          input: 'test-data/arazzo.yaml'
+
+      - name: Test Action - Validate with warnings as errors
+        uses: ./
+        with:
+          input: 'test-data/arazzo.yaml'
+          warnings-as-errors: 'true'

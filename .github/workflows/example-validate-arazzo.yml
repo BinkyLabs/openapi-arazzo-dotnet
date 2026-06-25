@@ -1,0 +1,24 @@
+name: Example - Validate OpenAPI Arazzo
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'arazzo/**'
+
+jobs:
+  validate-arazzo:
+    runs-on: ubuntu-latest
+    name: Validate Arazzo
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Validate OpenAPI Arazzo document
+        uses: BinkyLabs/openapi-arazzo-dotnet@v1
+        with:
+          input: 'arazzo/arazzo.yaml'
+          warnings-as-errors: 'true'

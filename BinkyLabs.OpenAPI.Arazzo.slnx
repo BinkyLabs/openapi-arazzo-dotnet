@@ -3,9 +3,15 @@
   <Folder Name="/src/lib/">
     <Project Path="src/lib/BinkyLabs.OpenApi.Arazzo.csproj" />
   </Folder>
+  <Folder Name="/src/tool/">
+    <Project Path="src/tool/BinkyLabs.OpenApi.Arazzo.Cli.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/lib/">
     <Project Path="tests/lib/BinkyLabs.OpenApi.Arazzo.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/tool/">
+    <Project Path="tests/tool/BinkyLabs.OpenApi.Arazzo.Cli.Tests.csproj" />
   </Folder>
   <Folder Name="/performance/" />
   <Folder Name="/performance/benchmark/">
