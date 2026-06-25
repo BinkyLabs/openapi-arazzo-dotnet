@@ -315,8 +315,8 @@ public class ParsingContextTests
     }
 
     [Theory]
-    [InlineData("""{ "arazzo": "1.0.0", "info": { "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "Info.Title is a REQUIRED field")]
-    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "Info.Version is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoInfo.Title is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoInfo.Version is a REQUIRED field")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "SourceDescriptions is a REQUIRED field")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "SourceDescriptions is a REQUIRED field")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }] }""", "Workflows is a REQUIRED field")]
@@ -358,6 +358,36 @@ public class ParsingContextTests
         ctx.ParseFragment<ArazzoStep>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
 
         Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains("ArazzoStep.StepId is a REQUIRED field", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{ "version": "1" }""", "ArazzoInfo.Title is a REQUIRED field")]
+    [InlineData("""{ "title": "", "version": "1" }""", "ArazzoInfo.Title is a REQUIRED field")]
+    [InlineData("""{ "title": "T" }""", "ArazzoInfo.Version is a REQUIRED field")]
+    [InlineData("""{ "title": "T", "version": "" }""", "ArazzoInfo.Version is a REQUIRED field")]
+    public void ParseFragment_MissingOrEmptyInfoRequiredFields_AddsDiagnosticError(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.ParseFragment<ArazzoInfo>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoInfo.Title is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoInfo.Title is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoInfo.Version is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }] }] }""", "ArazzoInfo.Version is a REQUIRED field")]
+    public void Parse_InfoRequiredFields_AddsSingleDiagnosticError(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Equal(1, ctx.Diagnostic.Errors.Count(e => e.Message.Contains(expectedMessage, StringComparison.Ordinal)));
     }
 
     [Theory]
