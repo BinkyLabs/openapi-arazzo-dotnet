@@ -279,7 +279,6 @@ public class ParsingContext
             else
             {
                 ValidateUniqueWorkflowIds(doc.Workflows);
-                ValidateWorkflowRequiredFields(doc.Workflows);
                 ValidateStepRequiredFields(doc.Workflows);
                 ValidateWorkflowActionRequiredFields(doc.Workflows);
                 ValidateWorkflowStepIds(doc.Workflows);
@@ -293,16 +292,16 @@ public class ParsingContext
         }
     }
 
-    private void ValidateWorkflowRequiredFields(IEnumerable<ArazzoWorkflow> workflows)
+    private void ValidateInfoRequiredFields(ArazzoInfo info)
     {
-        foreach (var workflow in workflows)
+        if (string.IsNullOrEmpty(info.Title))
         {
-            AddRequiredFieldErrorIfMissing(workflow.WorkflowId, nameof(ArazzoWorkflow), nameof(ArazzoWorkflow.WorkflowId));
+            Diagnostic.Errors.Add(new OpenApiError("", $"Info.Title is a REQUIRED field at {GetLocation()}"));
+        }
 
-            if (workflow.Steps is not { Count: > 0 })
-            {
-                Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' steps is a REQUIRED field and MUST contain at least one entry."));
-            }
+        if (string.IsNullOrEmpty(info.Version))
+        {
+            Diagnostic.Errors.Add(new OpenApiError("", $"Info.Version is a REQUIRED field at {GetLocation()}"));
         }
     }
 

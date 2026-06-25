@@ -57,7 +57,21 @@ internal static partial class ArazzoV1Deserializer
         var workflow = new ArazzoWorkflow();
 
         mapNode.ParseMap(workflow, WorkflowFixedFields, WorkflowPatternFields, context);
+        ValidateWorkflowRequiredFields(workflow, context);
 
         return workflow;
+    }
+
+    private static void ValidateWorkflowRequiredFields(ArazzoWorkflow workflow, ParsingContext context)
+    {
+        if (string.IsNullOrEmpty(workflow.WorkflowId))
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoWorkflow)}.{nameof(ArazzoWorkflow.WorkflowId)} is a REQUIRED field."));
+        }
+
+        if (workflow.Steps is not { Count: > 0 })
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"Workflow '{workflow.WorkflowId}' steps is a REQUIRED field and MUST contain at least one entry."));
+        }
     }
 }
