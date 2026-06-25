@@ -206,10 +206,38 @@ public class ArazzoDocumentTests
         ];
         yield return
         [
+            CreateDocument(new ArazzoStep { StepId = "step1", WorkflowId = "$inputs.foo" }),
+            "workflowId value '$inputs.foo' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'"
+        ];
+        yield return
+        [
+            CreateDocument(new ArazzoStep { StepId = "step1", WorkflowId = "$sourceDescriptions.missing.externalWorkflow" }),
+            "workflowId value '$sourceDescriptions.missing.externalWorkflow' references unknown sourceDescription 'missing'"
+        ];
+        yield return
+        [
             CreateDocument(
                 new ArazzoStep { StepId = "step1", OperationId = "getUser" },
                 successActions: [new ArazzoSuccessAction { Name = "goto", Type = ArazzoSuccessType.Goto, StepId = "missingStep" }]),
             "references unknown stepId 'missingStep'"
+        ];
+        yield return
+        [
+            CreateDocument(
+                new ArazzoStep { StepId = "step1", OperationId = "getUser" },
+                successActions: [new ArazzoSuccessAction { Name = "goto", Type = ArazzoSuccessType.Goto, WorkflowId = "$outputs.foo" }]),
+            "workflowId value '$outputs.foo' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'"
+        ];
+        yield return
+        [
+            CreateDocument(
+                new ArazzoStep
+                {
+                    StepId = "step1",
+                    OperationId = "getUser",
+                    OnFailure = [new ArazzoFailureAction { Name = "retry", Type = ArazzoFailureType.Retry, WorkflowId = "$steps.step1" }]
+                }),
+            "workflowId value '$steps.step1' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'"
         ];
         yield return
         [
@@ -267,12 +295,13 @@ public class ArazzoDocumentTests
                 OperationPath = "{$sourceDescriptions.source1.url}#/paths/~1users/get",
                 Parameters = [new ArazzoParameterReference("shared")]
             },
-            successActions: [new ArazzoSuccessAction { Name = "goto", Type = ArazzoSuccessType.Goto, StepId = "step1" }],
+            successActions: [new ArazzoSuccessAction { Name = "goto", Type = ArazzoSuccessType.Goto, WorkflowId = "$sourceDescriptions.external.childWorkflow" }],
+            failureActions: [new ArazzoFailureAction { Name = "retry", Type = ArazzoFailureType.Retry, WorkflowId = "$sourceDescriptions.external.childWorkflow" }],
             parameters: new Dictionary<string, ArazzoParameter>
             {
                 ["shared"] = new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "1" }
             },
-            dependsOn: new HashSet<string> { "child", "$sourceDescriptions.source1.externalWorkflow" });
+            dependsOn: new HashSet<string> { "child", "$sourceDescriptions.external.childWorkflow" });
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
 
@@ -382,6 +411,7 @@ public class ArazzoDocumentTests
     private static ArazzoDocument CreateDocument(
         ArazzoStep step,
         IList<IArazzoSuccessAction>? successActions = null,
+        IList<IArazzoFailureAction>? failureActions = null,
         IDictionary<string, ArazzoParameter>? parameters = null,
         ISet<string>? dependsOn = null,
         IList<ArazzoSourceDescription>? sourceDescriptions = null)
@@ -400,6 +430,12 @@ public class ArazzoDocumentTests
                     Name = "source1",
                     Url = new Uri("https://example.com/api"),
                     Type = ArazzoDescriptionType.OpenAPI
+                },
+                new ArazzoSourceDescription
+                {
+                    Name = "external",
+                    Url = new Uri("https://example.com/external.arazzo"),
+                    Type = ArazzoDescriptionType.Arazzo
                 }
             },
             Workflows = new List<ArazzoWorkflow>
@@ -409,7 +445,8 @@ public class ArazzoDocumentTests
                     WorkflowId = "workflow1",
                     DependsOn = dependsOn,
                     Steps = new List<ArazzoStep> { step },
-                    SuccessActions = successActions
+                    SuccessActions = successActions,
+                    FailureActions = failureActions
                 },
                 new ArazzoWorkflow
                 {

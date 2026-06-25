@@ -242,15 +242,25 @@ internal static partial class ArazzoSemanticReferenceValidator
 
         if (workflowId.StartsWith("$sourceDescriptions.", StringComparison.Ordinal))
         {
-            foreach (var error in ValidateSourceDescriptionExpressions(workflowId, sourceDescriptionNames, elementName))
+            var match = SourceDescriptionWorkflowExpressionRegex().Match(workflowId);
+            if (!match.Success)
             {
-                yield return error;
+                yield return $"{elementName} workflowId value '{workflowId}' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'.";
+                yield break;
             }
+
+            var sourceDescriptionName = match.Groups[1].Value;
+            if (!sourceDescriptionNames.Contains(sourceDescriptionName))
+            {
+                yield return $"{elementName} workflowId value '{workflowId}' references unknown sourceDescription '{sourceDescriptionName}'.";
+            }
+
             yield break;
         }
 
         if (workflowId.StartsWith("$", StringComparison.Ordinal))
         {
+            yield return $"{elementName} workflowId value '{workflowId}' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'.";
             yield break;
         }
 

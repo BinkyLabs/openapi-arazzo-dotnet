@@ -483,7 +483,11 @@ public class ParsingContextTests
 
     [Theory]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "workflowId": "missingWorkflow" }] }] }""", "references unknown workflowId 'missingWorkflow'")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "workflowId": "$inputs.foo" }] }] }""", "workflowId value '$inputs.foo' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "workflowId": "$sourceDescriptions.missing.externalWorkflow" }] }] }""", "workflowId value '$sourceDescriptions.missing.externalWorkflow' references unknown sourceDescription 'missing'")]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }], "successActions": [{ "name": "goto", "type": "goto", "stepId": "missingStep" }] }] }""", "references unknown stepId 'missingStep'")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1" }], "successActions": [{ "name": "goto", "type": "goto", "workflowId": "$outputs.foo" }] }] }""", "workflowId value '$outputs.foo' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'")]
+    [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "onFailure": [{ "name": "retry", "type": "retry", "workflowId": "$steps.step1" }] }] }] }""", "workflowId value '$steps.step1' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'")]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "parameters": [{ "reference": "$components.parameters.missing" }] }] }] }""", "reference '$components.parameters.missing' does not resolve")]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationPath": "{$sourceDescriptions.missing.url}#/paths/~1users/get" }] }] }""", "references unknown sourceDescription 'missing'")]
     [InlineData("""{ "arazzo": "1.0.1", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationPath": "/users/{id}" }] }] }""", "must reference a sourceDescription URL runtime expression followed by a JSON Pointer to an operation path")]
@@ -509,7 +513,10 @@ public class ParsingContextTests
             {
               "arazzo": "1.0.1",
               "info": { "title": "T", "version": "1" },
-              "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }],
+              "sourceDescriptions": [
+                { "name": "source1", "url": "https://example.com/api" },
+                { "name": "external", "url": "https://example.com/external.arazzo", "type": "arazzo" }
+              ],
               "workflows": [
                 {
                   "workflowId": "wf",
@@ -519,9 +526,14 @@ public class ParsingContextTests
                       "stepId": "step1",
                       "operationPath": "{$sourceDescriptions.source1.url}#/paths/~1users/get",
                       "parameters": [{ "reference": "$components.parameters.shared" }]
-                    }
+                     },
+                     {
+                       "stepId": "step2",
+                       "workflowId": "$sourceDescriptions.external.childWorkflow"
+                     }
                   ],
-                  "successActions": [{ "name": "goto", "type": "goto", "stepId": "step1" }]
+                  "successActions": [{ "name": "goto", "type": "goto", "workflowId": "$sourceDescriptions.external.childWorkflow" }],
+                  "failureActions": [{ "name": "retry", "type": "retry", "workflowId": "$sourceDescriptions.external.childWorkflow" }]
                 },
                 {
                   "workflowId": "child",
