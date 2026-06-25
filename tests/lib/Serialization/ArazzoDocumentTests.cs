@@ -241,6 +241,20 @@ public class ArazzoDocumentTests
             CreateDocument(new ArazzoStep { StepId = "step1" }, dependsOn: new HashSet<string> { "$steps.step1" }),
             "dependsOn value '$steps.step1' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'"
         ];
+        yield return
+        [
+            CreateDocument(
+                new ArazzoStep { StepId = "step1", OperationId = "getUser" },
+                sourceDescriptions: CreateMultipleNonArazzoSourceDescriptions()),
+            "operationId 'getUser' is ambiguous because multiple non-arazzo sourceDescriptions are defined"
+        ];
+        yield return
+        [
+            CreateDocument(
+                new ArazzoStep { StepId = "step1", OperationId = "$sourceDescriptions.missing.getUser" },
+                sourceDescriptions: CreateMultipleNonArazzoSourceDescriptions()),
+            "references unknown sourceDescription 'missing'"
+        ];
     }
 
     [Fact]
@@ -268,11 +282,109 @@ public class ArazzoDocumentTests
         Assert.NotNull(json["workflows"]);
     }
 
+    [Fact]
+    public void SerializeAsV1_WithQualifiedOperationIdAndMultipleNonArazzoSourceDescriptions_ShouldSerialize()
+    {
+        var document = CreateDocument(
+            new ArazzoStep { StepId = "step1", OperationId = "$sourceDescriptions.source2.getUser" },
+            sourceDescriptions: CreateMultipleNonArazzoSourceDescriptions());
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        document.SerializeAsV1(writer);
+        var json = JsonNode.Parse(textWriter.ToString())!;
+
+        Assert.Equal("$sourceDescriptions.source2.getUser", json["workflows"]?[0]?["steps"]?[0]?["operationId"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task ParseAsync_WithAmbiguousUnqualifiedOperationId_ShouldReportDiagnostic()
+    {
+        const string json =
+            """
+            {
+              "arazzo": "1.0.1",
+              "info": {
+                "title": "Ambiguous operationId",
+                "version": "1.0.0"
+              },
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api1",
+                  "type": "openapi"
+                },
+                {
+                  "name": "source2",
+                  "url": "https://example.com/api2"
+                }
+              ],
+              "workflows": [
+                {
+                  "workflowId": "workflow1",
+                  "steps": [
+                    {
+                      "stepId": "step1",
+                      "operationId": "getUser"
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+
+        var result = await ArazzoDocument.ParseAsync(json, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Contains(result.Diagnostic?.Errors ?? [], error => error.Message.Contains("operationId 'getUser' is ambiguous because multiple non-arazzo sourceDescriptions are defined", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ParseAsync_WithQualifiedOperationIdAndMultipleNonArazzoSourceDescriptions_ShouldNotReportOperationIdDiagnostic()
+    {
+        const string json =
+            """
+            {
+              "arazzo": "1.0.1",
+              "info": {
+                "title": "Qualified operationId",
+                "version": "1.0.0"
+              },
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api1",
+                  "type": "openapi"
+                },
+                {
+                  "name": "source2",
+                  "url": "https://example.com/api2"
+                }
+              ],
+              "workflows": [
+                {
+                  "workflowId": "workflow1",
+                  "steps": [
+                    {
+                      "stepId": "step1",
+                      "operationId": "$sourceDescriptions.source2.getUser"
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+
+        var result = await ArazzoDocument.ParseAsync(json, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(result.Diagnostic?.Errors ?? [], error => error.Message.Contains("operationId", StringComparison.Ordinal));
+    }
+
     private static ArazzoDocument CreateDocument(
         ArazzoStep step,
         IList<IArazzoSuccessAction>? successActions = null,
         IDictionary<string, ArazzoParameter>? parameters = null,
-        ISet<string>? dependsOn = null)
+        ISet<string>? dependsOn = null,
+        IList<ArazzoSourceDescription>? sourceDescriptions = null)
     {
         return new ArazzoDocument
         {
@@ -281,7 +393,7 @@ public class ArazzoDocumentTests
                 Title = "Test Arazzo",
                 Version = "1.0.0"
             },
-            SourceDescriptions = new List<ArazzoSourceDescription>
+            SourceDescriptions = sourceDescriptions ?? new List<ArazzoSourceDescription>
             {
                 new ArazzoSourceDescription
                 {
@@ -304,7 +416,11 @@ public class ArazzoDocumentTests
                     WorkflowId = "child",
                     Steps = new List<ArazzoStep>
                     {
-                        new ArazzoStep { StepId = "childStep", OperationId = "getUser" }
+                        new ArazzoStep
+                        {
+                            StepId = "childStep",
+                            OperationId = sourceDescriptions is null ? "getUser" : "$sourceDescriptions.source1.getUser"
+                        }
                     }
                 }
             },
@@ -315,6 +431,24 @@ public class ArazzoDocumentTests
                     Parameters = parameters
                 }
         };
+    }
+
+    private static List<ArazzoSourceDescription> CreateMultipleNonArazzoSourceDescriptions()
+    {
+        return
+        [
+            new ArazzoSourceDescription
+            {
+                Name = "source1",
+                Url = new Uri("https://example.com/api1"),
+                Type = ArazzoDescriptionType.OpenAPI
+            },
+            new ArazzoSourceDescription
+            {
+                Name = "source2",
+                Url = new Uri("https://example.com/api2")
+            }
+        ];
     }
 
     [Fact]

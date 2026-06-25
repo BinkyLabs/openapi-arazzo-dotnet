@@ -29,6 +29,10 @@ public class ArazzoSpecificationExamplesTests
                 "#/workflows/steps/outputs/redirectAuthToken: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'redirectAuthToken': '$response.body.redirectAuthToken'.",
                 "#/workflows/steps/outputs/loanTransactionId: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'loanTransactionId': '$response.body.loanTransactionId'.",
             ],
+            [Path.Join("OperationResolution", "ambiguous.arazzo.yaml")] =
+            [
+                ": Workflow 'wf' step 'ambiguousOperationId' operationId 'listPets' is ambiguous because multiple non-arazzo sourceDescriptions are defined; use '$sourceDescriptions.<name>.listPets' syntax.",
+            ],
         };
 
     [Fact]

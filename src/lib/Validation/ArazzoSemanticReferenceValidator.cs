@@ -91,6 +91,8 @@ internal static partial class ArazzoSemanticReferenceValidator
                 .Select(static sourceDescription => sourceDescription.Name)
                 .OfType<string>() ?? [],
             StringComparer.Ordinal);
+        var nonArazzoSourceDescriptionCount = document.SourceDescriptions?
+            .Count(static sourceDescription => sourceDescription.Type is not ArazzoDescriptionType.Arazzo) ?? 0;
 
         foreach (var workflow in document.Workflows ?? [])
         {
@@ -113,6 +115,11 @@ internal static partial class ArazzoSemanticReferenceValidator
                 }
 
                 foreach (var error in ValidateOperationPathSourceDescriptions(step.OperationPath, sourceDescriptionNames, $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'"))
+                {
+                    yield return error;
+                }
+
+                foreach (var error in ValidateOperationIdSourceDescriptions(step.OperationId, sourceDescriptionNames, nonArazzoSourceDescriptionCount, $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'"))
                 {
                     yield return error;
                 }
@@ -260,6 +267,41 @@ internal static partial class ArazzoSemanticReferenceValidator
             : ValidateSourceDescriptionExpressions(operationPath, sourceDescriptionNames, elementName);
     }
 
+    private static IEnumerable<string> ValidateOperationIdSourceDescriptions(
+        string? operationId,
+        ISet<string> sourceDescriptionNames,
+        int nonArazzoSourceDescriptionCount,
+        string elementName)
+    {
+        if (string.IsNullOrEmpty(operationId))
+        {
+            yield break;
+        }
+
+        var sourceDescriptionOperationIdMatch = SourceDescriptionOperationIdRegex().Match(operationId);
+        if (sourceDescriptionOperationIdMatch.Success)
+        {
+            if (!ArazzoRuntimeExpressionValidator.IsRuntimeExpression(operationId))
+            {
+                yield return $"{elementName} operationId '{operationId}' must be a valid runtime expression.";
+                yield break;
+            }
+
+            var sourceDescriptionName = sourceDescriptionOperationIdMatch.Groups[1].Value;
+            if (!sourceDescriptionNames.Contains(sourceDescriptionName))
+            {
+                yield return $"{elementName} references unknown sourceDescription '{sourceDescriptionName}'.";
+            }
+
+            yield break;
+        }
+
+        if (nonArazzoSourceDescriptionCount > 1)
+        {
+            yield return $"{elementName} operationId '{operationId}' is ambiguous because multiple non-arazzo sourceDescriptions are defined; use '$sourceDescriptions.<name>.{operationId}' syntax.";
+        }
+    }
+
     private static IEnumerable<string> ValidateSourceDescriptionExpressions(string value, ISet<string> sourceDescriptionNames, string elementName)
     {
         return SourceDescriptionUrlExpressionRegex()
@@ -329,10 +371,9 @@ internal static partial class ArazzoSemanticReferenceValidator
         {
             var sourceDescriptionName = sourceDescriptionOperationIdMatch.Groups[1].Value;
             var referencedOperationId = sourceDescriptionOperationIdMatch.Groups[2].Value;
-            if (document.Workspace?.TryGetSourceDescription(sourceDescriptionName, out var sourceDescription) != true ||
-                document.SourceDescriptions?.Any(sourceDescription => sourceDescription.Name == sourceDescriptionName) != true)
+            if (document.SourceDescriptions?.Any(sourceDescription => sourceDescription.Name == sourceDescriptionName) != true ||
+                document.Workspace?.TryGetSourceDescription(sourceDescriptionName, out var sourceDescription) != true)
             {
-                yield return $"{elementName} references unknown sourceDescription '{sourceDescriptionName}'.";
                 yield break;
             }
 
@@ -346,6 +387,11 @@ internal static partial class ArazzoSemanticReferenceValidator
                 yield return $"{elementName} operationId '{operationId}' does not resolve to an operation in sourceDescription '{sourceDescriptionName}'.";
             }
 
+            yield break;
+        }
+
+        if ((document.SourceDescriptions?.Count(static sourceDescription => sourceDescription.Type is not ArazzoDescriptionType.Arazzo) ?? 0) > 1)
+        {
             yield break;
         }
 
