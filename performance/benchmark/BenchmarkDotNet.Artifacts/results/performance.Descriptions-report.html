@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>performance.Descriptions-20260625-082252</title>
+<title>performance.Descriptions-20260625-131628</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -13,24 +13,24 @@
 </head>
 <body>
 <pre><code>
-BenchmarkDotNet v0.15.8, Windows 11 (10.0.26200.8655/25H2/2025Update/HudsonValley2)
-Snapdragon X 12-core X1E80100 3.40 GHz (Max: 3.42GHz), 1 CPU, 12 logical and 12 physical cores
+BenchmarkDotNet v0.15.8, Linux Ubuntu 24.04.4 LTS (Noble Numbat)
+Intel Xeon Platinum 8370C CPU 2.80GHz (Max: 3.43GHz), 1 CPU, 2 logical cores and 1 physical core
 .NET SDK 10.0.301
-  [Host]   : .NET 10.0.9 (10.0.9, 10.0.926.27113), Arm64 RyuJIT armv8.0-a
-  ShortRun : .NET 10.0.9 (10.0.9, 10.0.926.27113), Arm64 RyuJIT armv8.0-a
+  [Host]   : .NET 10.0.9 (10.0.9, 10.0.926.27113), X64 RyuJIT x86-64-v4
+  ShortRun : .NET 10.0.9 (10.0.9, 10.0.926.27113), X64 RyuJIT x86-64-v4
 </code></pre>
 <pre><code>Job=ShortRun  IterationCount=3  LaunchCount=1  
 WarmupCount=3  
 </code></pre>
 
 <table>
-<thead><tr><th>Method  </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Gen0</th><th>Gen1</th><th>Allocated</th>
+<thead><tr><th>Method  </th><th>Mean</th><th>Error </th><th>StdDev</th><th>Gen0</th><th>Gen1</th><th>Allocated</th>
 </tr>
-</thead><tbody><tr><td>FormalBnplYaml</td><td>268.631 &mu;s</td><td>80.709 &mu;s</td><td>4.4239 &mu;s</td><td>96.1914</td><td>0.9766</td><td>393.3 KB</td>
-</tr><tr><td>FormalBnplJson</td><td>110.037 &mu;s</td><td>53.718 &mu;s</td><td>2.9445 &mu;s</td><td>60.5469</td><td>0.4883</td><td>248.35 KB</td>
-</tr><tr><td>FapiParYaml</td><td>215.200 &mu;s</td><td>52.135 &mu;s</td><td>2.8577 &mu;s</td><td>86.9141</td><td>2.9297</td><td>355.01 KB</td>
-</tr><tr><td>FapiParJson</td><td>97.148 &mu;s</td><td>37.286 &mu;s</td><td>2.0438 &mu;s</td><td>59.5703</td><td>0.4883</td><td>244.6 KB</td>
-</tr><tr><td>MinimalJson</td><td>9.271 &mu;s</td><td>5.488 &mu;s</td><td>0.3008 &mu;s</td><td>5.8746</td><td>-</td><td>24.05 KB</td>
+</thead><tbody><tr><td>FormalBnplYaml</td><td>566.03 &mu;s</td><td>330.994 &mu;s</td><td>18.143 &mu;s</td><td>15.6250</td><td>1.9531</td><td>398.79 KB</td>
+</tr><tr><td>FormalBnplJson</td><td>230.63 &mu;s</td><td>935.121 &mu;s</td><td>51.257 &mu;s</td><td>9.7656</td><td>2.9297</td><td>253.52 KB</td>
+</tr><tr><td>FapiParYaml</td><td>507.23 &mu;s</td><td>1,872.865 &mu;s</td><td>102.658 &mu;s</td><td>13.6719</td><td>1.9531</td><td>357.22 KB</td>
+</tr><tr><td>FapiParJson</td><td>218.82 &mu;s</td><td>716.983 &mu;s</td><td>39.300 &mu;s</td><td>9.7656</td><td>1.9531</td><td>246.59 KB</td>
+</tr><tr><td>MinimalJson</td><td>19.15 &mu;s</td><td>5.533 &mu;s</td><td>0.303 &mu;s</td><td>0.9766</td><td>-</td><td>24.21 KB</td>
 </tr></tbody></table>
 </body>
 </html>
