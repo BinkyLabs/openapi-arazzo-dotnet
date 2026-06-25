@@ -463,6 +463,52 @@ public class ArazzoStepTests
     }
 
     [Fact]
+    public void SerializeAsV1_WithHeaderParameterNameDifferingOnlyByCase_ShouldThrowArazzoSerializationException()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "duplicateHeaderParameterStep",
+            OperationId = "getUser",
+            Parameters = new List<IArazzoParameter>
+            {
+                new ArazzoParameter { Name = "X-Api-Key", In = ParameterLocation.Header, Value = "1" },
+                new ArazzoParameter { Name = "x-api-key", In = ParameterLocation.Header, Value = "2" }
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
+
+        Assert.Contains("duplicate parameter 'x-api-key' in 'header'", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(ParameterLocation.Query)]
+    [InlineData(ParameterLocation.Path)]
+    [InlineData(ParameterLocation.Cookie)]
+    public void SerializeAsV1_WithNonHeaderParameterNameDifferingOnlyByCase_ShouldSerialize(ParameterLocation location)
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "caseSensitiveParameterStep",
+            OperationId = "getUser",
+            Parameters = new List<IArazzoParameter>
+            {
+                new ArazzoParameter { Name = "UserId", In = location, Value = "1" },
+                new ArazzoParameter { Name = "userid", In = location, Value = "2" }
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        step.SerializeAsV1(writer);
+        var json = JsonNode.Parse(textWriter.ToString())!;
+
+        Assert.Equal(2, json["parameters"]!.AsArray().Count);
+    }
+
+    [Fact]
     public void SerializeAsV1_WithSameParameterNameDifferentIn_ShouldSerialize()
     {
         var step = new ArazzoStep

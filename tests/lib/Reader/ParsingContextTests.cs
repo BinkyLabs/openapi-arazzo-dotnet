@@ -261,6 +261,7 @@ public class ParsingContextTests
     }
 
     [Theory]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser", "parameters": [{ "name": "X-Api-Key", "in": "header", "value": "one" }, { "name": "x-api-key", "in": "header", "value": "two" }] }] }] }""", "duplicate parameter 'x-api-key' in 'header'")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "workflowId": "child" }], "parameters": [{ "name": "input", "value": "one" }, { "name": "input", "value": "two" }] }] }""", "duplicate parameter 'input' in '<unspecified>'")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }], "parameters": [{ "name": "id", "value": "one" }] }] }""", "parameter 'id' must specify 'in' when applied to an operation step")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "workflowId": "child", "parameters": [{ "name": "input", "value": "one" }, { "name": "input", "value": "two" }] }] }] }""", "duplicate parameter 'input' in '<unspecified>'")]
@@ -273,6 +274,46 @@ public class ParsingContextTests
         ctx.Parse(jsonNode, new Uri("https://example.com/"));
 
         Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("query")]
+    [InlineData("path")]
+    [InlineData("cookie")]
+    public void Parse_NonHeaderParametersDifferingOnlyByCase_DoesNotAddDuplicateDiagnosticError(string location)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse($$"""
+            {
+              "arazzo": "1.0.0",
+              "info": { "title": "T", "version": "1" },
+              "sourceDescriptions": [
+                {
+                  "name": "source1",
+                  "url": "https://example.com/api"
+                }
+              ],
+              "workflows": [
+                {
+                  "workflowId": "wf",
+                  "steps": [
+                    {
+                      "stepId": "step1",
+                      "operationId": "getUser",
+                      "parameters": [
+                        { "name": "UserId", "in": "{{location}}", "value": "one" },
+                        { "name": "userid", "in": "{{location}}", "value": "two" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+            """)!;
+
+        ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.DoesNotContain(ctx.Diagnostic.Errors, e => e.Message.Contains("duplicate parameter", StringComparison.Ordinal));
     }
 
     [Fact]
