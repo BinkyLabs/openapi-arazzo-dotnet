@@ -38,7 +38,7 @@ internal static class ArazzoParameterValidator
                 continue;
             }
 
-            if (!parameterKeys.Add((parameterName, parameter.In)))
+            if (!parameterKeys.Add((GetDuplicateDetectionName(parameterName, parameter.In), parameter.In)))
             {
                 yield return $"{elementName} contains duplicate parameter '{parameterName}' in '{GetParameterLocationDisplayName(parameter.In)}'.";
             }
@@ -63,6 +63,9 @@ internal static class ArazzoParameterValidator
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{elementName}.{fieldName} is a REQUIRED field."));
         }
     }
+
+    private static string GetDuplicateDetectionName(string name, ParameterLocation? location) =>
+        location == ParameterLocation.Header ? name.ToUpperInvariant() : name;
 
     private static string GetParameterLocationDisplayName(ParameterLocation? location) =>
         location.HasValue ? location.Value.GetDisplayName() : "<unspecified>";
