@@ -462,6 +462,63 @@ public class ParsingContextTests
     }
 
     [Theory]
+    [InlineData("""{ "type": "goto", "stepId": "step1" }""", "ArazzoSuccessAction.Name is a REQUIRED field")]
+    [InlineData("""{ "name": "", "type": "goto", "stepId": "step1" }""", "ArazzoSuccessAction.Name is a REQUIRED field")]
+    [InlineData("""{ "name": "goto", "stepId": "step1" }""", "ArazzoSuccessAction.Type is a REQUIRED field")]
+    public void ParseFragment_MissingSuccessActionRequiredFields_AddsDiagnosticError(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.ParseFragment<ArazzoSuccessAction>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{ "type": "retry" }""", "ArazzoFailureAction.Name is a REQUIRED field")]
+    [InlineData("""{ "name": "", "type": "retry" }""", "ArazzoFailureAction.Name is a REQUIRED field")]
+    [InlineData("""{ "name": "retry" }""", "ArazzoFailureAction.Type is a REQUIRED field")]
+    public void ParseFragment_MissingFailureActionRequiredFields_AddsDiagnosticError(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.ParseFragment<ArazzoFailureAction>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("successActions", """{ "type": "goto", "stepId": "step1" }""", "ArazzoSuccessAction.Name is a REQUIRED field")]
+    [InlineData("successActions", """{ "name": "", "type": "goto", "stepId": "step1" }""", "ArazzoSuccessAction.Name is a REQUIRED field")]
+    [InlineData("successActions", """{ "name": "goto", "stepId": "step1" }""", "ArazzoSuccessAction.Type is a REQUIRED field")]
+    [InlineData("failureActions", """{ "type": "retry" }""", "ArazzoFailureAction.Name is a REQUIRED field")]
+    [InlineData("failureActions", """{ "name": "", "type": "retry" }""", "ArazzoFailureAction.Name is a REQUIRED field")]
+    [InlineData("failureActions", """{ "name": "retry" }""", "ArazzoFailureAction.Type is a REQUIRED field")]
+    public void Parse_MissingActionRequiredFields_AddsSingleDiagnosticError(string actionCollectionName, string actionJson, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse($$"""
+            {
+              "arazzo": "1.0.0",
+              "info": { "title": "T", "version": "1" },
+              "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }],
+              "workflows": [
+                {
+                  "workflowId": "wf",
+                  "steps": [{ "stepId": "step1", "operationId": "getPet" }],
+                  "{{actionCollectionName}}": [{{actionJson}}]
+                }
+              ]
+            }
+            """)!;
+
+        ctx.Parse(jsonNode, new Uri("https://example.com/"));
+        Assert.Single(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Theory]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api1" }, { "name": "source1", "url": "https://example.com/api2" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }] }] }""", "duplicate name 'source1'")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }] }, { "workflowId": "wf", "steps": [{ "stepId": "step2", "operationId": "getUser" }] }] }""", "duplicate workflowId 'wf'")]
     [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step1", "operationId": "getUser" }, { "stepId": "step1", "operationId": "listUsers" }] }] }""", "duplicate stepId 'step1'")]

@@ -21,9 +21,20 @@ internal static class ArazzoResultActionValidator
         ArgumentNullException.ThrowIfNull(action);
         ArgumentNullException.ThrowIfNull(context);
 
+        AddRequiredFieldErrorIfMissing(action.Name, action.GetType().Name, nameof(IArazzoResultAction.Name), context);
+        AddRequiredFieldErrorIfMissing(action.Type, action.GetType().Name, nameof(IArazzoResultAction<ArazzoSuccessType>.Type), context);
+
         foreach (var error in Validate(action))
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
+        }
+    }
+
+    private static void AddRequiredFieldErrorIfMissing(object? value, string elementName, string fieldName, ParsingContext context)
+    {
+        if (value is null || value is string stringValue && string.IsNullOrEmpty(stringValue))
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{elementName}.{fieldName} is a REQUIRED field."));
         }
     }
 
