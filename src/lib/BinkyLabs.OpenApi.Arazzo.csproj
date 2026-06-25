@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>1.0.0-preview.0</Version>
+    <Version>1.0.0-preview.1</Version>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
@@ -44,10 +44,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <None Include="..\..\README.md" Pack="true" PackagePath="README.md" />
-    <None Include="..\Assets\logo-binkylabs.png" Pack="true" PackagePath="logo-binkylabs.png" />
-    <PackageReference Include="Microsoft.OpenApi" Version="3.7.0" />
-    <PackageReference Include="Microsoft.OpenApi.YamlReader" Version="3.7.0" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="README.md"/>
+    <None Include="..\Assets\logo-binkylabs.png" Pack="true" PackagePath="logo-binkylabs.png"/>
+    <PackageReference Include="Microsoft.OpenApi" Version="3.7.0"/>
+    <PackageReference Include="Microsoft.OpenApi.YamlReader" Version="3.7.0"/>
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
