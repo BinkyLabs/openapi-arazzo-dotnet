@@ -261,10 +261,6 @@ public class ParsingContext
             {
                 Diagnostic.Errors.Add(new OpenApiError("", $"Info is a REQUIRED field at {GetLocation()}"));
             }
-            else
-            {
-                ValidateInfoRequiredFields(doc.Info);
-            }
 
             if (doc.SourceDescriptions is not { Count: > 0 })
             {
@@ -294,19 +290,6 @@ public class ParsingContext
 
             ValidateComponentRequiredFields(doc.Components);
             ValidateWorkflowParameters(doc);
-        }
-    }
-
-    private void ValidateInfoRequiredFields(ArazzoInfo info)
-    {
-        if (string.IsNullOrEmpty(info.Title))
-        {
-            Diagnostic.Errors.Add(new OpenApiError("", $"Info.Title is a REQUIRED field at {GetLocation()}"));
-        }
-
-        if (string.IsNullOrEmpty(info.Version))
-        {
-            Diagnostic.Errors.Add(new OpenApiError("", $"Info.Version is a REQUIRED field at {GetLocation()}"));
         }
     }
 
