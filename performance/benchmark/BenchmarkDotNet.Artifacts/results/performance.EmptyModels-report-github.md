@@ -1,10 +1,10 @@
 ```
 
-BenchmarkDotNet v0.15.8, Linux Ubuntu 24.04.4 LTS (Noble Numbat)
-Intel Xeon Platinum 8370C CPU 2.80GHz (Max: 3.43GHz), 1 CPU, 2 logical cores and 1 physical core
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26200.8655/25H2/2025Update/HudsonValley2)
+Snapdragon X 12-core X1E80100 3.40 GHz (Max: 3.42GHz), 1 CPU, 12 logical and 12 physical cores
 .NET SDK 10.0.301
-  [Host]   : .NET 10.0.9 (10.0.9, 10.0.926.27113), X64 RyuJIT x86-64-v4
-  ShortRun : .NET 10.0.9 (10.0.9, 10.0.926.27113), X64 RyuJIT x86-64-v4
+  [Host]   : .NET 10.0.9 (10.0.9, 10.0.926.27113), Arm64 RyuJIT armv8.0-a
+  ShortRun : .NET 10.0.9 (10.0.9, 10.0.926.27113), Arm64 RyuJIT armv8.0-a
 
 Job=ShortRun  IterationCount=3  LaunchCount=1  
 WarmupCount=3  
@@ -12,21 +12,21 @@ WarmupCount=3
 ```
 | Method                       | Mean       | Error      | StdDev    | Gen0   | Allocated |
 |----------------------------- |-----------:|-----------:|----------:|-------:|----------:|
-| EmptyComponent               |   8.110 ns |   4.804 ns | 0.2633 ns | 0.0022 |      56 B |
-| EmptyCriterion               |   7.347 ns |   3.891 ns | 0.2133 ns | 0.0019 |      48 B |
-| EmptyCriterionExpressionType |   7.566 ns |   5.328 ns | 0.2921 ns | 0.0016 |      40 B |
-| EmptyDocument                | 815.476 ns | 112.523 ns | 6.1678 ns | 0.0420 |    1072 B |
-| EmptyFailureAction           |  12.131 ns |  12.419 ns | 0.6807 ns | 0.0041 |     104 B |
-| EmptyFailureActionReference  |  31.246 ns |  28.850 ns | 1.5814 ns | 0.0054 |     136 B |
-| EmptyInfo                    |   9.009 ns |   2.904 ns | 0.1592 ns | 0.0022 |      56 B |
-| EmptyInput                   |  30.797 ns |  26.945 ns | 1.4769 ns | 0.0181 |     456 B |
-| EmptyInputReference          |  33.270 ns |  30.436 ns | 1.6683 ns | 0.0073 |     184 B |
-| EmptyParameter               |   8.197 ns |   3.207 ns | 0.1758 ns | 0.0019 |      48 B |
-| EmptyParameterReference      |  33.609 ns |  13.981 ns | 0.7664 ns | 0.0057 |     144 B |
-| EmptyPayloadReplacement      |   7.064 ns |   4.278 ns | 0.2345 ns | 0.0016 |      40 B |
-| EmptyRequestBody             |   8.630 ns |   3.675 ns | 0.2014 ns | 0.0019 |      48 B |
-| EmptySourceDescription       |   8.127 ns |   4.243 ns | 0.2326 ns | 0.0019 |      48 B |
-| EmptyStep                    |  12.501 ns |  12.878 ns | 0.7059 ns | 0.0044 |     112 B |
-| EmptySuccessAction           |   8.374 ns |   6.771 ns | 0.3711 ns | 0.0025 |      64 B |
-| EmptySuccessActionReference  |  32.357 ns |  15.159 ns | 0.8309 ns | 0.0054 |     136 B |
-| EmptyWorkflow                |  12.360 ns |   4.714 ns | 0.2584 ns | 0.0041 |     104 B |
+| EmptyComponent               |   1.983 ns |  1.6009 ns | 0.0878 ns | 0.0134 |      56 B |
+| EmptyCriterion               |   1.832 ns |  1.1693 ns | 0.0641 ns | 0.0115 |      48 B |
+| EmptyCriterionExpressionType |   1.636 ns |  0.9960 ns | 0.0546 ns | 0.0096 |      40 B |
+| EmptyDocument                | 185.559 ns | 35.6887 ns | 1.9562 ns | 0.2563 |    1072 B |
+| EmptyFailureAction           |   3.075 ns |  1.2562 ns | 0.0689 ns | 0.0249 |     104 B |
+| EmptyFailureActionReference  |  13.135 ns |  3.9928 ns | 0.2189 ns | 0.0325 |     136 B |
+| EmptyInfo                    |   1.906 ns |  0.5317 ns | 0.0291 ns | 0.0134 |      56 B |
+| EmptyInput                   |   9.779 ns |  4.0609 ns | 0.2226 ns | 0.1090 |     456 B |
+| EmptyInputReference          |  14.023 ns |  6.8609 ns | 0.3761 ns | 0.0440 |     184 B |
+| EmptyParameter               |   1.821 ns |  1.7714 ns | 0.0971 ns | 0.0115 |      48 B |
+| EmptyParameterReference      |  13.514 ns |  4.8590 ns | 0.2663 ns | 0.0344 |     144 B |
+| EmptyPayloadReplacement      |   1.918 ns |  3.8872 ns | 0.2131 ns | 0.0096 |      40 B |
+| EmptyRequestBody             |   1.894 ns |  1.4989 ns | 0.0822 ns | 0.0115 |      48 B |
+| EmptySourceDescription       |   1.858 ns |  1.3284 ns | 0.0728 ns | 0.0115 |      48 B |
+| EmptyStep                    |   3.309 ns |  3.1451 ns | 0.1724 ns | 0.0268 |     112 B |
+| EmptySuccessAction           |   2.214 ns |  1.2693 ns | 0.0696 ns | 0.0153 |      64 B |
+| EmptySuccessActionReference  |  13.810 ns | 12.5719 ns | 0.6891 ns | 0.0325 |     136 B |
+| EmptyWorkflow                |   2.971 ns |  3.0842 ns | 0.1691 ns | 0.0249 |     104 B |
