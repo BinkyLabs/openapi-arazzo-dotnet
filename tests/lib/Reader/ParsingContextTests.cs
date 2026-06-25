@@ -389,6 +389,21 @@ public class ParsingContextTests
     }
 
     [Theory]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "steps": [{ "stepId": "step1", "operationId": "getPet" }] }] }""", "ArazzoWorkflow.WorkflowId is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "", "steps": [{ "stepId": "step1", "operationId": "getPet" }] }] }""", "ArazzoWorkflow.WorkflowId is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf" }] }""", "Workflow 'wf' steps is a REQUIRED field")]
+    [InlineData("""{ "arazzo": "1.0.0", "info": { "title": "T", "version": "1" }, "sourceDescriptions": [{ "name": "source1", "url": "https://example.com/api" }], "workflows": [{ "workflowId": "wf", "steps": [] }] }""", "Workflow 'wf' steps is a REQUIRED field")]
+    public void Parse_MissingOrEmptyWorkflowRequiredFields_AddsDiagnosticErrorOnce(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Equal(1, ctx.Diagnostic.Errors.Count(e => e.Message.Contains(expectedMessage, StringComparison.Ordinal)));
+    }
+
+    [Theory]
     [InlineData("""{ "operationId": "getPet" }""")]
     [InlineData("""{ "stepId": "", "operationId": "getPet" }""")]
     public void ParseFragment_MissingOrEmptyStepId_AddsDiagnosticError(string json)
@@ -429,6 +444,21 @@ public class ParsingContextTests
         ctx.Parse(jsonNode, new Uri("https://example.com/"));
 
         Assert.Equal(1, ctx.Diagnostic.Errors.Count(e => e.Message.Contains(expectedMessage, StringComparison.Ordinal)));
+    }
+
+    [Theory]
+    [InlineData("""{ "steps": [{ "stepId": "step1", "operationId": "getPet" }] }""", "ArazzoWorkflow.WorkflowId is a REQUIRED field")]
+    [InlineData("""{ "workflowId": "", "steps": [{ "stepId": "step1", "operationId": "getPet" }] }""", "ArazzoWorkflow.WorkflowId is a REQUIRED field")]
+    [InlineData("""{ "workflowId": "wf" }""", "Workflow 'wf' steps is a REQUIRED field")]
+    [InlineData("""{ "workflowId": "wf", "steps": [] }""", "Workflow 'wf' steps is a REQUIRED field")]
+    public void ParseFragment_MissingOrEmptyWorkflowRequiredFields_AddsDiagnosticError(string json, string expectedMessage)
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse(json)!;
+
+        ctx.ParseFragment<ArazzoWorkflow>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Contains(ctx.Diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
     }
 
     [Theory]
