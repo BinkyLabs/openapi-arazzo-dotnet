@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\lib\BinkyLabs.OpenApi.Arazzo.csproj" />
+    <ProjectReference Include="..\lib\BinkyLabs.OpenApi.Arazzo.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.CommandLine" Version="2.0.9" />
+    <PackageReference Include="System.CommandLine" Version="2.0.9"/>
   </ItemGroup>
 
   <PropertyGroup>
@@ -39,7 +39,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>clia</ToolCommandName>
     <PackageId>BinkyLabs.OpenApi.Arazzo.Tool</PackageId>
-    <Version>1.0.0-preview.1</Version>
+    <Version>1.0.0-preview.2</Version>
     <Description>OpenAPI Arazzo CLI - Validate Arazzo documents</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>openapi;arazzo;api;swagger;json;yaml;specification;dotnet</PackageTags>
@@ -47,8 +47,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="./README.md" Pack="true" PackagePath="" />
-    <None Include="..\Assets\logo-binkylabs.png" Pack="true" PackagePath="logo-binkylabs.png" />
+    <None Include="./README.md" Pack="true" PackagePath=""/>
+    <None Include="..\Assets\logo-binkylabs.png" Pack="true" PackagePath="logo-binkylabs.png"/>
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
