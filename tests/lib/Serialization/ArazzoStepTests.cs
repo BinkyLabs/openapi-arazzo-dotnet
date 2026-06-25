@@ -834,4 +834,65 @@ public class ArazzoStepTests
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains($"{propertyName} contains duplicate action '{reference}'", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SerializeAsV1_WithDistinctActionNames_ShouldNotThrow(bool useSuccessActions)
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "distinctActionStep",
+            OperationId = "getUser"
+        };
+        if (useSuccessActions)
+        {
+            step.OnSuccess =
+            [
+                new ArazzoSuccessAction { Name = "firstAction", Type = ArazzoSuccessType.End },
+                new ArazzoSuccessAction { Name = "secondAction", Type = ArazzoSuccessType.End }
+            ];
+        }
+        else
+        {
+            step.OnFailure =
+            [
+                new ArazzoFailureAction { Name = "firstAction", Type = ArazzoFailureType.End },
+                new ArazzoFailureAction { Name = "secondAction", Type = ArazzoFailureType.End }
+            ];
+        }
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        step.SerializeAsV1(writer);
+    }
+
+    [Theory]
+    [InlineData("onSuccess")]
+    [InlineData("onFailure")]
+    public void Deserialize_WithDistinctActionNames_DoesNotAddDiagnosticError(string propertyName)
+    {
+        var json = $$"""
+        {
+            "stepId": "distinctActionStep",
+            "operationId": "getUser",
+            "{{propertyName}}": [
+                {
+                    "name": "firstAction",
+                    "type": "end"
+                },
+                {
+                    "name": "secondAction",
+                    "type": "end"
+                }
+            ]
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+
+        Assert.DoesNotContain(parsingContext.Diagnostic.Errors, error => error.Message.Contains("contains duplicate action", StringComparison.Ordinal));
+    }
+
 }
