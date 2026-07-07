@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0-preview.3](https://github.com/BinkyLabs/openapi-arazzo-dotnet/compare/v1.0.0-preview.2...v1.0.0-preview.3) (2026-07-07)
+
+
+### Features
+
+* Add `.net10` support for the lib-project ([aab3e22](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/aab3e22187ee0a8b0162d008406db56435fea43c))
+
 ## [1.0.0-preview.2](https://github.com/BinkyLabs/openapi-arazzo-dotnet/compare/v1.0.0-preview.1...v1.0.0-preview.2) (2026-06-25)
 
 
