@@ -391,7 +391,6 @@ public class ArazzoInput : IArazzoInput
             ExclusiveMaximum = input.ExclusiveMaximum,
             ExclusiveMinimum = input.ExclusiveMinimum,
             Type = input.Type,
-            Const = input.Const,
             Format = input.Format,
             Description = input.Description,
             Maximum = input.Maximum,
@@ -437,6 +436,9 @@ public class ArazzoInput : IArazzoInput
             Extensions = ConvertToOpenApiExtensions(input.Extensions),
             DependentRequired = CloneDependentRequired(input.DependentRequired)
         };
+
+        if (input.Const is not null)
+            schema.Const = input.Const;
 
         return schema;
     }
