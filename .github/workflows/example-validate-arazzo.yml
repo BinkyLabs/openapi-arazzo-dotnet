@@ -15,7 +15,7 @@ jobs:
     name: Validate Arazzo
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Validate OpenAPI Arazzo document
         uses: BinkyLabs/openapi-arazzo-dotnet@v1
