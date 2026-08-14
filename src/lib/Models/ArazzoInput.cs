@@ -391,7 +391,6 @@ public class ArazzoInput : IArazzoInput
             ExclusiveMaximum = input.ExclusiveMaximum,
             ExclusiveMinimum = input.ExclusiveMinimum,
             Type = input.Type,
-            Const = input.Const,
             Format = input.Format,
             Description = input.Description,
             Maximum = input.Maximum,
@@ -438,6 +437,11 @@ public class ArazzoInput : IArazzoInput
             DependentRequired = CloneDependentRequired(input.DependentRequired)
         };
 
+        if (input.Const is not null)
+        {
+            schema.Const = input.Const;
+        }
+
         return schema;
     }
 
@@ -452,10 +456,12 @@ public class ArazzoInput : IArazzoInput
             unsupportedKeywords.Add(nameof(schema.Discriminator));
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         if (schema.Example is not null)
         {
             unsupportedKeywords.Add(nameof(schema.Example));
         }
+#pragma warning restore CS0618 // Type or member is obsolete
 
         if (schema.ExternalDocs is not null)
         {
