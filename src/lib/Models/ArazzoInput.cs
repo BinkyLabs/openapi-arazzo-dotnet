@@ -452,10 +452,12 @@ public class ArazzoInput : IArazzoInput
             unsupportedKeywords.Add(nameof(schema.Discriminator));
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         if (schema.Example is not null)
         {
             unsupportedKeywords.Add(nameof(schema.Example));
         }
+#pragma warning restore CS0618 // Type or member is obsolete
 
         if (schema.ExternalDocs is not null)
         {

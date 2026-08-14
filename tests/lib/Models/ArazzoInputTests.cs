@@ -268,7 +268,9 @@ public class ArazzoInputTests
                 schema.Discriminator = new OpenApiDiscriminator { PropertyName = "kind" };
                 break;
             case "Example":
+#pragma warning disable CS0618 // Type or member is obsolete
                 schema.Example = JsonValue.Create("sample");
+#pragma warning restore CS0618 // Type or member is obsolete
                 break;
             case "ExternalDocs":
                 schema.ExternalDocs = new OpenApiExternalDocs { Url = new Uri("https://example.com") };
