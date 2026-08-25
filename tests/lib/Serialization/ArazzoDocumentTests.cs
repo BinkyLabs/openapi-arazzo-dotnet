@@ -16,7 +16,6 @@ public class ArazzoDocumentTests
         // Arrange
         var document = new ArazzoDocument
         {
-            Arazzo = "1.0.1",
             Info = new ArazzoInfo
             {
                 Title = "Test Arazzo",
@@ -118,7 +117,6 @@ public class ArazzoDocumentTests
         // Arrange
         var document = new ArazzoDocument
         {
-            Arazzo = "1.0.1",
             Info = new ArazzoInfo
             {
                 Title = "Test Arazzo",
@@ -168,7 +166,7 @@ public class ArazzoDocumentTests
         var expectedJson =
         """
         {
-            "arazzo": "1.0.1",
+            "arazzo": "1.1.0",
             "info": {
                 "title": "Test Arazzo",
                 "version": "1.0.0"
@@ -326,7 +324,7 @@ public class ArazzoDocumentTests
         var expectedJson =
         """
         {
-            "arazzo": "1.0.1",
+            "arazzo": "1.1.0",
             "info": {
                 "title": "Minimal Arazzo",
                 "version": "1.0.0"
