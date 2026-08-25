@@ -103,12 +103,12 @@ internal static partial class ArazzoV1Deserializer
         var referenceCount = step.CountTargetFields();
         if (referenceCount > 1)
         {
-            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' can define only one of operationId, operationPath, channelPath, or workflowId."));
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), ArazzoStep.GetMultipleTargetFieldsError($"{nameof(ArazzoStep)} '{step.StepId}'", context.Diagnostic.SpecificationVersion)));
         }
 
         if (referenceCount == 0)
         {
-            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' must define exactly one of operationId, operationPath, channelPath, or workflowId."));
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), ArazzoStep.GetMissingTargetFieldError($"{nameof(ArazzoStep)} '{step.StepId}'", context.Diagnostic.SpecificationVersion)));
         }
 
         if (step.RequestBody is not null && !step.CanHaveRequestBody())
