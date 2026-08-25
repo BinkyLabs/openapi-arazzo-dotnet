@@ -102,7 +102,7 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         ValidateUniqueStepIds();
         ValidateWorkflowParameters();
         ValidateActions();
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressions(Outputs, $"{nameof(ArazzoWorkflow)}.{nameof(Outputs)}");
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressions(Outputs, $"{nameof(ArazzoWorkflow)}.{nameof(Outputs)}", specVersion);
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoWorkflowWorkflowId, WorkflowId);

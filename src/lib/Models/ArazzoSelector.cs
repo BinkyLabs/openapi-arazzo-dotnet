@@ -48,7 +48,7 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
         ArgumentException.ThrowIfNullOrEmpty(Context);
         ArgumentException.ThrowIfNullOrEmpty(Selector);
         ArgumentNullException.ThrowIfNull(Type);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context, $"{nameof(ArazzoSelector)}.{nameof(Context)}");
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context, $"{nameof(ArazzoSelector)}.{nameof(Context)}", specVersion);
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoSelectorContext, Context);

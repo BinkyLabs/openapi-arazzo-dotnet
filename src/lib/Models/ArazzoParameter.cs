@@ -47,7 +47,7 @@ public class ArazzoParameter : IArazzoParameter, IArazzoExtensible
 
         ArgumentException.ThrowIfNullOrEmpty(Name);
         ArgumentNullException.ThrowIfNull(Value);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Value, $"{nameof(ArazzoParameter)}.{nameof(Value)}");
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Value, $"{nameof(ArazzoParameter)}.{nameof(Value)}", specVersion);
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterName, Name);

@@ -50,7 +50,7 @@ public class ArazzoRequestBody : IArazzoSerializable, IArazzoExtensible
     private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Payload, $"{nameof(ArazzoRequestBody)}.{nameof(Payload)}");
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Payload, $"{nameof(ArazzoRequestBody)}.{nameof(Payload)}", specVersion);
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoRequestBodyContentType, ContentType);

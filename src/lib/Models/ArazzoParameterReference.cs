@@ -84,7 +84,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
     private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference.ReferenceV1, ReferenceType.Parameter, nameof(ArazzoParameterReference));
+        ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference.ReferenceV1, ReferenceType.Parameter, nameof(ArazzoParameterReference), specVersion);
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoReusableObjectReference, Reference.ReferenceV1);

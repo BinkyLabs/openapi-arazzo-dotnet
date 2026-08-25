@@ -110,7 +110,7 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 
         ValidateUniqueSourceDescriptionNames();
         ValidateUniqueWorkflowIds();
-        ArazzoSemanticReferenceValidator.ValidateSerialization(this);
+        ArazzoSemanticReferenceValidator.ValidateSerialization(this, specVersion);
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, specVersion is ArazzoSpecVersion.Arazzo1_0 ? "1.0.1" : "1.1.0");

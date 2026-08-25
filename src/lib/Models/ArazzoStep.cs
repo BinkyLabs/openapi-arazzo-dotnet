@@ -145,7 +145,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
         ValidateParameters();
         ValidateActions();
         ArazzoKeyValidator.ValidateSerializationKeys(Outputs?.Keys, $"{nameof(ArazzoStep)}.{nameof(Outputs)}");
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressions(Outputs, $"{nameof(ArazzoStep)}.{nameof(Outputs)}");
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressions(Outputs, $"{nameof(ArazzoStep)}.{nameof(Outputs)}", specVersion);
 
         writer.WriteStartObject();
 
