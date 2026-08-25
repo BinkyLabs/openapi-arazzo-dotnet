@@ -43,6 +43,39 @@ public class ArazzoPayloadReplacementTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_ShouldWriteCorrectJson()
+    {
+        var replacement = new ArazzoPayloadReplacement
+        {
+            Target = "/data/id",
+            Value = JsonNode.Parse("\"42\""),
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-extra"] = new JsonNodeExtension(JsonNode.Parse("{\"note\":\"yes\"}")!)
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "target": "/data/id",
+            "value": "42",
+            "x-extra": {
+                "note": "yes"
+            }
+        }
+        """;
+
+        replacement.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
     public void Deserialize_ShouldSetPropertiesAndExtensions()
     {
         var json = """
@@ -76,6 +109,23 @@ public class ArazzoPayloadReplacementTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => replacement.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoPayloadReplacement.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithInvalidRuntimeExpressionValue_ThrowsArazzoSerializationException()
+    {
+        var replacement = new ArazzoPayloadReplacement
+        {
+            Target = "/data/id",
+            Value = JsonNode.Parse("\"$response.statusCode\"")
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => replacement.SerializeAsV1_1(writer));
 
         Assert.Contains("ArazzoPayloadReplacement.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
     }

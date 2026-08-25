@@ -49,6 +49,45 @@ public class ArazzoCriterionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_WithSimpleType_ShouldWriteTypeAsString()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Context = "$response.body",
+            Type = new ArazzoCriterionExpressionType
+            {
+                Type = ArazzoCriterionExpressionTypeType.Simple,
+                Version = null
+            },
+            Condition = "$.status == 200",
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-extra"] = new JsonNodeExtension(JsonNode.Parse("{\"note\":\"success\"}")!)
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "context": "$response.body",
+            "type": "simple",
+            "condition": "$.status == 200",
+            "x-extra": {
+                "note": "success"
+            }
+        }
+        """;
+
+        criterion.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
     public void SerializeAsV1_WithRegexType_ShouldWriteTypeAsString()
     {
         var criterion = new ArazzoCriterion
@@ -74,6 +113,39 @@ public class ArazzoCriterionTests
         """;
 
         criterion.SerializeAsV1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithRegexType_ShouldWriteTypeAsString()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Context = "$response.body",
+            Type = new ArazzoCriterionExpressionType
+            {
+                Type = ArazzoCriterionExpressionTypeType.Regex,
+                Version = null
+            },
+            Condition = "/^[0-9]{3}$/"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "context": "$response.body",
+            "type": "regex",
+            "condition": "/^[0-9]{3}$/"
+        }
+        """;
+
+        criterion.SerializeAsV1_1(writer);
         var jsonResultObject = JsonNode.Parse(textWriter.ToString());
         var expectedJsonObject = JsonNode.Parse(expectedJson);
 
@@ -115,6 +187,42 @@ public class ArazzoCriterionTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
+
+    [Fact]
+    public void SerializeAsV1_1_WithJsonPathType_ShouldWriteTypeAsObject()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Context = "$response.body",
+            Type = new ArazzoCriterionExpressionType
+            {
+                Type = ArazzoCriterionExpressionTypeType.JsonPath,
+                Version = ArazzoCriterionExpressionVersion.DraftGoessnerDispatchJsonPath00
+            },
+            Condition = "$.status"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "context": "$response.body",
+            "type": {
+                "type": "jsonpath",
+                "version": "draft-goessner-dispatch-jsonpath-00"
+            },
+            "condition": "$.status"
+        }
+        """;
+
+        criterion.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
     [Fact]
     public void SerializeAsV1_WithXPathType_ShouldWriteTypeAsObject()
     {
@@ -150,6 +258,42 @@ public class ArazzoCriterionTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
+
+    [Fact]
+    public void SerializeAsV1_1_WithXPathType_ShouldWriteTypeAsObject()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Context = "$response.body",
+            Type = new ArazzoCriterionExpressionType
+            {
+                Type = ArazzoCriterionExpressionTypeType.XPath,
+                Version = ArazzoCriterionExpressionVersion.XPath30
+            },
+            Condition = "/response/status"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "context": "$response.body",
+            "type": {
+                "type": "xpath",
+                "version": "xpath-30"
+            },
+            "condition": "/response/status"
+        }
+        """;
+
+        criterion.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
     [Fact]
     public void SerializeAsV1_WithoutType_ShouldNotWriteTypeProperty()
     {
@@ -168,6 +312,31 @@ public class ArazzoCriterionTests
         """;
 
         criterion.SerializeAsV1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithoutType_ShouldNotWriteTypeProperty()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Condition = "$.status == 200"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "condition": "$.status == 200"
+        }
+        """;
+
+        criterion.SerializeAsV1_1(writer);
         var jsonResultObject = JsonNode.Parse(textWriter.ToString());
         var expectedJsonObject = JsonNode.Parse(expectedJson);
 
@@ -194,6 +363,27 @@ public class ArazzoCriterionTests
         Assert.Contains("cannot have a version property", ex.Message);
     }
 
+
+    [Fact]
+    public void SerializeAsV1_1_WithSimpleTypeAndVersion_ShouldThrowArazzoException()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Context = "$response.body",
+            Type = new ArazzoCriterionExpressionType
+            {
+                Type = ArazzoCriterionExpressionTypeType.Simple,
+                Version = ArazzoCriterionExpressionVersion.DraftGoessnerDispatchJsonPath00
+            },
+            Condition = "test"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var ex = Assert.Throws<ArazzoException>(() => criterion.SerializeAsV1_1(writer));
+        Assert.Contains("cannot have a version property", ex.Message);
+    }
+
     [Fact]
     public void SerializeAsV1_WithRegexTypeAndVersion_ShouldThrowArazzoException()
     {
@@ -211,6 +401,27 @@ public class ArazzoCriterionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var ex = Assert.Throws<ArazzoException>(() => criterion.SerializeAsV1(writer));
+        Assert.Contains("cannot have a version property", ex.Message);
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithRegexTypeAndVersion_ShouldThrowArazzoException()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Context = "$response.body",
+            Type = new ArazzoCriterionExpressionType
+            {
+                Type = ArazzoCriterionExpressionTypeType.Regex,
+                Version = ArazzoCriterionExpressionVersion.XPath30
+            },
+            Condition = "/pattern/"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var ex = Assert.Throws<ArazzoException>(() => criterion.SerializeAsV1_1(writer));
         Assert.Contains("cannot have a version property", ex.Message);
     }
 
@@ -409,6 +620,23 @@ public class ArazzoCriterionTests
         Assert.Contains("ArazzoCriterion.Context must be a valid runtime expression", exception.Message, StringComparison.Ordinal);
     }
 
+
+    [Fact]
+    public void SerializeAsV1_1_WithInvalidContext_ThrowsArazzoSerializationException()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Context = "response",
+            Condition = "true"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1_1(writer));
+
+        Assert.Contains("ArazzoCriterion.Context must be a valid runtime expression", exception.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void SerializeAsV1_WithoutCondition_ThrowsArazzoSerializationException()
     {
@@ -417,6 +645,19 @@ public class ArazzoCriterionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoCriterion.Condition is required", exception.Message, StringComparison.Ordinal);
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithoutCondition_ThrowsArazzoSerializationException()
+    {
+        var criterion = new ArazzoCriterion();
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1_1(writer));
 
         Assert.Contains("ArazzoCriterion.Condition is required", exception.Message, StringComparison.Ordinal);
     }
@@ -436,6 +677,26 @@ public class ArazzoCriterionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoCriterion.Context is required when ArazzoCriterion.Type is specified", exception.Message, StringComparison.Ordinal);
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithTypeAndNoContext_ThrowsArazzoSerializationException()
+    {
+        var criterion = new ArazzoCriterion
+        {
+            Type = new ArazzoCriterionExpressionType
+            {
+                Type = ArazzoCriterionExpressionTypeType.Regex
+            },
+            Condition = "/^[0-9]+$/"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1_1(writer));
 
         Assert.Contains("ArazzoCriterion.Context is required when ArazzoCriterion.Type is specified", exception.Message, StringComparison.Ordinal);
     }

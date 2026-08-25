@@ -72,6 +72,17 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
     /// <inheritdoc />
     public override void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer);
+    }
+
+    /// <inheritdoc />
+    public override void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer);
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer)
+    {
         ArgumentNullException.ThrowIfNull(writer);
         ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference.ReferenceV1, ReferenceType.Parameter, nameof(ArazzoParameterReference));
 

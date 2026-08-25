@@ -72,6 +72,21 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer);
+    }
+
+    /// <summary>
+    /// Serializes the Arazzo document as an OpenAPI Arazzo v1.1.0 JSON object.
+    /// </summary>
+    /// <param name="writer">The OpenAPI writer to use for serialization.</param>
+    /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>
+    public void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer);
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer)
+    {
         // Validate required fields
         if (Info is null)
         {

@@ -41,6 +41,20 @@ public class ArazzoComponent : IArazzoSerializable, IArazzoExtensible
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer);
+    }
+
+    /// <summary>
+    /// Serializes the reusable components as an OpenAPI Arazzo v1.1.0 JSON object.
+    /// </summary>
+    /// <param name="writer">The OpenAPI writer to use for serialization.</param>
+    public void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer);
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer)
+    {
         ArgumentNullException.ThrowIfNull(writer);
 
         ArazzoKeyValidator.ValidateSerializationKeys(Parameters?.Keys, $"{nameof(ArazzoComponent)}.{nameof(Parameters)}");

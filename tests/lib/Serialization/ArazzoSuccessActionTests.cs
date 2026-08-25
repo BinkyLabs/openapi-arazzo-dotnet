@@ -59,6 +59,55 @@ public class ArazzoSuccessActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_ShouldWriteCorrectJson_WithAllProperties()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Name = "successAction1",
+            Type = ArazzoSuccessType.Goto,
+            StepId = "step456",
+            Criteria = new List<ArazzoCriterion>
+            {
+                new ArazzoCriterion
+                {
+                    Context = "$statusCode",
+                    Condition = "200"
+                }
+            },
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-extra"] = new JsonNodeExtension(JsonNode.Parse("{\"note\":\"test\"}")!)
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "name": "successAction1",
+            "type": "goto",
+            "stepId": "step456",
+            "criteria": [
+                {
+                    "context": "$statusCode",
+                    "condition": "200"
+                }
+            ],
+            "x-extra": {
+                "note": "test"
+            }
+        }
+        """;
+
+        successAction.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
     public void SerializeAsV1_ShouldWriteCorrectJson_WithRequiredPropertiesOnly()
     {
         var successAction = new ArazzoSuccessAction
@@ -85,6 +134,32 @@ public class ArazzoSuccessActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_ShouldWriteCorrectJson_WithRequiredPropertiesOnly()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Name = "endAction",
+            Type = ArazzoSuccessType.End
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "name": "endAction",
+            "type": "end"
+        }
+        """;
+
+        successAction.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
     public void SerializeAsV1_ShouldThrowException_WhenNameIsNull()
     {
         var successAction = new ArazzoSuccessAction
@@ -95,6 +170,19 @@ public class ArazzoSuccessActionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         Assert.Throws<ArgumentNullException>(() => successAction.SerializeAsV1(writer));
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_ShouldThrowException_WhenNameIsNull()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Type = ArazzoSuccessType.End
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => successAction.SerializeAsV1_1(writer));
     }
 
     [Fact]
@@ -111,6 +199,24 @@ public class ArazzoSuccessActionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => successAction.SerializeAsV1(writer));
+
+        Assert.Contains("can define only one of workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_WithWorkflowIdAndStepId_ShouldThrowArazzoSerializationException()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Name = "gotoAction",
+            Type = ArazzoSuccessType.Goto,
+            WorkflowId = "workflow1",
+            StepId = "step1"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => successAction.SerializeAsV1_1(writer));
 
         Assert.Contains("can define only one of workflowId or stepId", exception.Message, StringComparison.Ordinal);
     }
@@ -133,6 +239,23 @@ public class ArazzoSuccessActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_WithEndAndTargetField_ShouldThrowArazzoSerializationException()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Name = "endAction",
+            Type = ArazzoSuccessType.End,
+            WorkflowId = "workflow1"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => successAction.SerializeAsV1_1(writer));
+
+        Assert.Contains("type=end must not define workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SerializeAsV1_WithGotoAndNoTargetField_ShouldThrowArazzoSerializationException()
     {
         var successAction = new ArazzoSuccessAction
@@ -149,6 +272,22 @@ public class ArazzoSuccessActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_WithGotoAndNoTargetField_ShouldThrowArazzoSerializationException()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Name = "gotoAction",
+            Type = ArazzoSuccessType.Goto
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => successAction.SerializeAsV1_1(writer));
+
+        Assert.Contains("type=goto must define exactly one of workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SerializeAsV1_ShouldThrowException_WhenTypeIsNull()
     {
         var successAction = new ArazzoSuccessAction
@@ -159,6 +298,19 @@ public class ArazzoSuccessActionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         Assert.Throws<ArgumentNullException>(() => successAction.SerializeAsV1(writer));
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_ShouldThrowException_WhenTypeIsNull()
+    {
+        var successAction = new ArazzoSuccessAction
+        {
+            Name = "testAction"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => successAction.SerializeAsV1_1(writer));
     }
 
     [Fact]
@@ -241,6 +393,21 @@ public class ArazzoSuccessActionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         successAction.SerializeAsV1(writer);
+
+        var json = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$components.successActions.shared", json?["reference"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_WithReference_WritesReference()
+    {
+        var successAction = new ArazzoSuccessActionReference("shared");
+
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        successAction.SerializeAsV1_1(writer);
 
         var json = JsonNode.Parse(textWriter.ToString());
 

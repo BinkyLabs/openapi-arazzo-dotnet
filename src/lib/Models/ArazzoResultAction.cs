@@ -64,4 +64,10 @@ public abstract class ArazzoResultAction<T> : IArazzoResultAction<T>, IArazzoExt
     /// </summary>
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public abstract void SerializeAsV1(IOpenApiWriter writer);
+
+    /// <summary>
+    /// Serializes the result action as an OpenAPI Arazzo v1.1.0 JSON object.
+    /// </summary>
+    /// <param name="writer">The OpenAPI writer to use for serialization.</param>
+    public abstract void SerializeAsV1_1(IOpenApiWriter writer);
 }
