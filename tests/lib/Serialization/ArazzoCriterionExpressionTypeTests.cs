@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
-using BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 using Microsoft.OpenApi;
 
@@ -128,8 +127,10 @@ public class ArazzoCriterionExpressionTypeTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
-    [Fact]
-    public void Deserialize_ShouldSetPropertiesAndExtensions()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_ShouldSetPropertiesAndExtensions(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -141,8 +142,9 @@ public class ArazzoCriterionExpressionTypeTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
+        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, specVersion);
 
+        Assert.NotNull(expressionType);
         Assert.Equal(ArazzoCriterionExpressionTypeType.XPath, expressionType.Type);
         Assert.Equal(ArazzoCriterionExpressionVersion.XPath20, expressionType.Version);
         Assert.NotNull(expressionType.Extensions);
@@ -150,8 +152,10 @@ public class ArazzoCriterionExpressionTypeTests
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("true"), extension.Node));
     }
 
-    [Fact]
-    public void Deserialize_WithJsonPath_ShouldSetPropertiesCorrectly()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_WithJsonPath_ShouldSetPropertiesCorrectly(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -162,14 +166,17 @@ public class ArazzoCriterionExpressionTypeTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
+        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, specVersion);
 
+        Assert.NotNull(expressionType);
         Assert.Equal(ArazzoCriterionExpressionTypeType.JsonPath, expressionType.Type);
         Assert.Equal(ArazzoCriterionExpressionVersion.DraftGoessnerDispatchJsonPath00, expressionType.Version);
     }
 
-    [Fact]
-    public void Deserialize_WithXPath10_ShouldSetPropertiesCorrectly()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_WithXPath10_ShouldSetPropertiesCorrectly(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -180,22 +187,25 @@ public class ArazzoCriterionExpressionTypeTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var expressionType = ArazzoV1Deserializer.LoadCriterionExpressionType(jsonNode, parsingContext);
+        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, specVersion);
 
+        Assert.NotNull(expressionType);
         Assert.Equal(ArazzoCriterionExpressionTypeType.XPath, expressionType.Type);
         Assert.Equal(ArazzoCriterionExpressionVersion.XPath10, expressionType.Version);
     }
 
     [Theory]
-    [InlineData("""{ "version": "xpath-30" }""", "ArazzoCriterionExpressionType.Type is a REQUIRED field.")]
-    [InlineData("""{ "type": "xpath" }""", "ArazzoCriterionExpressionType.Version is a REQUIRED field.")]
-    public void ParseFragment_MissingRequiredFields_AddsDiagnosticError(string json, string expectedMessage)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "version": "xpath-30" }""", "ArazzoCriterionExpressionType.Type is a REQUIRED field.")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "type": "xpath" }""", "ArazzoCriterionExpressionType.Version is a REQUIRED field.")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "version": "xpath-30" }""", "ArazzoCriterionExpressionType.Type is a REQUIRED field.")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "type": "xpath" }""", "ArazzoCriterionExpressionType.Version is a REQUIRED field.")]
+    public void ParseFragment_AsV1AndV1_1_MissingRequiredFields_AddsDiagnosticError(ArazzoSpecVersion specVersion, string json, string expectedMessage)
     {
         var jsonNode = JsonNode.Parse(json)!;
         var diagnostic = new ArazzoDiagnostic();
         var parsingContext = new ParsingContext(diagnostic);
 
-        parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+        parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, specVersion);
 
         Assert.Contains(diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
     }
@@ -316,8 +326,10 @@ public class ArazzoCriterionExpressionTypeTests
         Assert.Contains("Serializing criterion expression type 'regex' as an object is NOT supported by the specification", exception.Message);
     }
 
-    [Fact]
-    public void Deserialize_WithSimpleType_ShouldLogError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_WithSimpleType_ShouldLogError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -329,7 +341,7 @@ public class ArazzoCriterionExpressionTypeTests
         var diagnostic = new ArazzoDiagnostic();
         var parsingContext = new ParsingContext(diagnostic);
 
-        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, specVersion);
 
         // Verify that the object was deserialized
         Assert.Equal(ArazzoCriterionExpressionTypeType.Simple, expressionType?.Type);
@@ -340,8 +352,10 @@ public class ArazzoCriterionExpressionTypeTests
         Assert.Contains("Deserializing criterion expression type 'simple' as an object is NOT supported by the specification", diagnostic.Errors[0].Message);
     }
 
-    [Fact]
-    public void Deserialize_WithRegexType_ShouldLogError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_WithRegexType_ShouldLogError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -353,7 +367,7 @@ public class ArazzoCriterionExpressionTypeTests
         var diagnostic = new ArazzoDiagnostic();
         var parsingContext = new ParsingContext(diagnostic);
 
-        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, specVersion);
 
         // Verify that the object was deserialized
         Assert.Equal(ArazzoCriterionExpressionTypeType.Regex, expressionType?.Type);

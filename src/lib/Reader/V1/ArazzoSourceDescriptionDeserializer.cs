@@ -18,16 +18,23 @@ internal static partial class ArazzoV1Deserializer
             o.Type = type;
         }}
     };
-    public static readonly PatternFieldMap<ArazzoSourceDescription> SourceDescriptionPatternFields = new()
+    public static PatternFieldMap<ArazzoSourceDescription> GetSourceDescriptionPatternFields() =>
+    new()
     {
         {s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c))}
     };
+    public static readonly PatternFieldMap<ArazzoSourceDescription> SourceDescriptionPatternFields = GetSourceDescriptionPatternFields();
 
     public static ArazzoSourceDescription LoadSourceDescription(JsonNode node, ParsingContext context)
     {
+        return LoadSourceDescriptionInternal(node, context, SourceDescriptionFixedFields, SourceDescriptionPatternFields);
+    }
+
+    public static ArazzoSourceDescription LoadSourceDescriptionInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoSourceDescription> sourceDescriptionFixedFields, PatternFieldMap<ArazzoSourceDescription> sourceDescriptionPatternFields)
+    {
         var mapNode = node.CheckMapNode("SourceDescription", context);
         var sourceDescription = new ArazzoSourceDescription();
-        mapNode.ParseMap(sourceDescription, SourceDescriptionFixedFields, SourceDescriptionPatternFields, context);
+        mapNode.ParseMap(sourceDescription, sourceDescriptionFixedFields, sourceDescriptionPatternFields, context);
         ValidateSourceDescriptionRequiredFields(sourceDescription, context);
 
         return sourceDescription;

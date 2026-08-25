@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
 using BinkyLabs.OpenApi.Arazzo.Reader.V1;
+using BinkyLabs.OpenApi.Arazzo.Reader.V1_1;
 
 using Microsoft.OpenApi;
 
@@ -10,6 +11,14 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
 public class ArazzoDocumentTests
 {
+    private static ArazzoDocument LoadDocument(JsonNode jsonNode, ParsingContext parsingContext, ArazzoSpecVersion specVersion) =>
+        specVersion switch
+        {
+            ArazzoSpecVersion.Arazzo1_0 => ArazzoV1Deserializer.LoadDocument(jsonNode, parsingContext),
+            ArazzoSpecVersion.Arazzo1_1 => ArazzoV1_1Deserializer.LoadDocument(jsonNode, parsingContext),
+            _ => throw new ArgumentOutOfRangeException(nameof(specVersion), specVersion, null)
+        };
+
     [Fact]
     public void SerializeAsV1_ShouldWriteCorrectJson()
     {
@@ -635,13 +644,15 @@ public class ArazzoDocumentTests
         Assert.Equal("$sourceDescriptions.source1.getUser", json["workflows"]?[0]?["steps"]?[0]?["operationId"]?.GetValue<string>());
     }
 
-    [Fact]
-    public async Task ParseAsync_WithAmbiguousUnqualifiedOperationId_ShouldReportDiagnostic()
+    [Theory]
+    [InlineData("1.0.1")]
+    [InlineData("1.1.0")]
+    public async Task ParseAsync_V1AndV1_1_WithAmbiguousUnqualifiedOperationId_ShouldReportDiagnostic(string arazzoVersion)
     {
-        const string json =
-            """
+        var json =
+            $$"""
             {
-              "arazzo": "1.0.1",
+              "arazzo": "{{arazzoVersion}}",
               "info": {
                 "title": "Ambiguous operationId",
                 "version": "1.0.0"
@@ -676,13 +687,15 @@ public class ArazzoDocumentTests
         Assert.Contains(result.Diagnostic?.Errors ?? [], error => error.Message.Contains("operationId 'getUser' is ambiguous because multiple non-arazzo sourceDescriptions are defined", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public async Task ParseAsync_WithQualifiedOperationIdAndMultipleNonArazzoSourceDescriptions_ShouldNotReportOperationIdDiagnostic()
+    [Theory]
+    [InlineData("1.0.1")]
+    [InlineData("1.1.0")]
+    public async Task ParseAsync_V1AndV1_1_WithQualifiedOperationIdAndMultipleNonArazzoSourceDescriptions_ShouldNotReportOperationIdDiagnostic(string arazzoVersion)
     {
-        const string json =
-            """
+        var json =
+            $$"""
             {
-              "arazzo": "1.0.1",
+              "arazzo": "{{arazzoVersion}}",
               "info": {
                 "title": "Qualified operationId",
                 "version": "1.0.0"
@@ -797,13 +810,15 @@ public class ArazzoDocumentTests
         ];
     }
 
-    [Fact]
-    public void Deserialize_ShouldSetPropertiesCorrectly()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "1.0.1")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "1.1.0")]
+    public void Deserialize_V1AndV1_1_ShouldSetPropertiesCorrectly(ArazzoSpecVersion specVersion, string arazzoVersion)
     {
         // Arrange
-        var json = """
+        var json = $$"""
         {
-            "arazzo": "1.0.1",
+            "arazzo": "{{arazzoVersion}}",
             "info": {
                 "title": "Test Arazzo",
                 "version": "1.0.0"
@@ -836,10 +851,10 @@ public class ArazzoDocumentTests
         var parsingContext = new ParsingContext(new());
 
         // Act
-        var document = ArazzoV1Deserializer.LoadDocument(jsonNode, parsingContext);
+        var document = LoadDocument(jsonNode, parsingContext, specVersion);
 
         // Assert
-        Assert.Equal("1.0.1", document.Arazzo);
+        Assert.Equal(arazzoVersion, document.Arazzo);
         Assert.NotNull(document.Info);
         Assert.Equal("Test Arazzo", document.Info.Title);
         Assert.Equal("1.0.0", document.Info.Version);
@@ -860,13 +875,15 @@ public class ArazzoDocumentTests
     }
 
 
-    [Fact]
-    public void Deserialize_WithExtensions_ShouldLoadExtensions()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "1.0.1")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "1.1.0")]
+    public void Deserialize_V1AndV1_1_WithExtensions_ShouldLoadExtensions(ArazzoSpecVersion specVersion, string arazzoVersion)
     {
         // Arrange
-        var json = """
+        var json = $$"""
         {
-            "arazzo": "1.0.1",
+            "arazzo": "{{arazzoVersion}}",
             "info": {
                 "title": "Test",
                 "version": "1.0.0"
@@ -878,7 +895,7 @@ public class ArazzoDocumentTests
         var parsingContext = new ParsingContext(new());
 
         // Act
-        var document = ArazzoV1Deserializer.LoadDocument(jsonNode, parsingContext);
+        var document = LoadDocument(jsonNode, parsingContext, specVersion);
 
         // Assert
         Assert.NotNull(document.Extensions);
@@ -1258,13 +1275,15 @@ public class ArazzoDocumentTests
         Assert.Contains("duplicate workflowId 'workflow1'", exception.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task LoadFromStreamAsync_ShouldParseDocument()
+    [Theory]
+    [InlineData("1.0.0")]
+    [InlineData("1.1.0")]
+    public async Task LoadFromStreamAsync_V1AndV1_1_ShouldParseDocument(string arazzoVersion)
     {
-        const string json =
-            """
+        var json =
+            $$"""
             {
-              "arazzo": "1.0.0",
+              "arazzo": "{{arazzoVersion}}",
               "info": {
                 "title": "Loaded from stream",
                 "version": "1.0.0"
@@ -1297,13 +1316,15 @@ public class ArazzoDocumentTests
         Assert.Equal("Loaded from stream", result.Document!.Info!.Title);
     }
 
-    [Fact]
-    public async Task ParseAsync_ShouldParseDocument()
+    [Theory]
+    [InlineData("1.0.0")]
+    [InlineData("1.1.0")]
+    public async Task ParseAsync_V1AndV1_1_ShouldParseDocument(string arazzoVersion)
     {
-        const string json =
-            """
+        var json =
+            $$"""
             {
-              "arazzo": "1.0.0",
+              "arazzo": "{{arazzoVersion}}",
               "info": {
                 "title": "Parsed document",
                 "version": "1.0.0"

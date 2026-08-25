@@ -34,10 +34,12 @@ internal static partial class ArazzoV1Deserializer
         } },
     };
 
-    public static readonly PatternFieldMap<ArazzoComponent> ComponentPatternFields = new()
+    public static PatternFieldMap<ArazzoComponent> GetComponentPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoComponent> ComponentPatternFields = GetComponentPatternFields();
 
     public static IArazzoInput? LoadSchema(JsonNode node, ParsingContext context)
     {
@@ -150,10 +152,15 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoComponent LoadComponent(JsonNode node, ParsingContext context)
     {
+        return LoadComponentInternal(node, context, ComponentFixedFields, ComponentPatternFields);
+    }
+
+    public static ArazzoComponent LoadComponentInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoComponent> componentFixedFields, PatternFieldMap<ArazzoComponent> componentPatternFields)
+    {
         var mapNode = node.CheckMapNode("Component", context);
         var component = new ArazzoComponent();
 
-        mapNode.ParseMap(component, ComponentFixedFields, ComponentPatternFields, context);
+        mapNode.ParseMap(component, componentFixedFields, componentPatternFields, context);
 
         return component;
     }

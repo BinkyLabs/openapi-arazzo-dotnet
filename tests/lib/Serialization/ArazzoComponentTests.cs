@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
 using BinkyLabs.OpenApi.Arazzo.Reader.V1;
+using BinkyLabs.OpenApi.Arazzo.Reader.V1_1;
 
 using Microsoft.OpenApi;
 
@@ -9,6 +10,18 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
 public class ArazzoComponentTests
 {
+    private static ArazzoComponent LoadComponent(JsonNode jsonNode, ParsingContext parsingContext, ArazzoSpecVersion specVersion)
+    {
+        var component = specVersion switch
+        {
+            ArazzoSpecVersion.Arazzo1_0 => ArazzoV1Deserializer.LoadComponent(jsonNode, parsingContext),
+            ArazzoSpecVersion.Arazzo1_1 => ArazzoV1_1Deserializer.LoadComponent(jsonNode, parsingContext),
+            _ => throw new ArgumentOutOfRangeException(nameof(specVersion), specVersion, null)
+        };
+        Assert.NotNull(component);
+        return component;
+    }
+
     [Fact]
     public void SerializeAsV1_ShouldWriteCorrectJson()
     {
@@ -153,8 +166,10 @@ public class ArazzoComponentTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
-    [Fact]
-    public void Deserialize_ShouldSetPropertiesAndExtensions()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_ShouldSetPropertiesAndExtensions(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -182,7 +197,7 @@ public class ArazzoComponentTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var component = ArazzoV1Deserializer.LoadComponent(jsonNode, parsingContext);
+        var component = LoadComponent(jsonNode, parsingContext, specVersion);
 
         Assert.NotNull(component.Parameters);
         Assert.Contains("param1", component.Parameters!.Keys);
@@ -280,8 +295,10 @@ public class ArazzoComponentTests
         Assert.Contains("Invalid key: 'invalid key'", exception.Message);
     }
 
-    [Fact]
-    public void Deserialize_WithInvalidComponentKey_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithInvalidComponentKey_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -297,7 +314,7 @@ public class ArazzoComponentTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var component = ArazzoV1Deserializer.LoadComponent(jsonNode, parsingContext);
+        var component = LoadComponent(jsonNode, parsingContext, specVersion);
 
         Assert.NotNull(component.Parameters);
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Invalid key: 'invalid key'", StringComparison.Ordinal));

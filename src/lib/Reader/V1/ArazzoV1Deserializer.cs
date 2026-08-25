@@ -6,8 +6,7 @@ internal static partial class ArazzoV1Deserializer
 {
     private static IArazzoExtension LoadExtension(string name, JsonNode node, ParsingContext context)
     {
-        if (context.ExtensionParsers is not null && context.ExtensionParsers.TryGetValue(name, out var parser) && parser(
-            node, ArazzoSpecVersion.Arazzo1_0) is { } result)
+        if (context.ExtensionParsers is not null && context.ExtensionParsers.TryGetValue(name, out var parser) && parser(node, context.Diagnostic.SpecificationVersion) is { } result)
         {
             return result;
         }

@@ -49,10 +49,12 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoResultActionCriteria, static (o, v, c) => o.Criteria = v.CreateList(LoadCriterion, c) }
     };
 
-    public static readonly PatternFieldMap<ArazzoFailureAction> FailureActionPatternFields = new()
+    public static PatternFieldMap<ArazzoFailureAction> GetFailureActionPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoFailureAction> FailureActionPatternFields = GetFailureActionPatternFields();
 
     public static IArazzoFailureAction LoadFailureAction(JsonNode node, ParsingContext context)
     {
@@ -71,9 +73,14 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoFailureAction LoadFailureActionObject(JsonNode node, ParsingContext context)
     {
+        return LoadFailureActionObjectInternal(node, context, FailureActionFixedFields, FailureActionPatternFields);
+    }
+
+    public static ArazzoFailureAction LoadFailureActionObjectInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoFailureAction> failureActionFixedFields, PatternFieldMap<ArazzoFailureAction> failureActionPatternFields)
+    {
         var mapNode = node.CheckMapNode("FailureAction", context);
         var failureAction = new ArazzoFailureAction();
-        mapNode.ParseMap(failureAction, FailureActionFixedFields, FailureActionPatternFields, context);
+        mapNode.ParseMap(failureAction, failureActionFixedFields, failureActionPatternFields, context);
         ArazzoFailureActionValidator.ValidateDeserialization(failureAction, context);
 
         return failureAction;

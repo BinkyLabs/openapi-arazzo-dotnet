@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
 using BinkyLabs.OpenApi.Arazzo.Reader.V1;
+using BinkyLabs.OpenApi.Arazzo.Reader.V1_1;
 
 using Microsoft.OpenApi;
 
@@ -9,6 +10,18 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
 public class ArazzoWorkflowTests
 {
+    private static ArazzoWorkflow LoadWorkflow(JsonNode jsonNode, ParsingContext parsingContext, ArazzoSpecVersion specVersion)
+    {
+        var workflow = specVersion switch
+        {
+            ArazzoSpecVersion.Arazzo1_0 => ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext),
+            ArazzoSpecVersion.Arazzo1_1 => ArazzoV1_1Deserializer.LoadWorkflow(jsonNode, parsingContext),
+            _ => throw new ArgumentOutOfRangeException(nameof(specVersion), specVersion, null)
+        };
+        Assert.NotNull(workflow);
+        return workflow;
+    }
+
     [Fact]
     public void SerializeAsV1_ShouldWriteCorrectJson()
     {
@@ -291,8 +304,10 @@ public class ArazzoWorkflowTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
-    [Fact]
-    public void Deserialize_ShouldSetPropertiesAndExtensions()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_ShouldSetPropertiesAndExtensions(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -308,7 +323,7 @@ public class ArazzoWorkflowTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var workflow = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+        var workflow = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.Equal("testWorkflow", workflow.WorkflowId);
         Assert.Equal("Test workflow", workflow.Summary);
@@ -321,8 +336,10 @@ public class ArazzoWorkflowTests
         Assert.Contains("workflow2", workflow.DependsOn);
     }
 
-    [Fact]
-    public void Deserialize_WithParameterList_LoadsParameters()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithParameterList_LoadsParameters(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -344,7 +361,7 @@ public class ArazzoWorkflowTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var workflow = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+        var workflow = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.NotNull(workflow.Parameters);
         Assert.Equal(2, workflow.Parameters!.Count);
@@ -812,8 +829,10 @@ public class ArazzoWorkflowTests
         Assert.False(parameter.ContainsKey("in"));
     }
 
-    [Fact]
-    public void Deserialize_WithInvalidOutputKey_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithInvalidOutputKey_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -826,14 +845,16 @@ public class ArazzoWorkflowTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var workflow = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+        var workflow = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.NotNull(workflow.Outputs);
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Invalid key: 'invalid key'", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithInvalidOutputExpression_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithInvalidOutputExpression_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -846,14 +867,16 @@ public class ArazzoWorkflowTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var workflow = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+        var workflow = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.NotNull(workflow.Outputs);
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Values in ArazzoWorkflow.Outputs must be valid runtime expressions", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithReferences_LoadsReferenceTypes()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithReferences_LoadsReferenceTypes(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -879,7 +902,7 @@ public class ArazzoWorkflowTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var workflow = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+        var workflow = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!));
         Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!));
@@ -1025,9 +1048,11 @@ public class ArazzoWorkflowTests
     }
 
     [Theory]
-    [InlineData("successActions")]
-    [InlineData("failureActions")]
-    public void Deserialize_WithDuplicateActionNames_AddsDiagnosticError(string propertyName)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "successActions")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "failureActions")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "successActions")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "failureActions")]
+    public void Deserialize_V1AndV1_1_WithDuplicateActionNames_AddsDiagnosticError(ArazzoSpecVersion specVersion, string propertyName)
     {
         var json = $$"""
         {
@@ -1047,15 +1072,17 @@ public class ArazzoWorkflowTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+        _ = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains($"{propertyName} contains duplicate action 'duplicateAction'", StringComparison.Ordinal));
     }
 
     [Theory]
-    [InlineData("successActions", "$components.successActions.reusableAction")]
-    [InlineData("failureActions", "$components.failureActions.reusableAction")]
-    public void Deserialize_WithDuplicateActionReferences_AddsDiagnosticError(string propertyName, string reference)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "successActions", "$components.successActions.reusableAction")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "failureActions", "$components.failureActions.reusableAction")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "successActions", "$components.successActions.reusableAction")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "failureActions", "$components.failureActions.reusableAction")]
+    public void Deserialize_V1AndV1_1_WithDuplicateActionReferences_AddsDiagnosticError(ArazzoSpecVersion specVersion, string propertyName, string reference)
     {
         var json = $$"""
         {
@@ -1073,7 +1100,7 @@ public class ArazzoWorkflowTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+        _ = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains($"{propertyName} contains duplicate action '{reference}'", StringComparison.Ordinal));
     }
@@ -1143,9 +1170,11 @@ public class ArazzoWorkflowTests
     }
 
     [Theory]
-    [InlineData("successActions")]
-    [InlineData("failureActions")]
-    public void Deserialize_WithDistinctActionNames_DoesNotAddDiagnosticError(string propertyName)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "successActions")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "failureActions")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "successActions")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "failureActions")]
+    public void Deserialize_V1AndV1_1_WithDistinctActionNames_DoesNotAddDiagnosticError(ArazzoSpecVersion specVersion, string propertyName)
     {
         var json = $$"""
         {
@@ -1165,7 +1194,7 @@ public class ArazzoWorkflowTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadWorkflow(jsonNode, parsingContext);
+        _ = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.DoesNotContain(parsingContext.Diagnostic.Errors, error => error.Message.Contains("contains duplicate action", StringComparison.Ordinal));
     }
