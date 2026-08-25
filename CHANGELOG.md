@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0-preview.4](https://github.com/BinkyLabs/openapi-arazzo-dotnet/compare/v1.0.0-preview.3...v1.0.0-preview.4) (2026-08-25)
+
+
+### Bug Fixes
+
+* do not default const to null ([18a80f8](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/18a80f8819da2d952a91d6c301227e93b57c79bc))
+
 ## [1.0.0-preview.3](https://github.com/BinkyLabs/openapi-arazzo-dotnet/compare/v1.0.0-preview.2...v1.0.0-preview.3) (2026-07-07)
 
 
