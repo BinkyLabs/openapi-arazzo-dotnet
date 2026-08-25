@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
-using BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 using Microsoft.OpenApi;
 
@@ -75,8 +74,10 @@ public class ArazzoPayloadReplacementTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
-    [Fact]
-    public void Deserialize_ShouldSetPropertiesAndExtensions()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_ShouldSetPropertiesAndExtensions(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -88,8 +89,9 @@ public class ArazzoPayloadReplacementTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var replacement = ArazzoV1Deserializer.LoadPayloadReplacement(jsonNode, parsingContext);
+        var replacement = parsingContext.ParseFragment<ArazzoPayloadReplacement>(jsonNode, specVersion);
 
+        Assert.NotNull(replacement);
         Assert.Equal("/data/count", replacement.Target);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("\"10\""), replacement.Value), "Replacement value does not match expected value.");
         Assert.NotNull(replacement.Extensions);
@@ -130,8 +132,10 @@ public class ArazzoPayloadReplacementTests
         Assert.Contains("ArazzoPayloadReplacement.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Deserialize_WithInvalidRuntimeExpressionValue_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_WithInvalidRuntimeExpressionValue_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var jsonNode = JsonNode.Parse(
             """
@@ -142,21 +146,24 @@ public class ArazzoPayloadReplacementTests
             """)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadPayloadReplacement(jsonNode, parsingContext);
+        _ = parsingContext.ParseFragment<ArazzoPayloadReplacement>(jsonNode, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoPayloadReplacement.Value contains an invalid runtime expression", StringComparison.Ordinal));
     }
 
     [Theory]
-    [InlineData("""{ "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
-    [InlineData("""{ "target": "", "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
-    [InlineData("""{ "target": "/name" }""", "ArazzoPayloadReplacement.Value is a REQUIRED field")]
-    public void ParseFragment_MissingRequiredFields_AddsDiagnosticError(string json, string expectedMessage)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "target": "", "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "target": "/name" }""", "ArazzoPayloadReplacement.Value is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "target": "", "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "target": "/name" }""", "ArazzoPayloadReplacement.Value is a REQUIRED field")]
+    public void ParseFragment_AsV1AndV1_1_MissingRequiredFields_AddsDiagnosticError(ArazzoSpecVersion specVersion, string json, string expectedMessage)
     {
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        parsingContext.ParseFragment<ArazzoPayloadReplacement>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+        parsingContext.ParseFragment<ArazzoPayloadReplacement>(jsonNode, specVersion);
 
         Assert.Single(parsingContext.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
     }

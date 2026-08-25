@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
-using BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 using Microsoft.OpenApi;
 
@@ -81,8 +80,10 @@ public class ArazzoInfoTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "The serialized JSON does not match the expected JSON.");
     }
 
-    [Fact]
-    public void Deserialize_ShouldSetPropertiesCorrectly()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_ShouldSetPropertiesCorrectly(ArazzoSpecVersion specVersion)
     {
         // Arrange
         var json = """
@@ -98,9 +99,10 @@ public class ArazzoInfoTests
 
 
         // Act
-        var arazzoInfo = ArazzoV1Deserializer.LoadInfo(jsonNode, parsingContext);
+        var arazzoInfo = parsingContext.ParseFragment<ArazzoInfo>(jsonNode, specVersion);
 
         // Assert
+        Assert.NotNull(arazzoInfo);
         Assert.Equal("Test Arazzo", arazzoInfo.Title);
         Assert.Equal("1.0.0", arazzoInfo.Version);
         Assert.Equal("A concise summary", arazzoInfo.Summary);

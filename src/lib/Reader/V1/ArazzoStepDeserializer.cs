@@ -39,16 +39,23 @@ internal static partial class ArazzoV1Deserializer
         } }
     };
 
-    public static readonly PatternFieldMap<ArazzoStep> StepPatternFields = new()
+    public static PatternFieldMap<ArazzoStep> GetStepPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoStep> StepPatternFields = GetStepPatternFields();
 
     public static ArazzoStep LoadStep(JsonNode node, ParsingContext context)
     {
+        return LoadStepInternal(node, context, StepFixedFields, StepPatternFields);
+    }
+
+    public static ArazzoStep LoadStepInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoStep> stepFixedFields, PatternFieldMap<ArazzoStep> stepPatternFields)
+    {
         var mapNode = node.CheckMapNode("Step", context);
         var step = new ArazzoStep();
-        mapNode.ParseMap(step, StepFixedFields, StepPatternFields, context);
+        mapNode.ParseMap(step, stepFixedFields, stepPatternFields, context);
         ValidateStepRequiredFields(step, context);
         ValidateStepTargetFields(step, context);
         ArazzoSemanticReferenceValidator.ValidateOperationPathDeserialization(step.OperationPath, context, $"{nameof(ArazzoStep)} '{step.StepId}'");

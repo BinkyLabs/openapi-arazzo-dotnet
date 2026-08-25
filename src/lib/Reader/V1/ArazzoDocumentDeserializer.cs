@@ -14,16 +14,22 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoDocumentWorkflows, static (o, v, c) => o.Workflows = v.CreateList(LoadWorkflow, c) },
         { ArazzoConstants.ArazzoDocumentComponents, static (o, v, c) => o.Components = LoadComponent(v, c) },
     };
-    public static readonly PatternFieldMap<ArazzoDocument> DocumentPatternFields = new()
+    public static PatternFieldMap<ArazzoDocument> GetDocumentPatternFields() =>
+    new()
     {
         {s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k,LoadExtension(k, n, c))}
     };
+    public static readonly PatternFieldMap<ArazzoDocument> DocumentPatternFields = GetDocumentPatternFields();
     public static ArazzoDocument LoadArazzoDocument(JsonNode node, Uri location, ParsingContext context)
+    {
+        return LoadArazzoDocumentInternal(node, location, context, DocumentFixedFields, DocumentPatternFields);
+    }
+    public static ArazzoDocument LoadArazzoDocumentInternal(JsonNode node, Uri location, ParsingContext context, FixedFieldMap<ArazzoDocument> documentFixedFields, PatternFieldMap<ArazzoDocument> documentPatternFields)
     {
         var document = new ArazzoDocument();
         document.BaseUri = location;
         context.SetTempStorage("CurrentDocument", document);
-        node.CheckMapNode("Document", context).ParseMap(document, DocumentFixedFields, DocumentPatternFields, context);
+        node.CheckMapNode("Document", context).ParseMap(document, documentFixedFields, documentPatternFields, context);
         context.SetTempStorage("CurrentDocument", null);
         return document;
     }

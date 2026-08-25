@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
 using BinkyLabs.OpenApi.Arazzo.Reader.V1;
+using BinkyLabs.OpenApi.Arazzo.Reader.V1_1;
 
 using Microsoft.OpenApi;
 
@@ -9,6 +10,18 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
 public class ArazzoStepTests
 {
+    private static ArazzoStep LoadStep(JsonNode jsonNode, ParsingContext parsingContext, ArazzoSpecVersion specVersion)
+    {
+        var step = specVersion switch
+        {
+            ArazzoSpecVersion.Arazzo1_0 => ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext),
+            ArazzoSpecVersion.Arazzo1_1 => ArazzoV1_1Deserializer.LoadStep(jsonNode, parsingContext),
+            _ => throw new ArgumentOutOfRangeException(nameof(specVersion), specVersion, null)
+        };
+        Assert.NotNull(step);
+        return step;
+    }
+
     [Fact]
     public void BuildOperationPointer_ShouldEscapePathAndNormalizeMethod()
     {
@@ -450,8 +463,10 @@ public class ArazzoStepTests
         Assert.Contains("must reference a sourceDescription URL runtime expression followed by a JSON Pointer to an operation path", exception.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Deserialize_WithPlainOperationPath_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithPlainOperationPath_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -462,13 +477,15 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("must reference a sourceDescription URL runtime expression followed by a JSON Pointer to an operation path", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithQueryOperationPath_ShouldNotAddDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithQueryOperationPath_ShouldNotAddDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -479,13 +496,15 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.DoesNotContain(parsingContext.Diagnostic.Errors, error => error.Message.Contains("operationPath", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_ShouldSetPropertiesAndExtensions()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_ShouldSetPropertiesAndExtensions(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -515,7 +534,7 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var step = ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        var step = LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.Equal("Fetch user details", step.Description);
         Assert.Equal("getUser", step.StepId);
@@ -1033,8 +1052,10 @@ public class ArazzoStepTests
         Assert.False(parameter.ContainsKey("in"));
     }
 
-    [Fact]
-    public void Deserialize_WithInvalidOutputKey_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithInvalidOutputKey_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -1047,7 +1068,7 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var step = ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        var step = LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.NotNull(step.Outputs);
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Invalid key: 'invalid key'", StringComparison.Ordinal));
@@ -1093,8 +1114,10 @@ public class ArazzoStepTests
         Assert.Contains("Invalid value for key 'userId': 'not-a-runtime-expression'", exception.Message);
     }
 
-    [Fact]
-    public void Deserialize_WithInvalidOutputValue_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithInvalidOutputValue_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -1107,14 +1130,16 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var step = ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        var step = LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.NotNull(step.Outputs);
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Invalid value for key 'userId': 'not-a-runtime-expression'", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithoutTarget_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithoutTarget_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -1124,13 +1149,15 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("must define exactly one of operationId, operationPath, or workflowId", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithWorkflowIdAndOperationId_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithWorkflowIdAndOperationId_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -1142,13 +1169,15 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("can define only one of operationId, operationPath, or workflowId", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithWorkflowIdAndOperationPath_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithWorkflowIdAndOperationPath_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -1160,13 +1189,15 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("can define only one of operationId, operationPath, or workflowId", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithWorkflowTargetAndRequestBody_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithWorkflowTargetAndRequestBody_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -1178,13 +1209,15 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("requestBody can only be specified when the step targets operationId or operationPath", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithoutTargetAndRequestBody_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithoutTargetAndRequestBody_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -1195,20 +1228,22 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("requestBody can only be specified when the step targets operationId or operationPath", StringComparison.Ordinal));
     }
 
     [Theory]
-    [InlineData("""{ "stepId": "operationIdRequestStep", "operationId": "updateUser", "requestBody": {} }""")]
-    [InlineData("""{ "stepId": "operationPathRequestStep", "operationPath": "$sourceDescriptions.source1.url#/paths/~1users~1{id}/patch", "requestBody": {} }""")]
-    public void Deserialize_WithOperationTargetAndRequestBody_DoesNotAddRequestBodyDiagnostic(string json)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "stepId": "operationIdRequestStep", "operationId": "updateUser", "requestBody": {} }""")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "stepId": "operationPathRequestStep", "operationPath": "$sourceDescriptions.source1.url#/paths/~1users~1{id}/patch", "requestBody": {} }""")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "stepId": "operationIdRequestStep", "operationId": "updateUser", "requestBody": {} }""")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "stepId": "operationPathRequestStep", "operationPath": "$sourceDescriptions.source1.url#/paths/~1users~1{id}/patch", "requestBody": {} }""")]
+    public void Deserialize_V1AndV1_1_WithOperationTargetAndRequestBody_DoesNotAddRequestBodyDiagnostic(ArazzoSpecVersion specVersion, string json)
     {
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.DoesNotContain(parsingContext.Diagnostic.Errors, error => error.Message.Contains("requestBody can only be specified", StringComparison.Ordinal));
     }
@@ -1399,9 +1434,11 @@ public class ArazzoStepTests
     }
 
     [Theory]
-    [InlineData("onSuccess")]
-    [InlineData("onFailure")]
-    public void Deserialize_WithDuplicateActionNames_AddsDiagnosticError(string propertyName)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "onSuccess")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "onFailure")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "onSuccess")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "onFailure")]
+    public void Deserialize_V1AndV1_1_WithDuplicateActionNames_AddsDiagnosticError(ArazzoSpecVersion specVersion, string propertyName)
     {
         var json = $$"""
         {
@@ -1422,15 +1459,17 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        _ = LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains($"{propertyName} contains duplicate action 'duplicateAction'", StringComparison.Ordinal));
     }
 
     [Theory]
-    [InlineData("onSuccess", "$components.successActions.reusableAction")]
-    [InlineData("onFailure", "$components.failureActions.reusableAction")]
-    public void Deserialize_WithDuplicateActionReferences_AddsDiagnosticError(string propertyName, string reference)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "onSuccess", "$components.successActions.reusableAction")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "onFailure", "$components.failureActions.reusableAction")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "onSuccess", "$components.successActions.reusableAction")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "onFailure", "$components.failureActions.reusableAction")]
+    public void Deserialize_V1AndV1_1_WithDuplicateActionReferences_AddsDiagnosticError(ArazzoSpecVersion specVersion, string propertyName, string reference)
     {
         var json = $$"""
         {
@@ -1449,7 +1488,7 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        _ = LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains($"{propertyName} contains duplicate action '{reference}'", StringComparison.Ordinal));
     }
@@ -1519,9 +1558,11 @@ public class ArazzoStepTests
     }
 
     [Theory]
-    [InlineData("onSuccess")]
-    [InlineData("onFailure")]
-    public void Deserialize_WithDistinctActionNames_DoesNotAddDiagnosticError(string propertyName)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "onSuccess")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "onFailure")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "onSuccess")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "onFailure")]
+    public void Deserialize_V1AndV1_1_WithDistinctActionNames_DoesNotAddDiagnosticError(ArazzoSpecVersion specVersion, string propertyName)
     {
         var json = $$"""
         {
@@ -1542,7 +1583,7 @@ public class ArazzoStepTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadStep(jsonNode, parsingContext);
+        _ = LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.DoesNotContain(parsingContext.Diagnostic.Errors, error => error.Message.Contains("contains duplicate action", StringComparison.Ordinal));
     }

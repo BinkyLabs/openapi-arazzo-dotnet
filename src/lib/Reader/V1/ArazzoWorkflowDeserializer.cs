@@ -46,17 +46,24 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
     };
 
-    public static readonly PatternFieldMap<ArazzoWorkflow> WorkflowPatternFields = new()
+    public static PatternFieldMap<ArazzoWorkflow> GetWorkflowPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoWorkflow> WorkflowPatternFields = GetWorkflowPatternFields();
 
     public static ArazzoWorkflow LoadWorkflow(JsonNode node, ParsingContext context)
+    {
+        return LoadWorkflowInternal(node, context, WorkflowFixedFields, WorkflowPatternFields);
+    }
+
+    public static ArazzoWorkflow LoadWorkflowInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoWorkflow> workflowFixedFields, PatternFieldMap<ArazzoWorkflow> workflowPatternFields)
     {
         var mapNode = node.CheckMapNode("Workflow", context);
         var workflow = new ArazzoWorkflow();
 
-        mapNode.ParseMap(workflow, WorkflowFixedFields, WorkflowPatternFields, context);
+        mapNode.ParseMap(workflow, workflowFixedFields, workflowPatternFields, context);
         ValidateWorkflowRequiredFields(workflow, context);
 
         return workflow;

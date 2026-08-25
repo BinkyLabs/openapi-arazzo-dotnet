@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
-using BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 using Microsoft.OpenApi;
 
@@ -111,8 +110,10 @@ public class ArazzoRequestBodyTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
-    [Fact]
-    public void Deserialize_ShouldSetPropertiesAndExtensions()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_ShouldSetPropertiesAndExtensions(ArazzoSpecVersion specVersion)
     {
         var json = """
         {
@@ -127,8 +128,9 @@ public class ArazzoRequestBodyTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var requestBody = ArazzoV1Deserializer.LoadRequestBody(jsonNode, parsingContext);
+        var requestBody = parsingContext.ParseFragment<ArazzoRequestBody>(jsonNode, specVersion);
 
+        Assert.NotNull(requestBody);
         Assert.Equal("application/json", requestBody.ContentType);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("{\"count\":10}"), requestBody.Payload), "Payload does not match expected value.");
         Assert.NotNull(requestBody.Replacements);
@@ -310,8 +312,10 @@ public class ArazzoRequestBodyTests
         Assert.Contains("ArazzoRequestBody.Payload contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Deserialize_WithInvalidEmbeddedRuntimeExpressionInPayload_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_AsV1AndV1_1_WithInvalidEmbeddedRuntimeExpressionInPayload_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var jsonNode = JsonNode.Parse(
             """
@@ -323,7 +327,7 @@ public class ArazzoRequestBodyTests
             """)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadRequestBody(jsonNode, parsingContext);
+        _ = parsingContext.ParseFragment<ArazzoRequestBody>(jsonNode, specVersion);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoRequestBody.Payload contains an invalid runtime expression", StringComparison.Ordinal));
     }
