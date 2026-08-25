@@ -257,6 +257,17 @@ public class ArazzoInput : IArazzoInput
     /// <inheritdoc />
     public void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer);
+    }
+
+    /// <inheritdoc />
+    public void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer);
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer)
+    {
         ArgumentNullException.ThrowIfNull(writer);
 
         ConvertToOpenApiSchema(this).SerializeAsV32(writer);

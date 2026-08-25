@@ -93,6 +93,17 @@ public abstract class BaseArazzoReferenceHolder<T, U, V> : IArazzoReferenceHolde
     /// <inheritdoc/>
     public virtual void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer);
+    }
+
+    /// <inheritdoc/>
+    public virtual void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer);
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer)
+    {
         ArgumentNullException.ThrowIfNull(writer);
         Reference.SerializeAsV1(writer);
     }

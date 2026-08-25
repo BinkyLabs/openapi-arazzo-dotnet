@@ -43,6 +43,39 @@ public class ArazzoCriterionExpressionTypeTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_WithJsonPathType_ShouldWriteCorrectJson()
+    {
+        var expressionType = new ArazzoCriterionExpressionType
+        {
+            Type = ArazzoCriterionExpressionTypeType.JsonPath,
+            Version = ArazzoCriterionExpressionVersion.DraftGoessnerDispatchJsonPath00,
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-extra"] = new JsonNodeExtension(JsonNode.Parse("{\"note\":\"yes\"}")!)
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "type": "jsonpath",
+            "version": "draft-goessner-dispatch-jsonpath-00",
+            "x-extra": {
+                "note": "yes"
+            }
+        }
+        """;
+
+        expressionType.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
     public void SerializeAsV1_WithXPathType_ShouldWriteCorrectJson()
     {
         var expressionType = new ArazzoCriterionExpressionType
@@ -62,6 +95,33 @@ public class ArazzoCriterionExpressionTypeTests
         """;
 
         expressionType.SerializeAsV1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithXPathType_ShouldWriteCorrectJson()
+    {
+        var expressionType = new ArazzoCriterionExpressionType
+        {
+            Type = ArazzoCriterionExpressionTypeType.XPath,
+            Version = ArazzoCriterionExpressionVersion.XPath30
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "type": "xpath",
+            "version": "xpath-30"
+        }
+        """;
+
+        expressionType.SerializeAsV1_1(writer);
         var jsonResultObject = JsonNode.Parse(textWriter.ToString());
         var expectedJsonObject = JsonNode.Parse(expectedJson);
 
@@ -153,6 +213,20 @@ public class ArazzoCriterionExpressionTypeTests
         Assert.Throws<ArgumentNullException>(() => expressionType.SerializeAsV1(writer));
     }
 
+
+    [Fact]
+    public void SerializeAsV1_1_WithoutTypeThrowsException()
+    {
+        var expressionType = new ArazzoCriterionExpressionType
+        {
+            Version = ArazzoCriterionExpressionVersion.XPath30
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => expressionType.SerializeAsV1_1(writer));
+    }
+
     [Fact]
     public void SerializeAsV1_WithoutVersionThrowsException()
     {
@@ -164,6 +238,20 @@ public class ArazzoCriterionExpressionTypeTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         Assert.Throws<ArgumentNullException>(() => expressionType.SerializeAsV1(writer));
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithoutVersionThrowsException()
+    {
+        var expressionType = new ArazzoCriterionExpressionType
+        {
+            Type = ArazzoCriterionExpressionTypeType.JsonPath
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => expressionType.SerializeAsV1_1(writer));
     }
 
     [Fact]
@@ -181,6 +269,22 @@ public class ArazzoCriterionExpressionTypeTests
         Assert.Contains("Serializing criterion expression type 'simple' as an object is NOT supported by the specification", exception.Message);
     }
 
+
+    [Fact]
+    public void SerializeAsV1_1_WithSimpleType_ThrowsArazzoException()
+    {
+        var expressionType = new ArazzoCriterionExpressionType
+        {
+            Type = ArazzoCriterionExpressionTypeType.Simple,
+            Version = ArazzoCriterionExpressionVersion.XPath30
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoException>(() => expressionType.SerializeAsV1_1(writer));
+        Assert.Contains("Serializing criterion expression type 'simple' as an object is NOT supported by the specification", exception.Message);
+    }
+
     [Fact]
     public void SerializeAsV1_WithRegexType_ThrowsArazzoException()
     {
@@ -193,6 +297,22 @@ public class ArazzoCriterionExpressionTypeTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var exception = Assert.Throws<ArazzoException>(() => expressionType.SerializeAsV1(writer));
+        Assert.Contains("Serializing criterion expression type 'regex' as an object is NOT supported by the specification", exception.Message);
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithRegexType_ThrowsArazzoException()
+    {
+        var expressionType = new ArazzoCriterionExpressionType
+        {
+            Type = ArazzoCriterionExpressionTypeType.Regex,
+            Version = ArazzoCriterionExpressionVersion.XPath20
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoException>(() => expressionType.SerializeAsV1_1(writer));
         Assert.Contains("Serializing criterion expression type 'regex' as an object is NOT supported by the specification", exception.Message);
     }
 

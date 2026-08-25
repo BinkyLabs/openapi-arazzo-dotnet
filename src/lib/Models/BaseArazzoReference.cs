@@ -115,6 +115,12 @@ public class BaseArazzoReference : IArazzoSerializable
         SerializeInternal(writer);
     }
 
+    /// <inheritdoc/>
+    public virtual void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer);
+    }
+
     /// <summary>
     /// Serialize <see cref="BaseArazzoReference"/>
     /// </summary>

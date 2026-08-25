@@ -47,6 +47,41 @@ public class ArazzoInfoTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_ShouldWriteCorrectJson()
+    {
+        // Arrange
+        var arazzoInfo = new ArazzoInfo
+        {
+            Title = "Test Arazzo",
+            Version = "1.0.0",
+            Summary = "A concise summary",
+            Description = "A longer description"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+"""
+{
+    "title": "Test Arazzo",
+    "version": "1.0.0",
+    "summary": "A concise summary",
+    "description": "A longer description"
+}
+""";
+
+        // Act
+        arazzoInfo.SerializeAsV1_1(writer);
+        var jsonResult = textWriter.ToString();
+        var jsonResultObject = JsonNode.Parse(jsonResult);
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+
+        // Assert
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "The serialized JSON does not match the expected JSON.");
+    }
+
+    [Fact]
     public void Deserialize_ShouldSetPropertiesCorrectly()
     {
         // Arrange
@@ -85,6 +120,20 @@ public class ArazzoInfoTests
         Assert.Throws<ArgumentNullException>(() => arazzoInfo.SerializeAsV1(writer));
     }
 
+
+    [Fact]
+    public void SerializeAsV1_1_WithMissingTitle_ShouldThrowArgumentNullException()
+    {
+        var arazzoInfo = new ArazzoInfo
+        {
+            Version = "1.0.0"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => arazzoInfo.SerializeAsV1_1(writer));
+    }
+
     [Fact]
     public void SerializeAsV1_WithMissingVersion_ShouldThrowArgumentNullException()
     {
@@ -96,5 +145,19 @@ public class ArazzoInfoTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         Assert.Throws<ArgumentNullException>(() => arazzoInfo.SerializeAsV1(writer));
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithMissingVersion_ShouldThrowArgumentNullException()
+    {
+        var arazzoInfo = new ArazzoInfo
+        {
+            Title = "Test Arazzo"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => arazzoInfo.SerializeAsV1_1(writer));
     }
 }

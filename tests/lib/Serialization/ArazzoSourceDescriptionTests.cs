@@ -44,6 +44,38 @@ public class ArazzoSourceDescriptionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_ShouldWriteCorrectJson()
+    {
+        // Arrange
+        var sourceDescription = new ArazzoSourceDescription
+        {
+            Name = "Test Source",
+            Url = new Uri("https://example.com/api"),
+            Type = ArazzoDescriptionType.OpenAPI
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+"""
+{
+    "name": "Test Source",
+    "url": "https://example.com/api",
+    "type": "openapi"
+}
+""";
+
+        // Act
+        sourceDescription.SerializeAsV1_1(writer);
+        var jsonResult = textWriter.ToString();
+        var jsonResultObject = JsonNode.Parse(jsonResult);
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        // Assert
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "The serialized JSON does not match the expected JSON.");
+    }
+
+    [Fact]
     public void SerializeAsV1_WithArazzoType_ShouldWriteCorrectJson()
     {
         // Arrange
@@ -67,6 +99,38 @@ public class ArazzoSourceDescriptionTests
 
         // Act
         sourceDescription.SerializeAsV1(writer);
+        var jsonResult = textWriter.ToString();
+        var jsonResultObject = JsonNode.Parse(jsonResult);
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        // Assert
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "The serialized JSON does not match the expected JSON.");
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_WithArazzoType_ShouldWriteCorrectJson()
+    {
+        // Arrange
+        var sourceDescription = new ArazzoSourceDescription
+        {
+            Name = "Test Arazzo Source",
+            Url = new Uri("https://example.com/arazzo"),
+            Type = ArazzoDescriptionType.Arazzo
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+"""
+{
+    "name": "Test Arazzo Source",
+    "url": "https://example.com/arazzo",
+    "type": "arazzo"
+}
+""";
+
+        // Act
+        sourceDescription.SerializeAsV1_1(writer);
         var jsonResult = textWriter.ToString();
         var jsonResultObject = JsonNode.Parse(jsonResult);
         var expectedJsonObject = JsonNode.Parse(expectedJson);

@@ -1,1 +1,22 @@
 #nullable enable
+abstract BinkyLabs.OpenApi.Arazzo.ArazzoResultAction<T>.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoComponent.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterion.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoDocument.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSpecVersion.Arazzo1_1 = 1 -> BinkyLabs.OpenApi.Arazzo.ArazzoSpecVersion
+BinkyLabs.OpenApi.Arazzo.ArazzoInfo.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoInput.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoParameter.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoRequestBody.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSourceDescription.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoStep.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.IArazzoSerializable.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+override BinkyLabs.OpenApi.Arazzo.ArazzoFailureAction.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+override BinkyLabs.OpenApi.Arazzo.ArazzoInputReference.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+override BinkyLabs.OpenApi.Arazzo.ArazzoParameterReference.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+override BinkyLabs.OpenApi.Arazzo.ArazzoSuccessAction.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+virtual BinkyLabs.OpenApi.Arazzo.BaseArazzoReference.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+virtual BinkyLabs.OpenApi.Arazzo.BaseArazzoReferenceHolder<T, U, V>.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void

@@ -45,6 +45,41 @@ public class ArazzoParameterTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_ShouldWriteCorrectJson()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "id",
+            In = ParameterLocation.Path,
+            Value = "42",
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-extra"] = new JsonNodeExtension(JsonNode.Parse("{\"note\":\"yes\"}")!)
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "name": "id",
+            "in": "path",
+            "value": "42",
+            "x-extra": {
+                "note": "yes"
+            }
+        }
+        """;
+
+        parameter.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
     public void Deserialize_ShouldSetPropertiesAndExtensions()
     {
         var json = """
@@ -94,6 +129,33 @@ public class ArazzoParameterTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
+
+    [Fact]
+    public void SerializeAsV1_1_WithoutIn_ShouldOmitIn()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "input",
+            Value = "42"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "name": "input",
+            "value": "42"
+        }
+        """;
+
+        parameter.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
     [Fact]
     public void SerializeAsV1_WithReference_WritesReferenceAndValueOverride()
     {
@@ -106,6 +168,26 @@ public class ArazzoParameterTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         parameter.SerializeAsV1(writer);
+
+        var json = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$components.parameters.shared", json?["reference"]?.GetValue<string>());
+        Assert.Equal("42", json?["value"]?.GetValue<string>());
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithReference_WritesReferenceAndValueOverride()
+    {
+        var parameter = new ArazzoParameterReference("shared")
+        {
+            Value = JsonValue.Create("42")
+        };
+
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        parameter.SerializeAsV1_1(writer);
 
         var json = JsonNode.Parse(textWriter.ToString());
 
@@ -198,6 +280,24 @@ public class ArazzoParameterTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => parameter.SerializeAsV1(writer));
+
+        Assert.Contains("ArazzoParameter.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
+    }
+
+
+    [Fact]
+    public void SerializeAsV1_1_WithInvalidRuntimeExpressionValue_ThrowsArazzoSerializationException()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "id",
+            In = ParameterLocation.Query,
+            Value = "$response.statusCode"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => parameter.SerializeAsV1_1(writer));
 
         Assert.Contains("ArazzoParameter.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
     }
