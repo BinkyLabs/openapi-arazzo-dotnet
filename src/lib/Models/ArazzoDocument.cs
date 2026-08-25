@@ -24,9 +24,9 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     internal ArazzoWorkspace? Workspace { get; set; }
 
     /// <summary>
-    /// Gets or sets the Arazzo version. Default is "1.0.1".
+    /// Gets or sets the Arazzo version. Default is "1.1.0".
     /// </summary>
-    public string? Arazzo { get; internal set; } = "1.0.1";
+    public string? Arazzo { get; internal set; } = "1.1.0";
 
     /// <summary>
     /// Gets or sets the Arazzo info object.
