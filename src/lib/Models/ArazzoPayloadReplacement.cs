@@ -17,6 +17,11 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
     public string? Target { get; set; }
 
     /// <summary>
+    /// Gets or sets the selector type used to resolve the target.
+    /// </summary>
+    public JsonNode? TargetSelectorType { get; set; }
+
+    /// <summary>
     /// Gets or sets the replacement value.
     /// </summary>
     public JsonNode? Value { get; set; }
@@ -52,6 +57,12 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoPayloadReplacementTarget, Target);
+        writer.WriteOptionalObject(
+            specVersion is ArazzoSpecVersion.Arazzo1_0
+                ? ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType)
+                : ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType,
+            TargetSelectorType,
+            static (w, v) => w.WriteAny(v));
         writer.WriteOptionalObject(ArazzoConstants.ArazzoPayloadReplacementValue, Value, static (w, v) => w.WriteAny(v));
         writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();

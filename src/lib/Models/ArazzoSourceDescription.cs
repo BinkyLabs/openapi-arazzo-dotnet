@@ -55,6 +55,10 @@ public class ArazzoSourceDescription : IArazzoSerializable, IArazzoExtensible
         writer.WriteProperty(ArazzoConstants.ArazzoSourceDescriptionUrl, Url?.ToString());
         if (Type.HasValue)
         {
+            if (Type.Value is ArazzoDescriptionType.AsyncAPI)
+            {
+                ArazzoVersionCompatibility.ThrowIfUnsupportedInV1(specVersion, ArazzoConstants.ArazzoSourceDescriptionType, Type.Value);
+            }
             writer.WriteProperty(ArazzoConstants.ArazzoSourceDescriptionType, Type.Value.GetDisplayName());
         }
         writer.WriteArazzoExtensions(Extensions, specVersion);

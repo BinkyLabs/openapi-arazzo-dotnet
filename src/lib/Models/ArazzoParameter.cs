@@ -51,9 +51,14 @@ public class ArazzoParameter : IArazzoParameter, IArazzoExtensible
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterName, Name);
-        if (In.HasValue)
+        var locationName = In?.GetDisplayName();
+        if (!string.IsNullOrEmpty(locationName))
         {
-            writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterIn, In.Value.GetDisplayName());
+            if (specVersion is ArazzoSpecVersion.Arazzo1_0 && "querystring".Equals(locationName, StringComparison.OrdinalIgnoreCase))
+            {
+                ArazzoVersionCompatibility.ThrowIfUnsupportedInV1(specVersion, ArazzoConstants.ArazzoParameterIn, locationName);
+            }
+            writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterIn, locationName);
         }
         writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, Value, static (w, v) => w.WriteAny(v));
         writer.WriteArazzoExtensions(Extensions, specVersion);

@@ -13,8 +13,14 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoParameterName, static (o, v, c) => o.Name = v.GetScalarValue() },
         { ArazzoConstants.ArazzoParameterIn, static (o, v, c) =>
         {
-            if (!v.GetScalarValue().TryGetEnumFromDisplayName<ParameterLocation>(c, out var _in))
+            var location = v.GetScalarValue();
+            if (!location.TryGetEnumFromDisplayName<ParameterLocation>(c, out var _in))
             {
+                return;
+            }
+            if ("querystring".Equals(location, StringComparison.OrdinalIgnoreCase) && c.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+            {
+                c.Diagnostic.Errors.Add(new OpenApiError(c.GetLocation(), "The value 'querystring' for 'in' is not supported in Arazzo 1.0."));
                 return;
             }
             o.In = _in;

@@ -80,6 +80,61 @@ public class ArazzoParameterTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
+    [Fact]
+    public void SerializeAsV1_WithQueryStringParameter_ShouldThrowExplicitVersionError()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "fullQuery",
+            In = ParameterLocation.QueryString,
+            Value = "filter=active"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => parameter.SerializeAsV1(writer));
+
+        Assert.Contains("The value 'querystring' for 'in' is not supported in Arazzo 1.0.", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DeserializeAsV1_WithQueryStringParameter_ShouldReportExplicitVersionError()
+    {
+        var json = """
+        {
+            "name": "fullQuery",
+            "in": "querystring",
+            "value": "filter=active"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var parameter = LoadParameterObject(jsonNode, parsingContext, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Equal("fullQuery", parameter.Name);
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message == "The value 'querystring' for 'in' is not supported in Arazzo 1.0.");
+    }
+
+    [Fact]
+    public void DeserializeAsV1_1_WithQueryStringParameter_ShouldSetLocation()
+    {
+        var json = """
+        {
+            "name": "fullQuery",
+            "in": "querystring",
+            "value": "filter=active"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var parameter = LoadParameterObject(jsonNode, parsingContext, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.Equal(ParameterLocation.QueryString, parameter.In);
+        Assert.Empty(parsingContext.Diagnostic.Errors);
+    }
+
     [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0)]
     [InlineData(ArazzoSpecVersion.Arazzo1_1)]

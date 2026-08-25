@@ -153,6 +153,151 @@ public class ArazzoStepTests
     }
 
     [Fact]
+    public void SerializeAsV1_WithArazzo11Properties_ShouldWriteExtensionFields()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "receiveOrder",
+            ChannelPath = "$sourceDescriptions.asyncApi.orders",
+            Action = ArazzoStepAction.Receive,
+            CorrelationId = "$inputs.correlationId",
+            Timeout = 6000,
+            DependsOn = new HashSet<string> { "sendOrder" }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        step.SerializeAsV1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$sourceDescriptions.asyncApi.orders", jsonResultObject?["x-channelPath"]?.GetValue<string>());
+        Assert.Equal("receive", jsonResultObject?["x-action"]?.GetValue<string>());
+        Assert.Equal("$inputs.correlationId", jsonResultObject?["x-correlationId"]?.GetValue<string>());
+        Assert.Equal(6000, jsonResultObject?["x-timeout"]?.GetValue<int>());
+        Assert.Equal("sendOrder", jsonResultObject?["x-dependsOn"]?[0]?.GetValue<string>());
+        Assert.Null(jsonResultObject?["channelPath"]);
+        Assert.Null(jsonResultObject?["action"]);
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_WithArazzo11Properties_ShouldWriteSpecificationFields()
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "receiveOrder",
+            ChannelPath = "$sourceDescriptions.asyncApi.orders",
+            Action = ArazzoStepAction.Receive,
+            CorrelationId = "$inputs.correlationId",
+            Timeout = 6000,
+            DependsOn = new HashSet<string> { "sendOrder" }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        step.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$sourceDescriptions.asyncApi.orders", jsonResultObject?["channelPath"]?.GetValue<string>());
+        Assert.Equal("receive", jsonResultObject?["action"]?.GetValue<string>());
+        Assert.Equal("$inputs.correlationId", jsonResultObject?["correlationId"]?.GetValue<string>());
+        Assert.Equal(6000, jsonResultObject?["timeout"]?.GetValue<int>());
+        Assert.Equal("sendOrder", jsonResultObject?["dependsOn"]?[0]?.GetValue<string>());
+        Assert.Null(jsonResultObject?["x-channelPath"]);
+        Assert.Null(jsonResultObject?["x-action"]);
+    }
+
+    [Fact]
+    public void DeserializeAsV1_WithArazzo11ExtensionFields_ShouldSetProperties()
+    {
+        var json = """
+        {
+            "stepId": "receiveOrder",
+            "x-channelPath": "$sourceDescriptions.asyncApi.orders",
+            "x-action": "receive",
+            "x-correlationId": "$inputs.correlationId",
+            "x-timeout": 6000,
+            "x-dependsOn": [ "sendOrder" ]
+        }
+        """;
+        var parsingContext = new ParsingContext(new());
+
+        var step = LoadStep(JsonNode.Parse(json)!, parsingContext, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Equal("$sourceDescriptions.asyncApi.orders", step.ChannelPath);
+        Assert.Equal(ArazzoStepAction.Receive, step.Action);
+        Assert.Equal("$inputs.correlationId", step.CorrelationId);
+        Assert.Equal(6000, step.Timeout);
+        Assert.Contains("sendOrder", step.DependsOn!);
+        Assert.Empty(parsingContext.Diagnostic.Errors);
+    }
+
+    [Fact]
+    public void DeserializeAsV1_WithArazzo11SpecificationFields_ShouldNotSetProperties()
+    {
+        var json = """
+        {
+            "stepId": "receiveOrder",
+            "channelPath": "$sourceDescriptions.asyncApi.orders",
+            "action": "receive"
+        }
+        """;
+        var parsingContext = new ParsingContext(new());
+
+        var step = LoadStep(JsonNode.Parse(json)!, parsingContext, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Null(step.ChannelPath);
+        Assert.Null(step.Action);
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("channelPath is not a valid property", StringComparison.Ordinal));
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("action is not a valid property", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void DeserializeAsV1_1_WithArazzo11SpecificationFields_ShouldSetProperties()
+    {
+        var json = """
+        {
+            "stepId": "receiveOrder",
+            "channelPath": "$sourceDescriptions.asyncApi.orders",
+            "action": "receive",
+            "correlationId": "$inputs.correlationId",
+            "timeout": 6000,
+            "dependsOn": [ "sendOrder" ]
+        }
+        """;
+        var parsingContext = new ParsingContext(new());
+
+        var step = LoadStep(JsonNode.Parse(json)!, parsingContext, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.Equal("$sourceDescriptions.asyncApi.orders", step.ChannelPath);
+        Assert.Equal(ArazzoStepAction.Receive, step.Action);
+        Assert.Equal("$inputs.correlationId", step.CorrelationId);
+        Assert.Equal(6000, step.Timeout);
+        Assert.Contains("sendOrder", step.DependsOn!);
+        Assert.Empty(parsingContext.Diagnostic.Errors);
+    }
+
+    [Fact]
+    public void DeserializeAsV1_1_WithArazzo11ExtensionFields_ShouldNotSetProperties()
+    {
+        var json = """
+        {
+            "stepId": "receiveOrder",
+            "x-channelPath": "$sourceDescriptions.asyncApi.orders",
+            "x-action": "receive"
+        }
+        """;
+        var parsingContext = new ParsingContext(new());
+
+        var step = LoadStep(JsonNode.Parse(json)!, parsingContext, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.Null(step.ChannelPath);
+        Assert.Null(step.Action);
+        Assert.NotNull(step.Extensions);
+        Assert.Contains("x-channelPath", step.Extensions!.Keys);
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("must define exactly one of operationId, operationPath, channelPath, or workflowId", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void SerializeAsV1_1_ShouldWriteCorrectJson()
     {
         var step = new ArazzoStep
@@ -608,7 +753,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
 
-        Assert.Contains("can define only one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("can define only one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -625,7 +770,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1_1(writer));
 
-        Assert.Contains("can define only one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("can define only one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -642,7 +787,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
 
-        Assert.Contains("can define only one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("can define only one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -659,7 +804,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1_1(writer));
 
-        Assert.Contains("can define only one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("can define only one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -676,7 +821,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
 
-        Assert.Contains("can define only one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("can define only one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -693,7 +838,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1_1(writer));
 
-        Assert.Contains("can define only one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("can define only one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -708,7 +853,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
 
-        Assert.Contains("must define exactly one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("must define exactly one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -723,7 +868,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1_1(writer));
 
-        Assert.Contains("must define exactly one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("must define exactly one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -739,7 +884,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
 
-        Assert.Contains("must define exactly one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("must define exactly one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -755,7 +900,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1_1(writer));
 
-        Assert.Contains("must define exactly one of operationId, operationPath, or workflowId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("must define exactly one of operationId, operationPath, channelPath, or workflowId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1151,7 +1296,7 @@ public class ArazzoStepTests
 
         LoadStep(jsonNode, parsingContext, specVersion);
 
-        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("must define exactly one of operationId, operationPath, or workflowId", StringComparison.Ordinal));
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("must define exactly one of operationId, operationPath, channelPath, or workflowId", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -1171,7 +1316,7 @@ public class ArazzoStepTests
 
         LoadStep(jsonNode, parsingContext, specVersion);
 
-        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("can define only one of operationId, operationPath, or workflowId", StringComparison.Ordinal));
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("can define only one of operationId, operationPath, channelPath, or workflowId", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -1191,7 +1336,7 @@ public class ArazzoStepTests
 
         LoadStep(jsonNode, parsingContext, specVersion);
 
-        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("can define only one of operationId, operationPath, or workflowId", StringComparison.Ordinal));
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("can define only one of operationId, operationPath, channelPath, or workflowId", StringComparison.Ordinal));
     }
 
     [Theory]

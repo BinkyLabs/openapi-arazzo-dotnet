@@ -46,7 +46,8 @@ internal static partial class ArazzoV1Deserializer
                 c.Diagnostic.Errors.Add(new OpenApiError($"{c.GetLocation()}/{ArazzoConstants.ArazzoFailureActionRetryLimit}", $"{nameof(ArazzoFailureAction)} retryLimit must be a non-negative integer. Invalid value: '{value}'."));
             }
         } },
-        { ArazzoConstants.ArazzoResultActionCriteria, static (o, v, c) => o.Criteria = v.CreateList(LoadCriterion, c) }
+        { ArazzoConstants.ArazzoResultActionCriteria, static (o, v, c) => o.Criteria = v.CreateList(LoadCriterion, c) },
+        { "x-parameters", static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) }
     };
 
     public static PatternFieldMap<ArazzoFailureAction> GetFailureActionPatternFields() =>

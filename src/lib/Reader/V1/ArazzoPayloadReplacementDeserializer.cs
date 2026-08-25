@@ -11,6 +11,7 @@ internal static partial class ArazzoV1Deserializer
     public static readonly FixedFieldMap<ArazzoPayloadReplacement> PayloadReplacementFixedFields = new()
     {
         { ArazzoConstants.ArazzoPayloadReplacementTarget, static (o, v, c) => o.Target = v.GetScalarValue() },
+        { "x-targetSelectorType", static (o, v, c) => o.TargetSelectorType = v },
         { ArazzoConstants.ArazzoPayloadReplacementValue, static (o, v, c) => o.Value = v }
     };
 

@@ -363,12 +363,12 @@ public class ParsingContext
                 var referenceCount = step.CountTargetFields();
                 if (referenceCount > 1)
                 {
-                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' can define only one of operationId, operationPath, or workflowId."));
+                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' can define only one of operationId, operationPath, channelPath, or workflowId."));
                 }
 
                 if (referenceCount == 0)
                 {
-                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' must define exactly one of operationId, operationPath, or workflowId."));
+                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' must define exactly one of operationId, operationPath, channelPath, or workflowId."));
                 }
 
                 if (step.RequestBody is not null && !step.CanHaveRequestBody())
@@ -441,5 +441,5 @@ public class ParsingContext
     }
 
     private static bool IsOperationTargetedStep(ArazzoStep step) =>
-        !string.IsNullOrEmpty(step.OperationId) || !string.IsNullOrEmpty(step.OperationPath);
+        !string.IsNullOrEmpty(step.OperationId) || !string.IsNullOrEmpty(step.OperationPath) || !string.IsNullOrEmpty(step.ChannelPath);
 }

@@ -121,6 +121,36 @@ public class ArazzoDocumentTests
     }
 
     [Fact]
+    public void SerializeAsV1_WithSelf_ShouldWriteExtensionField()
+    {
+        var document = CreateDocument(new ArazzoStep { StepId = "step1", OperationId = "getUser" });
+        document.Self = "https://example.com/arazzo.yaml";
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        document.SerializeAsV1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("https://example.com/arazzo.yaml", jsonResultObject?["x-$self"]?.GetValue<string>());
+        Assert.Null(jsonResultObject?["$self"]);
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_WithSelf_ShouldWriteSelfField()
+    {
+        var document = CreateDocument(new ArazzoStep { StepId = "step1", OperationId = "getUser" });
+        document.Self = "https://example.com/arazzo.yaml";
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        document.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("https://example.com/arazzo.yaml", jsonResultObject?["$self"]?.GetValue<string>());
+        Assert.Null(jsonResultObject?["x-$self"]);
+    }
+
+    [Fact]
     public void SerializeAsV1_1_ShouldWriteCorrectJson()
     {
         // Arrange
