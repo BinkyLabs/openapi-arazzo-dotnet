@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
@@ -49,6 +51,11 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
     /// Gets or sets the list of failure actions.
     /// </summary>
     public IList<IArazzoFailureAction>? FailureActions { get; set; }
+
+    /// <summary>
+    /// Gets or sets output values as runtime expressions or selector objects.
+    /// </summary>
+    public IDictionary<string, JsonNode>? OutputValues { get; set; }
 
     /// <summary>
     /// Gets or sets the outputs dictionary.
@@ -117,10 +124,17 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         // Write failure actions
         writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowFailureActions, FailureActions, callback);
 
-        ArazzoKeyValidator.ValidateSerializationKeys(Outputs?.Keys, $"{nameof(ArazzoWorkflow)}.{nameof(Outputs)}");
+        ArazzoKeyValidator.ValidateSerializationKeys((OutputValues?.Keys ?? Outputs?.Keys), $"{nameof(ArazzoWorkflow)}.{nameof(Outputs)}");
 
         // Write outputs
-        writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowOutputs, Outputs, static (w, s) => w.WriteValue(s));
+        if (OutputValues is not null)
+        {
+            writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowOutputs, OutputValues, static (w, s) => w.WriteAny(s));
+        }
+        else
+        {
+            writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowOutputs, Outputs, static (w, s) => w.WriteValue(s));
+        }
 
         // Write parameters
         writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowParameters, Parameters, callback);

@@ -29,6 +29,11 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     public string? Arazzo { get; internal set; } = "1.1.0";
 
     /// <summary>
+    /// Gets or sets the self-assigned URI of the Arazzo description.
+    /// </summary>
+    public string? Self { get; set; }
+
+    /// <summary>
     /// Gets or sets the Arazzo info object.
     /// </summary>
     public ArazzoInfo? Info { get; set; }
@@ -109,6 +114,11 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, specVersion is ArazzoSpecVersion.Arazzo1_0 ? "1.0.1" : "1.1.0");
+        writer.WriteProperty(
+            specVersion is ArazzoSpecVersion.Arazzo1_0
+                ? ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoDocumentSelf)
+                : ArazzoConstants.ArazzoDocumentSelf,
+            Self);
         writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, callback);
 
         writer.WriteRequiredCollection<ArazzoSourceDescription>(ArazzoConstants.ArazzoDocumentSourceDescriptions, SourceDescriptions, callback);

@@ -15,6 +15,10 @@ internal static partial class ArazzoV1Deserializer
             {
                 return;
             }
+            if (type is ArazzoDescriptionType.AsyncAPI && c.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+            {
+                c.Diagnostic.Errors.Add(new OpenApiError(c.GetLocation(), "The value 'asyncapi' for 'type' is not supported in Arazzo 1.0."));
+            }
             o.Type = type;
         }}
     };

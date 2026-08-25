@@ -26,6 +26,9 @@ public abstract class ArazzoResultAction<T> : IArazzoResultAction<T>, IArazzoExt
     public IList<ArazzoCriterion>? Criteria { get; set; }
 
     /// <inheritdoc/>
+    public IList<IArazzoParameter>? Parameters { get; set; }
+
+    /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
 
     /// <summary>
@@ -69,6 +72,14 @@ public abstract class ArazzoResultAction<T> : IArazzoResultAction<T>, IArazzoExt
         }
 
         writer.WriteOptionalCollection(ArazzoConstants.ArazzoResultActionCriteria, Criteria, callback);
+
+        writer.WriteOptionalCollection(GetVersionedFieldName(specVersion, ArazzoConstants.ArazzoResultActionParameters), Parameters, (w, p) =>
+        {
+            if (p is not null)
+            {
+                callback(w, p);
+            }
+        });
     }
 
     /// <summary>
@@ -82,4 +93,7 @@ public abstract class ArazzoResultAction<T> : IArazzoResultAction<T>, IArazzoExt
     /// </summary>
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public abstract void SerializeAsV1_1(IOpenApiWriter writer);
+
+    private static string GetVersionedFieldName(ArazzoSpecVersion specVersion, string fieldName) =>
+        specVersion is ArazzoSpecVersion.Arazzo1_0 ? ArazzoConstants.GetArazzo1_0ExtensionName(fieldName) : fieldName;
 }

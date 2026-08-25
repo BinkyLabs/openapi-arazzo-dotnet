@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Validation;
@@ -14,7 +15,30 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoStepStepId, static (o, v, c) => o.StepId = v.GetScalarValue() },
         { ArazzoConstants.ArazzoStepOperationId, static (o, v, c) => o.OperationId = v.GetScalarValue() },
         { ArazzoConstants.ArazzoStepOperationPath, static (o, v, c) => o.OperationPath = v.GetScalarValue() },
+        { "x-channelPath", static (o, v, c) => o.ChannelPath = v.GetScalarValue() },
         { ArazzoConstants.ArazzoStepWorkflowId, static (o, v, c) => o.WorkflowId = v.GetScalarValue() },
+        { "x-action", static (o, v, c) =>
+        {
+            if (!v.GetScalarValue().TryGetEnumFromDisplayName<ArazzoStepAction>(c, out var action))
+            {
+                return;
+            }
+            o.Action = action;
+        } },
+        { "x-correlationId", static (o, v, c) => o.CorrelationId = v.GetScalarValue() },
+        { "x-timeout", static (o, v, c) =>
+        {
+            var value = v.GetScalarValue();
+            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var timeout))
+            {
+                o.Timeout = timeout;
+            }
+            else
+            {
+                c.Diagnostic.Errors.Add(new OpenApiError($"{c.GetLocation()}/x-timeout", $"{nameof(ArazzoStep)} timeout must be an integer. Invalid value: '{value}'."));
+            }
+        } },
+        { "x-dependsOn", static (o, v, c) => o.DependsOn = v.CreateSimpleList(static n => n.GetScalarValue()!, c).ToHashSet(StringComparer.Ordinal) },
         { ArazzoConstants.ArazzoStepParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
         { ArazzoConstants.ArazzoStepRequestBody, static (o, v, c) => o.RequestBody = LoadRequestBody(v, c) },
         { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v, c) => o.SuccessCriteria = v.CreateList(LoadCriterion, c) },
@@ -31,7 +55,10 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoStepOutputs, static (o, v, c) =>
         {
             ArazzoKeyValidator.ValidateDeserializationKeys(v, c, $"{nameof(ArazzoStep)}.{nameof(ArazzoStep.Outputs)}");
-            var outputs = v.CreateSimpleMap(static n => n.GetScalarValue(), c)
+            o.OutputValues = CreateJsonNodeMap(v, c);
+            var outputs = o.OutputValues
+                .Where(static x => x.Value is JsonValue)
+                .Select(static x => new KeyValuePair<string, string?>(x.Key, x.Value.GetScalarValue()))
                 .Where(static x => x.Value is not null)
                 .ToDictionary(static x => x.Key, static x => x.Value!);
             ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressions(outputs, c, $"{nameof(ArazzoStep)}.{nameof(ArazzoStep.Outputs)}");
@@ -76,17 +103,29 @@ internal static partial class ArazzoV1Deserializer
         var referenceCount = step.CountTargetFields();
         if (referenceCount > 1)
         {
-            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' can define only one of operationId, operationPath, or workflowId."));
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' can define only one of operationId, operationPath, channelPath, or workflowId."));
         }
 
         if (referenceCount == 0)
         {
-            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' must define exactly one of operationId, operationPath, or workflowId."));
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' must define exactly one of operationId, operationPath, channelPath, or workflowId."));
         }
 
         if (step.RequestBody is not null && !step.CanHaveRequestBody())
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoStep)} '{step.StepId}' requestBody can only be specified when the step targets operationId or operationPath."));
         }
+    }
+
+    private static Dictionary<string, JsonNode> CreateJsonNodeMap(JsonNode? node, ParsingContext context)
+    {
+        if (node is not JsonObject jsonMap)
+        {
+            throw new ArazzoReaderException($"Expected map while parsing {nameof(JsonNode)}", context);
+        }
+
+        return jsonMap
+            .Where(static property => property.Value is not null)
+            .ToDictionary(static property => property.Key, static property => property.Value!);
     }
 }

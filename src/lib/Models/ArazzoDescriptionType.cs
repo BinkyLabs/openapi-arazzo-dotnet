@@ -11,11 +11,17 @@ public enum ArazzoDescriptionType
     /// OpenAPI specification type.
     /// </summary>
     [Display("openapi")]
-    OpenAPI,
+    OpenAPI = 0,
 
     /// <summary>
     /// Arazzo specification type.
     /// </summary>
     [Display("arazzo")]
-    Arazzo
+    Arazzo = 1,
+
+    /// <summary>
+    /// AsyncAPI specification type.
+    /// </summary>
+    [Display("asyncapi")]
+    AsyncAPI = 2
 }

@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
@@ -45,9 +47,34 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     public string? OperationPath { get; set; }
 
     /// <summary>
+    /// Gets or sets the AsyncAPI channel path.
+    /// </summary>
+    public string? ChannelPath { get; set; }
+
+    /// <summary>
     /// Gets or sets the workflow identifier.
     /// </summary>
     public string? WorkflowId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the AsyncAPI step action.
+    /// </summary>
+    public ArazzoStepAction? Action { get; set; }
+
+    /// <summary>
+    /// Gets or sets the correlation identifier for AsyncAPI receive steps.
+    /// </summary>
+    public string? CorrelationId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timeout in milliseconds.
+    /// </summary>
+    public int? Timeout { get; set; }
+
+    /// <summary>
+    /// Gets or sets the step identifiers or runtime references that this step depends on.
+    /// </summary>
+    public ISet<string>? DependsOn { get; set; }
 
     /// <summary>
     /// Gets or sets the list of parameters.
@@ -73,6 +100,11 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     /// Gets or sets the failure actions.
     /// </summary>
     public List<IArazzoFailureAction>? OnFailure { get; set; }
+
+    /// <summary>
+    /// Gets or sets output values as runtime expressions or selector objects.
+    /// </summary>
+    public IDictionary<string, JsonNode>? OutputValues { get; set; }
 
     /// <summary>
     /// Gets or sets the output expressions.
@@ -134,10 +166,26 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
             writer.WriteProperty(ArazzoConstants.ArazzoStepOperationPath, OperationPath);
         }
 
+        writer.WriteProperty(GetVersionedFieldName(specVersion, ArazzoConstants.ArazzoStepChannelPath), ChannelPath);
+
         if (!string.IsNullOrEmpty(WorkflowId))
         {
             writer.WriteProperty(ArazzoConstants.ArazzoStepWorkflowId, WorkflowId);
         }
+
+        if (Action.HasValue)
+        {
+            writer.WriteProperty(GetVersionedFieldName(specVersion, ArazzoConstants.ArazzoStepAction), Action.Value.GetDisplayName());
+        }
+
+        writer.WriteProperty(GetVersionedFieldName(specVersion, ArazzoConstants.ArazzoStepCorrelationId), CorrelationId);
+
+        if (Timeout.HasValue)
+        {
+            writer.WriteProperty(GetVersionedFieldName(specVersion, ArazzoConstants.ArazzoStepTimeout), Timeout.Value);
+        }
+
+        writer.WriteOptionalCollection(GetVersionedFieldName(specVersion, ArazzoConstants.ArazzoStepDependsOn), DependsOn, static (w, d) => w.WriteValue(d!));
 
         writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepParameters, Parameters, (w, p) =>
         {
@@ -176,10 +224,20 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
             }
         });
 
-        writer.WriteOptionalMap(
-            ArazzoConstants.ArazzoStepOutputs,
-            Outputs,
-            (w, v) => w.WriteValue(v));
+        if (OutputValues is not null)
+        {
+            writer.WriteOptionalMap(
+                ArazzoConstants.ArazzoStepOutputs,
+                OutputValues,
+                static (w, v) => w.WriteAny(v));
+        }
+        else
+        {
+            writer.WriteOptionalMap(
+                ArazzoConstants.ArazzoStepOutputs,
+                Outputs,
+                (w, v) => w.WriteValue(v));
+        }
 
         writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
@@ -191,12 +249,12 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
 
         if (operationReferenceCount > 1)
         {
-            throw new ArazzoSerializationException($"{nameof(ArazzoStep)} '{StepId}' can define only one of operationId, operationPath, or workflowId.");
+            throw new ArazzoSerializationException($"{nameof(ArazzoStep)} '{StepId}' can define only one of operationId, operationPath, channelPath, or workflowId.");
         }
 
         if (operationReferenceCount == 0)
         {
-            throw new ArazzoSerializationException($"{nameof(ArazzoStep)} '{StepId}' must define exactly one of operationId, operationPath, or workflowId.");
+            throw new ArazzoSerializationException($"{nameof(ArazzoStep)} '{StepId}' must define exactly one of operationId, operationPath, channelPath, or workflowId.");
         }
     }
 
@@ -218,7 +276,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     }
 
     private bool IsOperationTargeted() =>
-        !string.IsNullOrEmpty(OperationId) || !string.IsNullOrEmpty(OperationPath);
+        !string.IsNullOrEmpty(OperationId) || !string.IsNullOrEmpty(OperationPath) || !string.IsNullOrEmpty(ChannelPath);
 
     internal int CountTargetFields()
     {
@@ -229,6 +287,11 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
         }
 
         if (!string.IsNullOrEmpty(OperationPath))
+        {
+            targetCount++;
+        }
+
+        if (!string.IsNullOrEmpty(ChannelPath))
         {
             targetCount++;
         }
@@ -254,4 +317,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     {
         return segment.Replace("~", "~0", StringComparison.Ordinal).Replace("/", "~1", StringComparison.Ordinal);
     }
+
+    private static string GetVersionedFieldName(ArazzoSpecVersion specVersion, string fieldName) =>
+        specVersion is ArazzoSpecVersion.Arazzo1_0 ? ArazzoConstants.GetArazzo1_0ExtensionName(fieldName) : fieldName;
 }
