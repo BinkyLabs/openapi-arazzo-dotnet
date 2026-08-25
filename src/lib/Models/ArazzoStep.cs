@@ -90,7 +90,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
     }
 
     /// <summary>
@@ -99,10 +99,10 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public void SerializeAsV1_1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
     }
 
-    private void SerializeInternal(IOpenApiWriter writer)
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
 
@@ -139,25 +139,49 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
             writer.WriteProperty(ArazzoConstants.ArazzoStepWorkflowId, WorkflowId);
         }
 
-        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepParameters, Parameters, static (w, p) => p?.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepParameters, Parameters, (w, p) =>
+        {
+            if (p is not null)
+            {
+                callback(w, p);
+            }
+        });
 
         writer.WriteOptionalObject(
             ArazzoConstants.ArazzoStepRequestBody,
             RequestBody,
-            (w, rb) => rb.SerializeAsV1(w));
+            callback);
 
-        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepSuccessCriteria, SuccessCriteria, static (w, c) => c?.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepSuccessCriteria, SuccessCriteria, (w, c) =>
+        {
+            if (c is not null)
+            {
+                callback(w, c);
+            }
+        });
 
-        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepOnSuccess, OnSuccess, static (w, a) => a?.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepOnSuccess, OnSuccess, (w, a) =>
+        {
+            if (a is not null)
+            {
+                callback(w, a);
+            }
+        });
 
-        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepOnFailure, OnFailure, static (w, a) => a?.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoStepOnFailure, OnFailure, (w, a) =>
+        {
+            if (a is not null)
+            {
+                callback(w, a);
+            }
+        });
 
         writer.WriteOptionalMap(
             ArazzoConstants.ArazzoStepOutputs,
             Outputs,
             (w, v) => w.WriteValue(v));
 
-        writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
+        writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }
 

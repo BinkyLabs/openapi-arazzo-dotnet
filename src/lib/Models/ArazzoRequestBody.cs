@@ -35,7 +35,7 @@ public class ArazzoRequestBody : IArazzoSerializable, IArazzoExtensible
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
     }
 
     /// <summary>
@@ -44,10 +44,10 @@ public class ArazzoRequestBody : IArazzoSerializable, IArazzoExtensible
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public void SerializeAsV1_1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
     }
 
-    private void SerializeInternal(IOpenApiWriter writer)
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Payload, $"{nameof(ArazzoRequestBody)}.{nameof(Payload)}");
@@ -56,9 +56,15 @@ public class ArazzoRequestBody : IArazzoSerializable, IArazzoExtensible
         writer.WriteProperty(ArazzoConstants.ArazzoRequestBodyContentType, ContentType);
         writer.WriteOptionalObject(ArazzoConstants.ArazzoRequestBodyPayload, Payload, static (w, v) => w.WriteAny(v));
 
-        writer.WriteOptionalCollection(ArazzoConstants.ArazzoRequestBodyReplacements, Replacements, static (w, r) => r?.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoRequestBodyReplacements, Replacements, (w, r) =>
+        {
+            if (r is not null)
+            {
+                callback(w, r);
+            }
+        });
 
-        writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
+        writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }
 }

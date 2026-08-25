@@ -72,7 +72,7 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
     }
 
     /// <summary>
@@ -82,10 +82,10 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>
     public void SerializeAsV1_1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
     }
 
-    private void SerializeInternal(IOpenApiWriter writer)
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         // Validate required fields
         if (Info is null)
@@ -108,16 +108,16 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
         ArazzoSemanticReferenceValidator.ValidateSerialization(this);
 
         writer.WriteStartObject();
-        writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, "1.0.1");
-        writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, (w, obj) => obj.SerializeAsV1(w));
+        writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, specVersion is ArazzoSpecVersion.Arazzo1_0 ? "1.0.1" : "1.1.0");
+        writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, callback);
 
-        writer.WriteRequiredCollection(ArazzoConstants.ArazzoDocumentSourceDescriptions, SourceDescriptions, static (w, s) => s.SerializeAsV1(w));
+        writer.WriteRequiredCollection<ArazzoSourceDescription>(ArazzoConstants.ArazzoDocumentSourceDescriptions, SourceDescriptions, callback);
 
-        writer.WriteRequiredCollection(ArazzoConstants.ArazzoDocumentWorkflows, Workflows, static (w, wf) => wf.SerializeAsV1(w));
+        writer.WriteRequiredCollection<ArazzoWorkflow>(ArazzoConstants.ArazzoDocumentWorkflows, Workflows, callback);
 
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoDocumentComponents, Components, static (w, c) => c.SerializeAsV1(w));
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoDocumentComponents, Components, callback);
 
-        writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
+        writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }
 

@@ -15,7 +15,7 @@ public class ArazzoSuccessAction : ArazzoResultAction<ArazzoSuccessType>, IArazz
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public override void SerializeAsV1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
     }
 
     /// <summary>
@@ -24,18 +24,18 @@ public class ArazzoSuccessAction : ArazzoResultAction<ArazzoSuccessType>, IArazz
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public override void SerializeAsV1_1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
     }
 
-    private void SerializeInternal(IOpenApiWriter writer)
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
 
         writer.WriteStartObject();
 
-        SerializeCommonPropertiesAsV1(writer);
+        SerializeCommonPropertiesInternal(writer, specVersion, callback);
 
-        writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
+        writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }
 }
