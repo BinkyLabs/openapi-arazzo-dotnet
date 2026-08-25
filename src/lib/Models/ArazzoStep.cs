@@ -139,7 +139,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
         ArgumentNullException.ThrowIfNull(writer);
 
         ArgumentException.ThrowIfNullOrEmpty(StepId);
-        ValidateOperationReferenceFields();
+        ValidateOperationReferenceFields(specVersion);
         ArazzoSemanticReferenceValidator.ValidateOperationPathSerialization(OperationPath, $"{nameof(ArazzoStep)} '{StepId}'");
         ValidateRequestBodyApplicability();
         ValidateParameters();
@@ -243,18 +243,18 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
         writer.WriteEndObject();
     }
 
-    private void ValidateOperationReferenceFields()
+    private void ValidateOperationReferenceFields(ArazzoSpecVersion specVersion)
     {
         var operationReferenceCount = CountTargetFields();
 
         if (operationReferenceCount > 1)
         {
-            throw new ArazzoSerializationException($"{nameof(ArazzoStep)} '{StepId}' can define only one of operationId, operationPath, channelPath, or workflowId.");
+            throw new ArazzoSerializationException(GetMultipleTargetFieldsError($"{nameof(ArazzoStep)} '{StepId}'", specVersion));
         }
 
         if (operationReferenceCount == 0)
         {
-            throw new ArazzoSerializationException($"{nameof(ArazzoStep)} '{StepId}' must define exactly one of operationId, operationPath, channelPath, or workflowId.");
+            throw new ArazzoSerializationException(GetMissingTargetFieldError($"{nameof(ArazzoStep)} '{StepId}'", specVersion));
         }
     }
 
@@ -306,6 +306,21 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
 
     internal bool CanHaveRequestBody() =>
         IsOperationTargeted();
+
+    internal static string GetMultipleTargetFieldsError(string elementName, ArazzoSpecVersion specVersion) =>
+        specVersion is ArazzoSpecVersion.Arazzo1_0
+            ? $"{elementName} can define only one of operationId, operationPath, channelPath, or workflowId. For Arazzo 1.0 compatibility, {elementName} can define only one of operationId, operationPath, or workflowId; channelPath uses x-channelPath."
+            : $"{elementName} can define only one of {GetTargetFieldsDescription(specVersion)}.";
+
+    internal static string GetMissingTargetFieldError(string elementName, ArazzoSpecVersion specVersion) =>
+        specVersion is ArazzoSpecVersion.Arazzo1_0
+            ? $"{elementName} must define exactly one of operationId, operationPath, channelPath, or workflowId. For Arazzo 1.0 compatibility, {elementName} must define exactly one of operationId, operationPath, or workflowId; channelPath uses x-channelPath."
+            : $"{elementName} must define exactly one of {GetTargetFieldsDescription(specVersion)}.";
+
+    private static string GetTargetFieldsDescription(ArazzoSpecVersion specVersion) =>
+        specVersion is ArazzoSpecVersion.Arazzo1_0
+            ? "operationId, operationPath, or workflowId"
+            : "operationId, operationPath, channelPath, or workflowId";
 
     private void ValidateActions()
     {

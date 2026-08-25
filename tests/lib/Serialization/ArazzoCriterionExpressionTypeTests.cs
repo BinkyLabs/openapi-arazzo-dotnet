@@ -198,7 +198,6 @@ public class ArazzoCriterionExpressionTypeTests
     [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "version": "xpath-30" }""", "ArazzoCriterionExpressionType.Type is a REQUIRED field.")]
     [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "type": "xpath" }""", "ArazzoCriterionExpressionType.Version is a REQUIRED field.")]
     [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "version": "xpath-30" }""", "ArazzoCriterionExpressionType.Type is a REQUIRED field.")]
-    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "type": "xpath" }""", "ArazzoCriterionExpressionType.Version is a REQUIRED field.")]
     public void ParseFragment_AsV1AndV1_1_MissingRequiredFields_AddsDiagnosticError(ArazzoSpecVersion specVersion, string json, string expectedMessage)
     {
         var jsonNode = JsonNode.Parse(json)!;
@@ -208,6 +207,23 @@ public class ArazzoCriterionExpressionTypeTests
         parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, specVersion);
 
         Assert.Contains(diagnostic.Errors, e => e.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("jsonpath", ArazzoCriterionExpressionVersion.Rfc9535)]
+    [InlineData("xpath", ArazzoCriterionExpressionVersion.XPath31)]
+    [InlineData("jsonpointer", ArazzoCriterionExpressionVersion.Rfc6901)]
+    public void ParseFragment_AsV1_1_WithoutVersion_AppliesDefaultVersion(string type, ArazzoCriterionExpressionVersion expectedVersion)
+    {
+        var jsonNode = JsonNode.Parse($$"""{ "type": "{{type}}" }""")!;
+        var diagnostic = new ArazzoDiagnostic();
+        var parsingContext = new ParsingContext(diagnostic);
+
+        var expressionType = parsingContext.ParseFragment<ArazzoCriterionExpressionType>(jsonNode, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.NotNull(expressionType);
+        Assert.Equal(expectedVersion, expressionType.Version);
+        Assert.Empty(diagnostic.Errors);
     }
 
     [Fact]
@@ -252,7 +268,7 @@ public class ArazzoCriterionExpressionTypeTests
 
 
     [Fact]
-    public void SerializeAsV1_1_WithoutVersionThrowsException()
+    public void SerializeAsV1_1_WithoutVersionWritesDefaultVersion()
     {
         var expressionType = new ArazzoCriterionExpressionType
         {
@@ -261,7 +277,10 @@ public class ArazzoCriterionExpressionTypeTests
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
 
-        Assert.Throws<ArgumentNullException>(() => expressionType.SerializeAsV1_1(writer));
+        expressionType.SerializeAsV1_1(writer);
+
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        Assert.Equal("rfc9535", jsonResultObject?["version"]?.GetValue<string>());
     }
 
     [Fact]

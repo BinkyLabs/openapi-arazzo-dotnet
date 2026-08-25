@@ -363,12 +363,12 @@ public class ParsingContext
                 var referenceCount = step.CountTargetFields();
                 if (referenceCount > 1)
                 {
-                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' can define only one of operationId, operationPath, channelPath, or workflowId."));
+                    Diagnostic.Errors.Add(new OpenApiError("", ArazzoStep.GetMultipleTargetFieldsError($"Workflow '{workflow.WorkflowId}' step '{step.StepId}'", Diagnostic.SpecificationVersion)));
                 }
 
                 if (referenceCount == 0)
                 {
-                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' must define exactly one of operationId, operationPath, channelPath, or workflowId."));
+                    Diagnostic.Errors.Add(new OpenApiError("", ArazzoStep.GetMissingTargetFieldError($"Workflow '{workflow.WorkflowId}' step '{step.StepId}'", Diagnostic.SpecificationVersion)));
                 }
 
                 if (step.RequestBody is not null && !step.CanHaveRequestBody())
