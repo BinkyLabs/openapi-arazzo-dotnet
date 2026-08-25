@@ -135,7 +135,7 @@ public class BaseArazzoReference : IArazzoSerializable
 
         if (Type != ReferenceType.Input)
         {
-            ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(ReferenceV1, Type, nameof(BaseArazzoReference));
+            ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(ReferenceV1, Type, nameof(BaseArazzoReference), specVersion);
         }
 
         writer.WriteStartObject();

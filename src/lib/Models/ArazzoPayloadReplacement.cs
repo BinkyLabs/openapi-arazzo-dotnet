@@ -53,7 +53,7 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
 
         ArgumentException.ThrowIfNullOrEmpty(Target);
         ArgumentNullException.ThrowIfNull(Value);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Value, $"{nameof(ArazzoPayloadReplacement)}.{nameof(Value)}");
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Value, $"{nameof(ArazzoPayloadReplacement)}.{nameof(Value)}", specVersion);
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoPayloadReplacementTarget, Target);
