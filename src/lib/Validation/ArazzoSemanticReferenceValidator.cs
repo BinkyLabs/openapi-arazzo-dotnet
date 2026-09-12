@@ -21,9 +21,9 @@ internal static partial class ArazzoSemanticReferenceValidator
     [GeneratedRegex(@"^\$sourceDescriptions\.([^.\s#]+)\.[^.\s#]+$", RegexOptions.CultureInvariant)]
     private static partial Regex SourceDescriptionWorkflowExpressionRegex();
 
-    internal static void ValidateSerialization(ArazzoDocument document)
+    internal static void ValidateSerialization(ArazzoDocument document, ArazzoSpecVersion specVersion)
     {
-        if (Validate(document).FirstOrDefault() is string error)
+        if (Validate(document, specVersion).FirstOrDefault() is string error)
         {
             throw new ArazzoSerializationException(error);
         }
@@ -33,7 +33,7 @@ internal static partial class ArazzoSemanticReferenceValidator
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        foreach (var error in Validate(document))
+        foreach (var error in Validate(document, context.Diagnostic.SpecificationVersion))
         {
             context.Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));
         }
@@ -75,7 +75,7 @@ internal static partial class ArazzoSemanticReferenceValidator
         }
     }
 
-    private static IEnumerable<string> Validate(ArazzoDocument document)
+    private static IEnumerable<string> Validate(ArazzoDocument document, ArazzoSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(document);
 
@@ -105,7 +105,7 @@ internal static partial class ArazzoSemanticReferenceValidator
 
         foreach (var workflow in document.Workflows ?? [])
         {
-            foreach (var error in ValidateDependsOnReferences(workflow.DependsOn, workflowIds, sourceDescriptionNames, sourceDescriptionTypes, $"Workflow '{workflow.WorkflowId}'"))
+            foreach (var error in ValidateDependsOnReferences(workflow.DependsOn, workflowIds, sourceDescriptionNames, sourceDescriptionTypes, $"Workflow '{workflow.WorkflowId}'", specVersion))
             {
                 yield return error;
             }
@@ -128,7 +128,7 @@ internal static partial class ArazzoSemanticReferenceValidator
                     yield return error;
                 }
 
-                foreach (var error in ValidateOperationIdSourceDescriptions(step.OperationId, sourceDescriptionNames, nonArazzoSourceDescriptionNames, nonArazzoSourceDescriptionCount, $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'"))
+                foreach (var error in ValidateOperationIdSourceDescriptions(step.OperationId, sourceDescriptionNames, nonArazzoSourceDescriptionNames, nonArazzoSourceDescriptionCount, $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'", specVersion))
                 {
                     yield return error;
                 }
@@ -176,7 +176,8 @@ internal static partial class ArazzoSemanticReferenceValidator
         ISet<string> workflowIds,
         ISet<string> sourceDescriptionNames,
         IReadOnlyDictionary<string, ArazzoDescriptionType?> sourceDescriptionTypes,
-        string elementName)
+        string elementName,
+        ArazzoSpecVersion specVersion)
     {
         foreach (var dependency in dependsOn ?? [])
         {
@@ -187,7 +188,7 @@ internal static partial class ArazzoSemanticReferenceValidator
 
             if (dependency.StartsWith("$", StringComparison.Ordinal))
             {
-                if (!ArazzoRuntimeExpressionValidator.IsRuntimeExpression(dependency))
+                if (!ArazzoRuntimeExpressionValidator.IsRuntimeExpression(dependency, specVersion))
                 {
                     yield return $"{elementName} dependsOn value '{dependency}' must be a valid runtime expression.";
                     continue;
@@ -310,7 +311,8 @@ internal static partial class ArazzoSemanticReferenceValidator
         ISet<string> sourceDescriptionNames,
         ISet<string> nonArazzoSourceDescriptionNames,
         int nonArazzoSourceDescriptionCount,
-        string elementName)
+        string elementName,
+        ArazzoSpecVersion specVersion)
     {
         if (string.IsNullOrEmpty(operationId))
         {
@@ -320,7 +322,7 @@ internal static partial class ArazzoSemanticReferenceValidator
         var sourceDescriptionOperationIdMatch = SourceDescriptionOperationIdRegex().Match(operationId);
         if (sourceDescriptionOperationIdMatch.Success)
         {
-            if (!ArazzoRuntimeExpressionValidator.IsRuntimeExpression(operationId))
+            if (!ArazzoRuntimeExpressionValidator.IsRuntimeExpression(operationId, specVersion))
             {
                 yield return $"{elementName} operationId '{operationId}' must be a valid runtime expression.";
                 yield break;

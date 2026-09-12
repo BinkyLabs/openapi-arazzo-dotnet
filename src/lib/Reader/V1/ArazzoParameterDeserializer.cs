@@ -13,8 +13,14 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoParameterName, static (o, v, c) => o.Name = v.GetScalarValue() },
         { ArazzoConstants.ArazzoParameterIn, static (o, v, c) =>
         {
-            if (!v.GetScalarValue().TryGetEnumFromDisplayName<ParameterLocation>(c, out var _in))
+            var location = v.GetScalarValue();
+            if (!location.TryGetEnumFromDisplayName<ParameterLocation>(c, out var _in))
             {
+                return;
+            }
+            if ("querystring".Equals(location, StringComparison.OrdinalIgnoreCase) && c.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+            {
+                c.Diagnostic.Errors.Add(new OpenApiError(c.GetLocation(), "The value 'querystring' for 'in' is not supported in Arazzo 1.0."));
                 return;
             }
             o.In = _in;
@@ -22,10 +28,12 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoParameterValue, static (o, v, c) => o.Value = v }
     };
 
-    public static readonly PatternFieldMap<ArazzoParameter> ParameterPatternFields = new()
+    public static PatternFieldMap<ArazzoParameter> GetParameterPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoParameter> ParameterPatternFields = GetParameterPatternFields();
 
     public static IArazzoParameter LoadParameter(JsonNode node, ParsingContext context)
     {
@@ -52,9 +60,14 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoParameter LoadParameterObject(JsonNode node, ParsingContext context)
     {
+        return LoadParameterObjectInternal(node, context, ParameterFixedFields, ParameterPatternFields);
+    }
+
+    public static ArazzoParameter LoadParameterObjectInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoParameter> parameterFixedFields, PatternFieldMap<ArazzoParameter> parameterPatternFields)
+    {
         var mapNode = node.CheckMapNode("Parameter", context);
         var parameter = new ArazzoParameter();
-        mapNode.ParseMap(parameter, ParameterFixedFields, ParameterPatternFields, context);
+        mapNode.ParseMap(parameter, parameterFixedFields, parameterPatternFields, context);
         ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(parameter.Value, context, $"{nameof(ArazzoParameter)}.{nameof(ArazzoParameter.Value)}");
         ArazzoParameterValidator.ValidateDeserializationRequiredFields(parameter, context);
 

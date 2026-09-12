@@ -29,6 +29,10 @@ public static class ArazzoConstants
     /// The "components" field name in the Arazzo document.
     /// </summary>
     public const string ArazzoDocumentComponents = "components";
+    /// <summary>
+    /// The "$self" field name in the Arazzo document.
+    /// </summary>
+    public const string ArazzoDocumentSelf = "$self";
 
     // ArazzoInfo
     /// <summary>
@@ -103,6 +107,10 @@ public static class ArazzoConstants
     /// The "value" field name in the Arazzo Payload Replacement object.
     /// </summary>
     public const string ArazzoPayloadReplacementValue = "value";
+    /// <summary>
+    /// The "targetSelectorType" field name in the Arazzo Payload Replacement object.
+    /// </summary>
+    public const string ArazzoPayloadReplacementTargetSelectorType = "targetSelectorType";
 
     // ArazzoReusableObject
     /// <summary>
@@ -152,6 +160,20 @@ public static class ArazzoConstants
     /// </summary>
     public const string ArazzoCriterionExpressionTypeVersion = "version";
 
+    // ArazzoSelector
+    /// <summary>
+    /// The "context" field name in the Arazzo Selector object.
+    /// </summary>
+    public const string ArazzoSelectorContext = "context";
+    /// <summary>
+    /// The "selector" field name in the Arazzo Selector object.
+    /// </summary>
+    public const string ArazzoSelectorSelector = "selector";
+    /// <summary>
+    /// The "type" field name in the Arazzo Selector object.
+    /// </summary>
+    public const string ArazzoSelectorType = "type";
+
     // ArazzoResultAction (common fields for success and failure actions)
     /// <summary>
     /// The "name" field name in the Arazzo Result Action object.
@@ -173,6 +195,10 @@ public static class ArazzoConstants
     /// The "criteria" field name in the Arazzo Result Action object.
     /// </summary>
     public const string ArazzoResultActionCriteria = "criteria";
+    /// <summary>
+    /// The "parameters" field name in the Arazzo Result Action object.
+    /// </summary>
+    public const string ArazzoResultActionParameters = "parameters";
 
     // ArazzoFailureAction (specific fields only)
     /// <summary>
@@ -207,9 +233,29 @@ public static class ArazzoConstants
     /// </summary>
     public const string ArazzoStepOperationPath = "operationPath";
     /// <summary>
+    /// The "channelPath" field name in the Arazzo Step object.
+    /// </summary>
+    public const string ArazzoStepChannelPath = "channelPath";
+    /// <summary>
     /// The "workflowId" field name in the Arazzo Step object.
     /// </summary>
     public const string ArazzoStepWorkflowId = "workflowId";
+    /// <summary>
+    /// The "action" field name in the Arazzo Step object.
+    /// </summary>
+    public const string ArazzoStepAction = "action";
+    /// <summary>
+    /// The "correlationId" field name in the Arazzo Step object.
+    /// </summary>
+    public const string ArazzoStepCorrelationId = "correlationId";
+    /// <summary>
+    /// The "timeout" field name in the Arazzo Step object.
+    /// </summary>
+    public const string ArazzoStepTimeout = "timeout";
+    /// <summary>
+    /// The "dependsOn" field name in the Arazzo Step object.
+    /// </summary>
+    public const string ArazzoStepDependsOn = "dependsOn";
     /// <summary>
     /// The "parameters" field name in the Arazzo Step object.
     /// </summary>
@@ -276,4 +322,9 @@ public static class ArazzoConstants
     /// The "parameters" field name in the Arazzo Workflow object.
     /// </summary>
     public const string ArazzoWorkflowParameters = "parameters";
+
+    /// <summary>
+    /// Gets the Arazzo 1.0 extension name for the provided Arazzo 1.1 field name.
+    /// </summary>
+    internal static string GetArazzo1_0ExtensionName(string fieldName) => $"{ExtensionFieldNamePrefix}{fieldName}";
 }

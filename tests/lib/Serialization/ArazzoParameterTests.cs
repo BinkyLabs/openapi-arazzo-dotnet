@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
 using BinkyLabs.OpenApi.Arazzo.Reader.V1;
+using BinkyLabs.OpenApi.Arazzo.Reader.V1_1;
 
 using Microsoft.OpenApi;
 
@@ -45,7 +46,99 @@ public class ArazzoParameterTests
     }
 
     [Fact]
-    public void Deserialize_ShouldSetPropertiesAndExtensions()
+    public void SerializeAsV1_1_ShouldWriteCorrectJson()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "id",
+            In = ParameterLocation.Path,
+            Value = "42",
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-extra"] = new JsonNodeExtension(JsonNode.Parse("{\"note\":\"yes\"}")!)
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "name": "id",
+            "in": "path",
+            "value": "42",
+            "x-extra": {
+                "note": "yes"
+            }
+        }
+        """;
+
+        parameter.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
+    public void SerializeAsV1_WithQueryStringParameter_ShouldThrowExplicitVersionError()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "fullQuery",
+            In = ParameterLocation.QueryString,
+            Value = "filter=active"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => parameter.SerializeAsV1(writer));
+
+        Assert.Contains("The value 'querystring' for 'in' is not supported in Arazzo 1.0.", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DeserializeAsV1_WithQueryStringParameter_ShouldReportExplicitVersionError()
+    {
+        var json = """
+        {
+            "name": "fullQuery",
+            "in": "querystring",
+            "value": "filter=active"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var parameter = LoadParameterObject(jsonNode, parsingContext, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.Equal("fullQuery", parameter.Name);
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message == "The value 'querystring' for 'in' is not supported in Arazzo 1.0.");
+    }
+
+    [Fact]
+    public void DeserializeAsV1_1_WithQueryStringParameter_ShouldSetLocation()
+    {
+        var json = """
+        {
+            "name": "fullQuery",
+            "in": "querystring",
+            "value": "filter=active"
+        }
+        """;
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        var parameter = LoadParameterObject(jsonNode, parsingContext, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.Equal(ParameterLocation.QueryString, parameter.In);
+        Assert.Empty(parsingContext.Diagnostic.Errors);
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_ShouldSetPropertiesAndExtensions(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -58,7 +151,7 @@ public class ArazzoParameterTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var parameter = Assert.IsType<ArazzoParameter>(ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext));
+        var parameter = LoadParameterObject(jsonNode, parsingContext, version);
 
         Assert.Equal("limit", parameter.Name);
         Assert.Equal(ParameterLocation.Query, parameter.In);
@@ -94,6 +187,33 @@ public class ArazzoParameterTests
         Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
     }
 
+
+    [Fact]
+    public void SerializeAsV1_1_WithoutIn_ShouldOmitIn()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "input",
+            Value = "42"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "name": "input",
+            "value": "42"
+        }
+        """;
+
+        parameter.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
     [Fact]
     public void SerializeAsV1_WithReference_WritesReferenceAndValueOverride()
     {
@@ -113,8 +233,30 @@ public class ArazzoParameterTests
         Assert.Equal("42", json?["value"]?.GetValue<string>());
     }
 
+
     [Fact]
-    public void Deserialize_WithReference_ReturnsParameterReference()
+    public void SerializeAsV1_1_WithReference_WritesReferenceAndValueOverride()
+    {
+        var parameter = new ArazzoParameterReference("shared")
+        {
+            Value = JsonValue.Create("42")
+        };
+
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        parameter.SerializeAsV1_1(writer);
+
+        var json = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$components.parameters.shared", json?["reference"]?.GetValue<string>());
+        Assert.Equal("42", json?["value"]?.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithReference_ReturnsParameterReference(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -125,7 +267,7 @@ public class ArazzoParameterTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var parameter = Assert.IsType<ArazzoParameterReference>(ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext));
+        var parameter = Assert.IsType<ArazzoParameterReference>(LoadParameter(jsonNode, parsingContext, version));
 
         Assert.Equal("$components.parameters.shared", parameter.Reference.ReferenceV1);
         Assert.Equal("25", parameter.Value?.GetValue<string>());
@@ -133,8 +275,10 @@ public class ArazzoParameterTests
         Assert.DoesNotContain(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoParameter.Value is a REQUIRED field", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithDollarRef_ReturnsParameterObject()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithDollarRef_ReturnsParameterObject(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -145,17 +289,20 @@ public class ArazzoParameterTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var parameter = Assert.IsType<ArazzoParameter>(ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext));
+        var parameter = Assert.IsType<ArazzoParameter>(LoadParameter(jsonNode, parsingContext, version));
 
         Assert.Equal("25", parameter.Value?.GetValue<string>());
         Assert.Null(parameter.Name);
     }
 
     [Theory]
-    [InlineData("$steps.getUser.outputs.userId")]
-    [InlineData("$components.successActions.shared")]
-    [InlineData("$components.parameters")]
-    public void Deserialize_WithInvalidReusableReference_AddsDiagnosticError(string reference)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "$steps.getUser.outputs.userId")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "$components.successActions.shared")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "$components.parameters")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$steps.getUser.outputs.userId")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$components.successActions.shared")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$components.parameters")]
+    public void Deserialize_WithInvalidReusableReference_AddsDiagnosticError(ArazzoSpecVersion version, string reference)
     {
         var json = $$"""
         {
@@ -165,13 +312,15 @@ public class ArazzoParameterTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = Assert.IsType<ArazzoParameterReference>(ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext));
+        _ = Assert.IsType<ArazzoParameterReference>(LoadParameter(jsonNode, parsingContext, version));
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("$components.parameters.<name>", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithExternalReference_ThrowsOpenApiException()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithExternalReference_ThrowsOpenApiException(ArazzoSpecVersion version)
     {
         var jsonNode = JsonNode.Parse(
             """
@@ -180,7 +329,7 @@ public class ArazzoParameterTests
             }
             """)!;
 
-        var exception = Assert.Throws<OpenApiException>(() => ArazzoV1Deserializer.LoadParameter(jsonNode, new ParsingContext(new())));
+        var exception = Assert.Throws<OpenApiException>(() => LoadParameter(jsonNode, new ParsingContext(new()), version));
 
         Assert.Contains("do not support external resources", exception.Message, StringComparison.Ordinal);
     }
@@ -202,8 +351,28 @@ public class ArazzoParameterTests
         Assert.Contains("ArazzoParameter.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
     }
 
+
     [Fact]
-    public void Deserialize_WithInvalidRuntimeExpressionValue_AddsDiagnosticError()
+    public void SerializeAsV1_1_WithInvalidRuntimeExpressionValue_ThrowsArazzoSerializationException()
+    {
+        var parameter = new ArazzoParameter
+        {
+            Name = "id",
+            In = ParameterLocation.Query,
+            Value = "$response.statusCode"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => parameter.SerializeAsV1_1(writer));
+
+        Assert.Contains("ArazzoParameter.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithInvalidRuntimeExpressionValue_AddsDiagnosticError(ArazzoSpecVersion version)
     {
         var jsonNode = JsonNode.Parse(
             """
@@ -215,8 +384,40 @@ public class ArazzoParameterTests
             """)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext);
+        _ = LoadParameterObject(jsonNode, parsingContext, version);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoParameter.Value contains an invalid runtime expression", StringComparison.Ordinal));
+    }
+
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "{ \"value\": \"42\" }", "ArazzoParameter.Name is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "{ \"name\": \"id\" }", "ArazzoParameter.Value is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "{ \"value\": \"42\" }", "ArazzoParameter.Name is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "{ \"name\": \"id\" }", "ArazzoParameter.Value is a REQUIRED field")]
+    public void Deserialize_MissingRequiredFields_AddsDiagnosticError(ArazzoSpecVersion version, string json, string expectedMessage)
+    {
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = LoadParameterObject(jsonNode, parsingContext, version);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    private static ArazzoParameter LoadParameterObject(JsonNode jsonNode, ParsingContext parsingContext, ArazzoSpecVersion version)
+    {
+        var parameter = version == ArazzoSpecVersion.Arazzo1_1
+            ? ArazzoV1_1Deserializer.LoadParameterObject(jsonNode, parsingContext)
+            : Assert.IsType<ArazzoParameter>(ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext));
+        Assert.NotNull(parameter);
+        return parameter;
+    }
+
+    private static IArazzoParameter LoadParameter(JsonNode jsonNode, ParsingContext parsingContext, ArazzoSpecVersion version)
+    {
+        return version == ArazzoSpecVersion.Arazzo1_1
+            ? ArazzoV1_1Deserializer.LoadParameter(jsonNode, parsingContext)
+            : ArazzoV1Deserializer.LoadParameter(jsonNode, parsingContext);
     }
 }

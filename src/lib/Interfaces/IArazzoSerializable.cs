@@ -12,4 +12,10 @@ public interface IArazzoSerializable
     /// </summary>
     /// <param name="writer">A Microsoft.OpenAPI writer</param>
     void SerializeAsV1(IOpenApiWriter writer);
+
+    /// <summary>
+    /// Serializes the object to the OpenAPI Arazzo v1.1 format.
+    /// </summary>
+    /// <param name="writer">A Microsoft.OpenAPI writer</param>
+    void SerializeAsV1_1(IOpenApiWriter writer);
 }
