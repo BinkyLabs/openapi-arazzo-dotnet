@@ -72,8 +72,19 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
     /// <inheritdoc />
     public override void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
+    }
+
+    /// <inheritdoc />
+    public override void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
+    {
         ArgumentNullException.ThrowIfNull(writer);
-        ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference.ReferenceV1, ReferenceType.Parameter, nameof(ArazzoParameterReference));
+        ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference.ReferenceV1, ReferenceType.Parameter, nameof(ArazzoParameterReference), specVersion);
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoReusableObjectReference, Reference.ReferenceV1);

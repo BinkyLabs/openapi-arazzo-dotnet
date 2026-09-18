@@ -4,6 +4,7 @@
 using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader.V1;
+using BinkyLabs.OpenApi.Arazzo.Reader.V1_1;
 using BinkyLabs.OpenApi.Arazzo.Validation;
 
 using Microsoft.OpenApi;
@@ -52,6 +53,7 @@ public class ParsingContext
         Diagnostic = diagnostic;
     }
     private static readonly string[] ArazzoV1Versions = ["1.0.0", "1.0.1"];
+    private const string ArazzoV1_1Version = "1.1.0";
 
     /// <summary>
     /// Initiates the parsing process.  Not thread safe and should only be called once on a parsing context
@@ -71,8 +73,14 @@ public class ParsingContext
         {
             case string version when IsArazzoV1Version(version):
                 VersionService = new ArazzoV1VersionService(Diagnostic);
-                doc = VersionService.LoadDocument(jsonNode, location, this);
                 this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_0;
+                doc = VersionService.LoadDocument(jsonNode, location, this);
+                ValidateRequiredFields(doc, version);
+                break;
+            case string version when ArazzoV1_1Version.Equals(version, StringComparison.OrdinalIgnoreCase):
+                VersionService = new ArazzoV1_1VersionService(Diagnostic);
+                this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_1;
+                doc = VersionService.LoadDocument(jsonNode, location, this);
                 ValidateRequiredFields(doc, version);
                 break;
 
@@ -97,6 +105,12 @@ public class ParsingContext
         {
             case ArazzoSpecVersion.Arazzo1_0:
                 VersionService = new ArazzoV1VersionService(Diagnostic);
+                this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_0;
+                element = this.VersionService.LoadElement<T>(jsonNode, this);
+                break;
+            case ArazzoSpecVersion.Arazzo1_1:
+                VersionService = new ArazzoV1_1VersionService(Diagnostic);
+                this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_1;
                 element = this.VersionService.LoadElement<T>(jsonNode, this);
                 break;
             default:
@@ -255,7 +269,7 @@ public class ParsingContext
 
     private void ValidateRequiredFields(ArazzoDocument doc, string version)
     {
-        if (IsArazzoV1Version(version) && JsonNode is not null)
+        if ((IsArazzoV1Version(version) || ArazzoV1_1Version.Equals(version, StringComparison.OrdinalIgnoreCase)) && JsonNode is not null)
         {
             if (doc.Info == null)
             {
@@ -349,12 +363,12 @@ public class ParsingContext
                 var referenceCount = step.CountTargetFields();
                 if (referenceCount > 1)
                 {
-                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' can define only one of operationId, operationPath, or workflowId."));
+                    Diagnostic.Errors.Add(new OpenApiError("", ArazzoStep.GetMultipleTargetFieldsError($"Workflow '{workflow.WorkflowId}' step '{step.StepId}'", Diagnostic.SpecificationVersion)));
                 }
 
                 if (referenceCount == 0)
                 {
-                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' must define exactly one of operationId, operationPath, or workflowId."));
+                    Diagnostic.Errors.Add(new OpenApiError("", ArazzoStep.GetMissingTargetFieldError($"Workflow '{workflow.WorkflowId}' step '{step.StepId}'", Diagnostic.SpecificationVersion)));
                 }
 
                 if (step.RequestBody is not null && !step.CanHaveRequestBody())
@@ -427,5 +441,5 @@ public class ParsingContext
     }
 
     private static bool IsOperationTargetedStep(ArazzoStep step) =>
-        !string.IsNullOrEmpty(step.OperationId) || !string.IsNullOrEmpty(step.OperationPath);
+        !string.IsNullOrEmpty(step.OperationId) || !string.IsNullOrEmpty(step.OperationPath) || !string.IsNullOrEmpty(step.ChannelPath);
 }

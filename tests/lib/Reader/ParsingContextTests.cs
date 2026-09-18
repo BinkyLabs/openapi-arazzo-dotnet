@@ -931,6 +931,18 @@ public class ParsingContextTests
     }
 
     [Fact]
+    public void ParseFragment_Arazzo1_1_ReturnsElement()
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse("""{ "title": "T", "version": "1" }""")!;
+
+        var info = ctx.ParseFragment<ArazzoInfo>(jsonNode, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.NotNull(info);
+        Assert.Equal("T", info!.Title);
+    }
+
+    [Fact]
     public void ParseFragment_UnsupportedVersion_Throws()
     {
         var ctx = CreateContext();
