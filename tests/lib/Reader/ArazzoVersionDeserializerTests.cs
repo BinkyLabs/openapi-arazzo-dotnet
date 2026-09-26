@@ -55,6 +55,31 @@ public class ArazzoVersionDeserializerTests
         Assert.Equal(context.BaseUrl, document.BaseUri);
     }
 
+    [Fact]
+    public void V1_1LoadDocument_UsesParsingContextBaseUrlWhenPresent()
+    {
+        var json = JsonNode.Parse(
+            """
+            {
+              "arazzo": "1.1.0",
+              "info": {
+                "title": "Test",
+                "version": "1.0.0"
+              },
+              "sourceDescriptions": [],
+              "workflows": []
+            }
+            """)!;
+        var context = new ParsingContext(new())
+        {
+            BaseUrl = new Uri("https://example.com/from-context/arazzo-1.1.json")
+        };
+
+        var document = global::BinkyLabs.OpenApi.Arazzo.Reader.V1_1.ArazzoV1_1Deserializer.LoadDocument(json, context);
+
+        Assert.Equal(context.BaseUrl, document.BaseUri);
+    }
+
     [Theory]
     [InlineData("#/components/inputs/shared", "shared")]
     [InlineData("#/components/inputs/shared/", "shared")]

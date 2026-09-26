@@ -24,6 +24,11 @@ public interface IArazzoResultAction : IArazzoSerializable, IArazzoReferenceable
     /// Gets or sets the criteria list.
     /// </summary>
     IList<ArazzoCriterion>? Criteria { get; }
+
+    /// <summary>
+    /// Gets or sets parameters to pass to a referenced workflow.
+    /// </summary>
+    IList<IArazzoParameter>? Parameters { get; }
 }
 
 /// <summary>

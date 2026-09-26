@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
 using BinkyLabs.OpenApi.Arazzo.Reader.V1;
+using BinkyLabs.OpenApi.Arazzo.Reader.V1_1;
 
 using Microsoft.OpenApi;
 
@@ -63,6 +64,59 @@ public class ArazzoFailureActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_ShouldWriteCorrectJson_WithAllProperties()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "failureAction1",
+            Type = ArazzoFailureType.Retry,
+            WorkflowId = "workflow123",
+            RetryAfter = 5.5m,
+            RetryLimit = 3ul,
+            Criteria = new List<ArazzoCriterion>
+            {
+                new ArazzoCriterion
+                {
+                    Context = "$statusCode",
+                    Condition = "500"
+                }
+            },
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-extra"] = new JsonNodeExtension(JsonNode.Parse("{\"note\":\"test\"}")!)
+            }
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "name": "failureAction1",
+            "type": "retry",
+            "workflowId": "workflow123",
+            "retryAfter": 5.5,
+            "retryLimit": 3,
+            "criteria": [
+                {
+                    "context": "$statusCode",
+                    "condition": "500"
+                }
+            ],
+            "x-extra": {
+                "note": "test"
+            }
+        }
+        """;
+
+        failureAction.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
     public void SerializeAsV1_ShouldWriteCorrectJson_WithRequiredPropertiesOnly()
     {
         var failureAction = new ArazzoFailureAction
@@ -82,6 +136,32 @@ public class ArazzoFailureActionTests
         """;
 
         failureAction.SerializeAsV1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_ShouldWriteCorrectJson_WithRequiredPropertiesOnly()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "endAction",
+            Type = ArazzoFailureType.End
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "name": "endAction",
+            "type": "end"
+        }
+        """;
+
+        failureAction.SerializeAsV1_1(writer);
         var jsonResultObject = JsonNode.Parse(textWriter.ToString());
         var expectedJsonObject = JsonNode.Parse(expectedJson);
 
@@ -117,6 +197,34 @@ public class ArazzoFailureActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_ShouldWriteCorrectJson_WithGotoType()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "gotoAction",
+            Type = ArazzoFailureType.Goto,
+            StepId = "step789"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var expectedJson =
+        """
+        {
+            "name": "gotoAction",
+            "type": "goto",
+            "stepId": "step789"
+        }
+        """;
+
+        failureAction.SerializeAsV1_1(writer);
+        var jsonResultObject = JsonNode.Parse(textWriter.ToString());
+        var expectedJsonObject = JsonNode.Parse(expectedJson);
+
+        Assert.True(JsonNode.DeepEquals(jsonResultObject, expectedJsonObject), "Serialized JSON does not match expected output.");
+    }
+
+    [Fact]
     public void SerializeAsV1_WithRetryAndNoRetryLimit_ShouldOmitRetryLimit()
     {
         var failureAction = new ArazzoFailureAction
@@ -128,6 +236,23 @@ public class ArazzoFailureActionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         failureAction.SerializeAsV1(writer);
+        var json = JsonNode.Parse(textWriter.ToString())!;
+
+        Assert.Null(json["retryLimit"]);
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_WithRetryAndNoRetryLimit_ShouldOmitRetryLimit()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "retryAction",
+            Type = ArazzoFailureType.Retry
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        failureAction.SerializeAsV1_1(writer);
         var json = JsonNode.Parse(textWriter.ToString())!;
 
         Assert.Null(json["retryLimit"]);
@@ -151,6 +276,23 @@ public class ArazzoFailureActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_WithRetryAfterOnNonRetryType_ShouldThrowArazzoSerializationException()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "endAction",
+            Type = ArazzoFailureType.End,
+            RetryAfter = 1
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1_1(writer));
+
+        Assert.Contains("retryAfter can only be specified when type is retry", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SerializeAsV1_WithRetryLimitOnNonRetryType_ShouldThrowArazzoSerializationException()
     {
         var failureAction = new ArazzoFailureAction
@@ -163,6 +305,23 @@ public class ArazzoFailureActionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1(writer));
+
+        Assert.Contains("retryLimit can only be specified when type is retry", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_WithRetryLimitOnNonRetryType_ShouldThrowArazzoSerializationException()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "endAction",
+            Type = ArazzoFailureType.End,
+            RetryLimit = 1
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1_1(writer));
 
         Assert.Contains("retryLimit can only be specified when type is retry", exception.Message, StringComparison.Ordinal);
     }
@@ -185,6 +344,23 @@ public class ArazzoFailureActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_WithNegativeRetryAfter_ShouldThrowArazzoSerializationException()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "retryAction",
+            Type = ArazzoFailureType.Retry,
+            RetryAfter = -1
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1_1(writer));
+
+        Assert.Contains("retryAfter must be a non-negative decimal", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SerializeAsV1_ShouldThrowException_WhenNameIsNull()
     {
         var failureAction = new ArazzoFailureAction
@@ -195,6 +371,19 @@ public class ArazzoFailureActionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         Assert.Throws<ArgumentNullException>(() => failureAction.SerializeAsV1(writer));
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_ShouldThrowException_WhenNameIsNull()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Type = ArazzoFailureType.End
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => failureAction.SerializeAsV1_1(writer));
     }
 
     [Fact]
@@ -211,6 +400,24 @@ public class ArazzoFailureActionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1(writer));
+
+        Assert.Contains("can define only one of workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_WithWorkflowIdAndStepId_ShouldThrowArazzoSerializationException()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "retryAction",
+            Type = ArazzoFailureType.Retry,
+            WorkflowId = "workflow1",
+            StepId = "step1"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1_1(writer));
 
         Assert.Contains("can define only one of workflowId or stepId", exception.Message, StringComparison.Ordinal);
     }
@@ -233,6 +440,23 @@ public class ArazzoFailureActionTests
     }
 
     [Fact]
+    public void SerializeAsV1_1_WithEndAndTargetField_ShouldThrowArazzoSerializationException()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "endAction",
+            Type = ArazzoFailureType.End,
+            StepId = "step1"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1_1(writer));
+
+        Assert.Contains("type=end must not define workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SerializeAsV1_WithGotoAndNoTargetField_ShouldThrowArazzoSerializationException()
     {
         var failureAction = new ArazzoFailureAction
@@ -244,6 +468,22 @@ public class ArazzoFailureActionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1(writer));
+
+        Assert.Contains("type=goto must define exactly one of workflowId or stepId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeAsV1_1_WithGotoAndNoTargetField_ShouldThrowArazzoSerializationException()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "gotoAction",
+            Type = ArazzoFailureType.Goto
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => failureAction.SerializeAsV1_1(writer));
 
         Assert.Contains("type=goto must define exactly one of workflowId or stepId", exception.Message, StringComparison.Ordinal);
     }
@@ -262,7 +502,22 @@ public class ArazzoFailureActionTests
     }
 
     [Fact]
-    public void Deserialize_ShouldSetPropertiesAndExtensions()
+    public void SerializeAsV1_1_ShouldThrowException_WhenTypeIsNull()
+    {
+        var failureAction = new ArazzoFailureAction
+        {
+            Name = "testAction"
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        Assert.Throws<ArgumentNullException>(() => failureAction.SerializeAsV1_1(writer));
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_ShouldSetPropertiesAndExtensions(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -283,7 +538,7 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var failureAction = Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+        var failureAction = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Equal("retryAction", failureAction.Name);
         Assert.Equal(ArazzoFailureType.Retry, failureAction.Type);
@@ -300,8 +555,10 @@ public class ArazzoFailureActionTests
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("true"), extension.Node));
     }
 
-    [Fact]
-    public void Deserialize_ShouldSetRequiredPropertiesOnly()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_ShouldSetRequiredPropertiesOnly(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -312,7 +569,7 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var failureAction = Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+        var failureAction = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Equal("simpleEnd", failureAction.Name);
         Assert.Equal(ArazzoFailureType.End, failureAction.Type);
@@ -324,8 +581,10 @@ public class ArazzoFailureActionTests
         Assert.Null(failureAction.Extensions);
     }
 
-    [Fact]
-    public void Deserialize_WithRetryAndNoRetryLimit_ShouldUseDefaultRetryLimit()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithRetryAndNoRetryLimit_ShouldUseDefaultRetryLimit(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -336,14 +595,16 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var failureAction = Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+        var failureAction = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Equal(1ul, failureAction.RetryLimit);
         Assert.Empty(parsingContext.Diagnostic.Errors);
     }
 
-    [Fact]
-    public void Deserialize_WithRetryAfterOnNonRetryType_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithRetryAfterOnNonRetryType_AddsDiagnosticError(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -355,13 +616,15 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+        _ = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("retryAfter can only be specified when type is retry", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithRetryLimitOnNonRetryType_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithRetryLimitOnNonRetryType_AddsDiagnosticError(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -373,13 +636,15 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+        _ = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("retryLimit can only be specified when type is retry", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithNegativeRetryAfter_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithNegativeRetryAfter_AddsDiagnosticError(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -391,13 +656,15 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+        _ = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("retryAfter must be a non-negative decimal", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithInvalidRetryAfter_AddsDiagnosticError()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithInvalidRetryAfter_AddsDiagnosticError(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -409,16 +676,19 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+        _ = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("retryAfter must be a non-negative decimal", StringComparison.Ordinal));
     }
 
     [Theory]
-    [InlineData("\"not-a-number\"")]
-    [InlineData("-1")]
-    [InlineData("1.5")]
-    public void Deserialize_WithInvalidRetryLimit_AddsDiagnosticError(string retryLimit)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "\"not-a-number\"")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "-1")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "1.5")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "\"not-a-number\"")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "-1")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "1.5")]
+    public void Deserialize_WithInvalidRetryLimit_AddsDiagnosticError(ArazzoSpecVersion version, string retryLimit)
     {
         var json = $$"""
         {
@@ -430,27 +700,32 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+        _ = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("retryLimit must be a non-negative integer", StringComparison.Ordinal));
     }
 
     [Theory]
-    [InlineData("""{ "name": "endAction", "type": "end", "stepId": "step1" }""", "type=end must not define workflowId or stepId")]
-    [InlineData("""{ "name": "gotoAction", "type": "goto" }""", "type=goto must define exactly one of workflowId or stepId")]
-    [InlineData("""{ "name": "retryAction", "type": "retry", "workflowId": "workflow1", "stepId": "step1" }""", "can define only one of workflowId or stepId")]
-    public void Deserialize_WithInvalidTypeDependentTargetFields_AddsDiagnosticError(string json, string expectedMessage)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "name": "endAction", "type": "end", "stepId": "step1" }""", "type=end must not define workflowId or stepId")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "name": "gotoAction", "type": "goto" }""", "type=goto must define exactly one of workflowId or stepId")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "name": "retryAction", "type": "retry", "workflowId": "workflow1", "stepId": "step1" }""", "can define only one of workflowId or stepId")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "name": "endAction", "type": "end", "stepId": "step1" }""", "type=end must not define workflowId or stepId")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "name": "gotoAction", "type": "goto" }""", "type=goto must define exactly one of workflowId or stepId")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "name": "retryAction", "type": "retry", "workflowId": "workflow1", "stepId": "step1" }""", "can define only one of workflowId or stepId")]
+    public void Deserialize_WithInvalidTypeDependentTargetFields_AddsDiagnosticError(ArazzoSpecVersion version, string json, string expectedMessage)
     {
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
+        _ = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_ShouldHandleGotoType()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_ShouldHandleGotoType(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -462,7 +737,7 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var failureAction = Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+        var failureAction = LoadFailureActionObject(jsonNode, parsingContext, version);
 
         Assert.Equal("gotoFailure", failureAction.Name);
         Assert.Equal(ArazzoFailureType.Goto, failureAction.Type);
@@ -490,7 +765,24 @@ public class ArazzoFailureActionTests
     }
 
     [Fact]
-    public void Deserialize_WithReference_ReturnsFailureActionReference()
+    public void SerializeAsV1_1_WithReference_WritesReference()
+    {
+        var failureAction = new ArazzoFailureActionReference("shared");
+
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        failureAction.SerializeAsV1_1(writer);
+
+        var json = JsonNode.Parse(textWriter.ToString());
+
+        Assert.Equal("$components.failureActions.shared", json?["reference"]?.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithReference_ReturnsFailureActionReference(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -500,14 +792,16 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var failureAction = Assert.IsType<ArazzoFailureActionReference>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+        var failureAction = Assert.IsType<ArazzoFailureActionReference>(LoadFailureAction(jsonNode, parsingContext, version));
 
         Assert.Equal("$components.failureActions.shared", failureAction.Reference.ReferenceV1);
         Assert.Null(failureAction.Criteria);
     }
 
-    [Fact]
-    public void Deserialize_WithDollarRef_ReturnsFailureActionObject()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithDollarRef_ReturnsFailureActionObject(ArazzoSpecVersion version)
     {
         var json = """
         {
@@ -517,16 +811,18 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        var failureAction = Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+        var failureAction = Assert.IsType<ArazzoFailureAction>(LoadFailureAction(jsonNode, parsingContext, version));
 
         Assert.Null(failureAction.Name);
         Assert.Null(failureAction.Type);
     }
 
     [Theory]
-    [InlineData("$components.parameters.shared")]
-    [InlineData("$components.failureActions")]
-    public void Deserialize_WithInvalidReusableReference_AddsDiagnosticError(string reference)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "$components.parameters.shared")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "$components.failureActions")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$components.parameters.shared")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$components.failureActions")]
+    public void Deserialize_WithInvalidReusableReference_AddsDiagnosticError(ArazzoSpecVersion version, string reference)
     {
         var json = $$"""
         {
@@ -536,13 +832,15 @@ public class ArazzoFailureActionTests
         var jsonNode = JsonNode.Parse(json)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = Assert.IsType<ArazzoFailureActionReference>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+        _ = Assert.IsType<ArazzoFailureActionReference>(LoadFailureAction(jsonNode, parsingContext, version));
 
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("$components.failureActions.<name>", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Deserialize_WithExternalReference_ThrowsOpenApiException()
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_WithExternalReference_ThrowsOpenApiException(ArazzoSpecVersion version)
     {
         var jsonNode = JsonNode.Parse(
             """
@@ -551,8 +849,40 @@ public class ArazzoFailureActionTests
             }
             """)!;
 
-        var exception = Assert.Throws<OpenApiException>(() => ArazzoV1Deserializer.LoadFailureAction(jsonNode, new ParsingContext(new())));
+        var exception = Assert.Throws<OpenApiException>(() => LoadFailureAction(jsonNode, new ParsingContext(new()), version));
 
         Assert.Contains("do not support external resources", exception.Message, StringComparison.Ordinal);
+    }
+
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "{ \"type\": \"end\" }", "ArazzoFailureAction.Name is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "{ \"name\": \"endAction\" }", "ArazzoFailureAction.Type is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "{ \"type\": \"end\" }", "ArazzoFailureAction.Name is a REQUIRED field")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "{ \"name\": \"endAction\" }", "ArazzoFailureAction.Type is a REQUIRED field")]
+    public void Deserialize_MissingRequiredFields_AddsDiagnosticError(ArazzoSpecVersion version, string json, string expectedMessage)
+    {
+        var jsonNode = JsonNode.Parse(json)!;
+        var parsingContext = new ParsingContext(new());
+
+        _ = LoadFailureActionObject(jsonNode, parsingContext, version);
+
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    private static ArazzoFailureAction LoadFailureActionObject(JsonNode jsonNode, ParsingContext parsingContext, ArazzoSpecVersion version)
+    {
+        var action = version == ArazzoSpecVersion.Arazzo1_1
+            ? ArazzoV1_1Deserializer.LoadFailureActionObject(jsonNode, parsingContext)
+            : Assert.IsType<ArazzoFailureAction>(ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext));
+        Assert.NotNull(action);
+        return action;
+    }
+
+    private static IArazzoFailureAction LoadFailureAction(JsonNode jsonNode, ParsingContext parsingContext, ArazzoSpecVersion version)
+    {
+        return version == ArazzoSpecVersion.Arazzo1_1
+            ? ArazzoV1_1Deserializer.LoadFailureAction(jsonNode, parsingContext)
+            : ArazzoV1Deserializer.LoadFailureAction(jsonNode, parsingContext);
     }
 }

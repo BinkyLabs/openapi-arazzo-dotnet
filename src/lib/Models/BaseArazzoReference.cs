@@ -112,21 +112,22 @@ public class BaseArazzoReference : IArazzoSerializable
     /// <inheritdoc/>
     public virtual void SerializeAsV1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
+    }
+
+    /// <inheritdoc/>
+    public virtual void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
     }
 
     /// <summary>
     /// Serialize <see cref="BaseArazzoReference"/>
     /// </summary>
-    private void SerializeInternal(IOpenApiWriter writer, Action<IOpenApiWriter>? callback = null)
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
-
-        writer.WriteStartObject();
-        if (callback is not null)
-        {
-            callback(writer);
-        }
+        ArgumentNullException.ThrowIfNull(callback);
 
         var referencePropertyName = Type == ReferenceType.Input
             ? OpenApiConstants.DollarRef
@@ -134,9 +135,10 @@ public class BaseArazzoReference : IArazzoSerializable
 
         if (Type != ReferenceType.Input)
         {
-            ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(ReferenceV1, Type, nameof(BaseArazzoReference));
+            ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(ReferenceV1, Type, nameof(BaseArazzoReference), specVersion);
         }
 
+        writer.WriteStartObject();
         writer.WriteProperty(referencePropertyName, ReferenceV1);
 
         writer.WriteEndObject();

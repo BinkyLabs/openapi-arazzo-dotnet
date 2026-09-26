@@ -794,6 +794,11 @@ public class ArazzoReferenceWorkspaceTests
         {
             ArgumentNullException.ThrowIfNull(writer);
         }
+
+        public void SerializeAsV1_1(IOpenApiWriter writer)
+        {
+            SerializeAsV1(writer);
+        }
     }
 
     private sealed class TestReferenceHolder : BaseArazzoReferenceHolder<TestReferenceable, IArazzoReferenceable, BaseArazzoReference>, IArazzoReferenceable
