@@ -11,19 +11,27 @@ internal static partial class ArazzoV1Deserializer
     public static readonly FixedFieldMap<ArazzoPayloadReplacement> PayloadReplacementFixedFields = new()
     {
         { ArazzoConstants.ArazzoPayloadReplacementTarget, static (o, v, c) => o.Target = v.GetScalarValue() },
+        { "x-targetSelectorType", static (o, v, c) => o.TargetSelectorType = v },
         { ArazzoConstants.ArazzoPayloadReplacementValue, static (o, v, c) => o.Value = v }
     };
 
-    public static readonly PatternFieldMap<ArazzoPayloadReplacement> PayloadReplacementPatternFields = new()
+    public static PatternFieldMap<ArazzoPayloadReplacement> GetPayloadReplacementPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoPayloadReplacement> PayloadReplacementPatternFields = GetPayloadReplacementPatternFields();
 
     public static ArazzoPayloadReplacement LoadPayloadReplacement(JsonNode node, ParsingContext context)
     {
+        return LoadPayloadReplacementInternal(node, context, PayloadReplacementFixedFields, PayloadReplacementPatternFields);
+    }
+
+    public static ArazzoPayloadReplacement LoadPayloadReplacementInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoPayloadReplacement> payloadReplacementFixedFields, PatternFieldMap<ArazzoPayloadReplacement> payloadReplacementPatternFields)
+    {
         var mapNode = node.CheckMapNode("PayloadReplacement", context);
         var replacement = new ArazzoPayloadReplacement();
-        mapNode.ParseMap(replacement, PayloadReplacementFixedFields, PayloadReplacementPatternFields, context);
+        mapNode.ParseMap(replacement, payloadReplacementFixedFields, payloadReplacementPatternFields, context);
         ValidatePayloadReplacementRequiredFields(replacement, context);
         ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(replacement.Value, context, $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Value)}");
 

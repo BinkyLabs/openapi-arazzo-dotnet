@@ -24,9 +24,14 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     internal ArazzoWorkspace? Workspace { get; set; }
 
     /// <summary>
-    /// Gets or sets the Arazzo version. Default is "1.0.1".
+    /// Gets or sets the Arazzo version. Default is "1.1.0".
     /// </summary>
-    public string? Arazzo { get; internal set; } = "1.0.1";
+    public string? Arazzo { get; internal set; } = "1.1.0";
+
+    /// <summary>
+    /// Gets or sets the self-assigned URI of the Arazzo description.
+    /// </summary>
+    public string? Self { get; set; }
 
     /// <summary>
     /// Gets or sets the Arazzo info object.
@@ -72,6 +77,21 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
+    }
+
+    /// <summary>
+    /// Serializes the Arazzo document as an OpenAPI Arazzo v1.1.0 JSON object.
+    /// </summary>
+    /// <param name="writer">The OpenAPI writer to use for serialization.</param>
+    /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>
+    public void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
+    {
         // Validate required fields
         if (Info is null)
         {
@@ -90,19 +110,24 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 
         ValidateUniqueSourceDescriptionNames();
         ValidateUniqueWorkflowIds();
-        ArazzoSemanticReferenceValidator.ValidateSerialization(this);
+        ArazzoSemanticReferenceValidator.ValidateSerialization(this, specVersion);
 
         writer.WriteStartObject();
-        writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, "1.0.1");
-        writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, (w, obj) => obj.SerializeAsV1(w));
+        writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, specVersion is ArazzoSpecVersion.Arazzo1_0 ? "1.0.1" : "1.1.0");
+        writer.WriteProperty(
+            specVersion is ArazzoSpecVersion.Arazzo1_0
+                ? ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoDocumentSelf)
+                : ArazzoConstants.ArazzoDocumentSelf,
+            Self);
+        writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, callback);
 
-        writer.WriteRequiredCollection(ArazzoConstants.ArazzoDocumentSourceDescriptions, SourceDescriptions, static (w, s) => s.SerializeAsV1(w));
+        writer.WriteRequiredCollection<ArazzoSourceDescription>(ArazzoConstants.ArazzoDocumentSourceDescriptions, SourceDescriptions, callback);
 
-        writer.WriteRequiredCollection(ArazzoConstants.ArazzoDocumentWorkflows, Workflows, static (w, wf) => wf.SerializeAsV1(w));
+        writer.WriteRequiredCollection<ArazzoWorkflow>(ArazzoConstants.ArazzoDocumentWorkflows, Workflows, callback);
 
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoDocumentComponents, Components, static (w, c) => c.SerializeAsV1(w));
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoDocumentComponents, Components, callback);
 
-        writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
+        writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }
 

@@ -28,16 +28,23 @@ internal static partial class ArazzoV1Deserializer
         }}
     };
 
-    public static readonly PatternFieldMap<ArazzoCriterion> CriterionPatternFields = new()
+    public static PatternFieldMap<ArazzoCriterion> GetCriterionPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoCriterion> CriterionPatternFields = GetCriterionPatternFields();
 
     public static ArazzoCriterion LoadCriterion(JsonNode node, ParsingContext context)
     {
+        return LoadCriterionInternal(node, context, CriterionFixedFields, CriterionPatternFields);
+    }
+
+    public static ArazzoCriterion LoadCriterionInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoCriterion> criterionFixedFields, PatternFieldMap<ArazzoCriterion> criterionPatternFields)
+    {
         var mapNode = node.CheckMapNode("Criterion", context);
         var criterion = new ArazzoCriterion();
-        mapNode.ParseMap(criterion, CriterionFixedFields, CriterionPatternFields, context);
+        mapNode.ParseMap(criterion, criterionFixedFields, criterionPatternFields, context);
         ArazzoCriterionValidator.ValidateDeserialization(criterion, context);
         ArazzoRuntimeExpressionValidator.ValidateDeserializationExpression(criterion.Context, context, $"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Context)}");
 
