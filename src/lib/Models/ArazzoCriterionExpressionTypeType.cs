@@ -11,21 +11,27 @@ public enum ArazzoCriterionExpressionTypeType
     /// Simple criterion expression type.
     /// </summary>
     [Display("simple")]
-    Simple,
+    Simple = 0,
     /// <summary>
     /// Regular expression criterion expression type.
     /// </summary>
     [Display("regex")]
-    Regex,
+    Regex = 1,
     /// <summary>
     /// JSONPath criterion expression type.
     /// </summary>
     [Display("jsonpath")]
-    JsonPath,
+    JsonPath = 2,
 
     /// <summary>
     /// XPath criterion expression type.
     /// </summary>
     [Display("xpath")]
-    XPath,
+    XPath = 3,
+
+    /// <summary>
+    /// JSON Pointer criterion expression type.
+    /// </summary>
+    [Display("jsonpointer")]
+    JsonPointer = 4,
 }
