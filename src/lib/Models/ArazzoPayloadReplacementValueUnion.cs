@@ -10,6 +10,31 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// Represents a literal JSON value, runtime expression, or selector used in a payload replacement.
 /// Exactly one of <see cref="Any"/>, <see cref="Expression"/>, or <see cref="Selector"/> must be set.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Use property patterns to test which member is populated. The <c>is</c> operator does not
+/// invoke implicit conversions, so test the union's properties rather than the union's type.
+/// </para>
+/// <code>
+/// var replacement = new ArazzoPayloadReplacement
+/// {
+///     Value = new ArazzoRuntimeExpression("$inputs.id")
+/// };
+///
+/// if (replacement.Value is { Any: JsonNode any })
+/// {
+///     Console.WriteLine(any.ToJsonString());
+/// }
+/// else if (replacement.Value is { Expression: ArazzoRuntimeExpression expression })
+/// {
+///     Console.WriteLine(expression.Expression);
+/// }
+/// else if (replacement.Value is { Selector: ArazzoSelector selector })
+/// {
+///     Console.WriteLine(selector.Selector);
+/// }
+/// </code>
+/// </remarks>
 public class ArazzoPayloadReplacementValueUnion : IArazzoSerializable, IOpenApiElement
 {
     /// <summary>

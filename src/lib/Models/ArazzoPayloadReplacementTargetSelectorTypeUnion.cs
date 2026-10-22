@@ -6,6 +6,27 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// Represents a selector language or an Expression Type Object used to resolve a payload replacement target.
 /// Exactly one of <see cref="Type"/> or <see cref="ExpressionType"/> must be set.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Use property patterns to test which member is populated. The <c>is</c> operator does not
+/// invoke implicit conversions, so test the union's properties rather than the union's type.
+/// </para>
+/// <code>
+/// var replacement = new ArazzoPayloadReplacement
+/// {
+///     TargetSelectorType = ArazzoPayloadRequirementTargetSelectorType.JsonPath
+/// };
+///
+/// if (replacement.TargetSelectorType is { Type: ArazzoPayloadRequirementTargetSelectorType type })
+/// {
+///     Console.WriteLine(type);
+/// }
+/// else if (replacement.TargetSelectorType is { ExpressionType: ArazzoCriterionExpressionType expressionType })
+/// {
+///     Console.WriteLine(expressionType.Version);
+/// }
+/// </code>
+/// </remarks>
 public class ArazzoPayloadReplacementTargetSelectorTypeUnion : IArazzoSerializable, IOpenApiElement
 {
     /// <summary>
