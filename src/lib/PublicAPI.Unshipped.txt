@@ -170,3 +170,20 @@ static BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion.implicit operator BinkyLa
 static BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoSelector!(BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoSelector!
 *REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoStep.Outputs.get -> System.Collections.Generic.IDictionary<string!, string!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.Outputs.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.ArazzoParameterUnion() -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.Parameter.get -> BinkyLabs.OpenApi.Arazzo.ArazzoParameter?
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.Parameter.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.Reference.get -> BinkyLabs.OpenApi.Arazzo.ArazzoParameterReference?
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.Reference.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+static BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoParameter! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoParameterReference! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoParameter!(BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoParameter!
+static BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoParameterReference!(BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoParameterReference!
+*REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Parameters.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.IArazzoParameter!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Parameters.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.Name.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.In.get -> Microsoft.OpenApi.ParameterLocation?
+BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.Value.get -> System.Text.Json.Nodes.JsonNode?

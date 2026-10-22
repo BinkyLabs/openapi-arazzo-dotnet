@@ -40,7 +40,7 @@ internal static partial class ArazzoV1Deserializer
             ArazzoKeyValidator.ValidateDeserializationKeys(v, c, $"{nameof(ArazzoWorkflow)}.{nameof(ArazzoWorkflow.Outputs)}");
             o.Outputs = LoadOutputMap(v, c);
         } },
-        { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
+        { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateList(LoadParameterUnion, c) },
     };
 
     public static PatternFieldMap<ArazzoWorkflow> GetWorkflowPatternFields() =>

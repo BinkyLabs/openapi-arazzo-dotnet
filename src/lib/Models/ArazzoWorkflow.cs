@@ -58,7 +58,7 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the list of workflow parameters.
     /// </summary>
-    public IList<IArazzoParameter>? Parameters { get; set; }
+    public IList<ArazzoParameterUnion>? Parameters { get; set; }
 
     /// <summary>
     /// Gets or sets the extensions dictionary.

@@ -579,7 +579,7 @@ public class ArazzoReferenceWorkspaceTests
         Assert.Empty(result.Diagnostic.Errors);
 
         var workflow = Assert.Single(result.Document!.Workflows!);
-        var workflowParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!));
+        var workflowParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!).Reference);
         var workflowSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!));
         var workflowFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!));
         var step = Assert.Single(workflow.Steps!);

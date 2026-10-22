@@ -8,6 +8,19 @@ namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
 {
+    public static ArazzoParameterUnion LoadParameterUnion(JsonNode node, ParsingContext context)
+    {
+        if (node is JsonObject map && map.ContainsKey(ArazzoConstants.ArazzoReusableObjectReference) &&
+            (map.ContainsKey(ArazzoConstants.ArazzoParameterName) || map.ContainsKey(ArazzoConstants.ArazzoParameterIn)))
+            throw new ArazzoReaderException("A parameter must be either a Parameter Object or a Reusable Object, not both.", context);
+        return LoadParameter(node, context) switch
+        {
+            ArazzoParameter parameter => parameter,
+            ArazzoParameterReference reference => reference,
+            _ => throw new ArazzoReaderException("Unsupported parameter union member.", context)
+        };
+    }
+
     public static readonly FixedFieldMap<ArazzoParameter> ParameterFixedFields = new()
     {
         { ArazzoConstants.ArazzoParameterName, static (o, v, c) => o.Name = v.GetScalarValue() },
