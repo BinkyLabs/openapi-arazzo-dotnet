@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
@@ -25,7 +23,7 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the selector expression type as a string or Expression Type Object.
     /// </summary>
-    public JsonNode? Type { get; set; }
+    public ArazzoSelectorTypeUnion? Type { get; set; }
 
     /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
@@ -45,6 +43,8 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
     private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(writer);
+        if (specVersion is ArazzoSpecVersion.Arazzo1_0)
+            throw new ArazzoSerializationException("Selector objects are not supported in Arazzo 1.0.");
         ArgumentException.ThrowIfNullOrEmpty(Context);
         ArgumentException.ThrowIfNullOrEmpty(Selector);
         ArgumentNullException.ThrowIfNull(Type);
@@ -53,7 +53,7 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoSelectorContext, Context);
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoSelectorSelector, Selector);
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoSelectorType, Type, static (w, v) => w.WriteAny(v));
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoSelectorType, Type, static (w, v) => v.SerializeAsV1_1(w));
         writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }

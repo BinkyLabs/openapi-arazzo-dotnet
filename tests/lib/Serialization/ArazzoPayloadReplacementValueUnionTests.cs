@@ -274,7 +274,7 @@ public class ArazzoPayloadReplacementValueUnionTests
         Assert.Equal("$response.body", selector.Context);
         Assert.Equal("$.id", selector.Selector);
         Assert.NotNull(selector.Type);
-        Assert.Equal("jsonpath", selector.Type.GetValue<string>());
+        Assert.Equal(ArazzoPayloadRequirementTargetSelectorType.JsonPath, selector.Type.Type);
         Assert.NotNull(selector.Extensions);
         Assert.Contains("x-note", selector.Extensions.Keys);
         Assert.Empty(context.Diagnostic.Errors);
@@ -405,8 +405,7 @@ public class ArazzoPayloadReplacementValueUnionTests
         Assert.Equal("$self", literalValue.Any.GetValue<string>());
         Assert.Null(literalValue.Expression);
         Assert.Equal(ArazzoSpecVersion.Arazzo1_0, context.Diagnostic.SpecificationVersion);
-        var error = Assert.Single(context.Diagnostic.Errors);
-        Assert.Contains("not supported in Arazzo 1.0", error.Message, StringComparison.Ordinal);
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains("not supported in Arazzo 1.0", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -454,7 +453,7 @@ public class ArazzoPayloadReplacementValueUnionTests
     {
         Context = "$response.body",
         Selector = "$.id",
-        Type = JsonValue.Create("jsonpath")
+        Type = ArazzoPayloadRequirementTargetSelectorType.JsonPath
     };
 
     private static string Serialize(IArazzoSerializable value, ArazzoSpecVersion version)

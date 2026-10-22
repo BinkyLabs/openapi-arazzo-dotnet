@@ -73,7 +73,7 @@ BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Selector.get -> string?
 BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Selector.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoSelector.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoSelector.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
-BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Type.get -> System.Text.Json.Nodes.JsonNode?
+BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Type.get -> BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion?
 BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Type.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoSourceDescription.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
@@ -126,3 +126,15 @@ static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion.implicit oper
 static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!(System.Text.Json.Nodes.JsonNode? value) -> BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!
 virtual BinkyLabs.OpenApi.Arazzo.BaseArazzoReference.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
 virtual BinkyLabs.OpenApi.Arazzo.BaseArazzoReferenceHolder<T, U, V>.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion
+BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.ArazzoSelectorTypeUnion() -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.ExpressionType.get -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType?
+BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.ExpressionType.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.Type.get -> BinkyLabs.OpenApi.Arazzo.ArazzoPayloadRequirementTargetSelectorType?
+BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.Type.set -> void
+static BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType!(BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType!
+static BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoPayloadRequirementTargetSelectorType value) -> BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoPayloadRequirementTargetSelectorType(BinkyLabs.OpenApi.Arazzo.ArazzoSelectorTypeUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoPayloadRequirementTargetSelectorType

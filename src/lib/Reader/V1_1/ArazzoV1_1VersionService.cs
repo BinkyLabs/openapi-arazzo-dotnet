@@ -24,6 +24,7 @@ internal class ArazzoV1_1VersionService : BaseArazzoVersionService
         [typeof(ArazzoCriterionTypeUnion)] = V1.ArazzoV1Deserializer.LoadCriterionTypeUnion,
         [typeof(ArazzoCriterionExpressionType)] = ArazzoV1_1Deserializer.LoadCriterionExpressionType,
         [typeof(ArazzoSelector)] = ArazzoV1_1Deserializer.LoadSelector,
+        [typeof(ArazzoSelectorTypeUnion)] = ArazzoV1_1Deserializer.LoadSelectorTypeUnion,
         [typeof(ArazzoDocument)] = ArazzoV1_1Deserializer.LoadDocument,
         [typeof(ArazzoInfo)] = ArazzoV1_1Deserializer.LoadInfo,
         [typeof(ArazzoParameter)] = ArazzoV1_1Deserializer.LoadParameterObject,

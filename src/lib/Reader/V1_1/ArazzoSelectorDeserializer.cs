@@ -13,8 +13,16 @@ internal static partial class ArazzoV1_1Deserializer
     {
         { ArazzoConstants.ArazzoSelectorContext, static (o, v, c) => o.Context = v.GetScalarValue() },
         { ArazzoConstants.ArazzoSelectorSelector, static (o, v, c) => o.Selector = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoSelectorType, static (o, v, c) => o.Type = v }
+        { ArazzoConstants.ArazzoSelectorType, static (o, v, c) => o.Type = LoadSelectorTypeUnion(v, c) }
     };
+
+    public static ArazzoSelectorTypeUnion LoadSelectorTypeUnion(JsonNode node, ParsingContext context)
+    {
+        if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+            throw new ArazzoReaderException("Selector types are not supported in Arazzo 1.0.", context);
+        var type = ArazzoV1Deserializer.LoadPayloadReplacementTargetSelectorType(node, context);
+        return new() { Type = type.Type, ExpressionType = type.ExpressionType };
+    }
 
     public static PatternFieldMap<ArazzoSelector> GetSelectorPatternFields() =>
     new()

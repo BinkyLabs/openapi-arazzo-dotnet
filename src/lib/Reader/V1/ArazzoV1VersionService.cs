@@ -23,6 +23,8 @@ internal class ArazzoV1VersionService : BaseArazzoVersionService
     {
         [typeof(JsonNodeExtension)] = static (node, _) => new JsonNodeExtension(node),
         [typeof(ArazzoCriterion)] = ArazzoV1Deserializer.LoadCriterion,
+        [typeof(ArazzoSelector)] = static (n, c) => throw new ArazzoReaderException("Selector objects are not supported in Arazzo 1.0.", c),
+        [typeof(ArazzoSelectorTypeUnion)] = V1_1.ArazzoV1_1Deserializer.LoadSelectorTypeUnion,
         [typeof(ArazzoCriterionTypeUnion)] = ArazzoV1Deserializer.LoadCriterionTypeUnion,
         [typeof(ArazzoCriterionExpressionType)] = ArazzoV1Deserializer.LoadCriterionExpressionType,
         [typeof(ArazzoDocument)] = ArazzoV1Deserializer.LoadDocument,
