@@ -585,7 +585,7 @@ public class ArazzoReferenceWorkspaceTests
         var step = Assert.Single(workflow.Steps!);
         var stepParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(step.Parameters!).Reference);
         var stepSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(step.OnSuccess!).Reference);
-        var stepFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(step.OnFailure!));
+        var stepFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(step.OnFailure!).Reference);
 
         Assert.Equal("userId", stepParameter.Name);
         Assert.Equal(ParameterLocation.Path, stepParameter.In);

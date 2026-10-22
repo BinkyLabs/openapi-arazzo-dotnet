@@ -49,7 +49,7 @@ internal static partial class ArazzoV1Deserializer
         } },
         { ArazzoConstants.ArazzoStepOnFailure, static (o, v, c) =>
         {
-            o.OnFailure = v.CreateList<IArazzoFailureAction>(LoadFailureAction, c);
+            o.OnFailure = v.CreateUnionList(LoadFailureActionUnion, c);
             ArazzoActionListValidator.ValidateDeserialization(o.OnFailure, c, $"{nameof(ArazzoStep)} onFailure");
         } },
         { ArazzoConstants.ArazzoStepOutputs, static (o, v, c) =>

@@ -76,7 +76,7 @@ public class ArazzoStepTests
                     StepId = "step2"
                 }
             },
-            OnFailure = new List<IArazzoFailureAction>
+            OnFailure = new List<ArazzoFailureActionUnion>
             {
                 new ArazzoFailureAction
                 {
@@ -336,7 +336,7 @@ public class ArazzoStepTests
                     StepId = "step2"
                 }
             },
-            OnFailure = new List<IArazzoFailureAction>
+            OnFailure = new List<ArazzoFailureActionUnion>
             {
                 new ArazzoFailureAction
                 {

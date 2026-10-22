@@ -99,7 +99,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     /// <summary>
     /// Gets or sets the failure actions.
     /// </summary>
-    public List<IArazzoFailureAction>? OnFailure { get; set; }
+    public List<ArazzoFailureActionUnion>? OnFailure { get; set; }
 
     /// <summary>
     /// Gets or sets output values as runtime expressions or selector objects.

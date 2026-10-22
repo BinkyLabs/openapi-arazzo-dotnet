@@ -233,3 +233,5 @@ BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.Type.get -> BinkyLabs.OpenApi.
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.FailureActions.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.RetryAfter.get -> decimal?
 BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.RetryLimit.get -> ulong
+*REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoStep.OnFailure.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.IArazzoFailureAction!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoStep.OnFailure.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion!>?
