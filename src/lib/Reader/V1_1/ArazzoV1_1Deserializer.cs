@@ -121,7 +121,9 @@ internal static partial class ArazzoV1_1Deserializer
             ArazzoV1Deserializer.DocumentFixedFields,
             new HashSet<string>(StringComparer.Ordinal) { "x-$self" })
         {
-            [ArazzoConstants.ArazzoDocumentSelf] = static (o, v, c) => o.Self = v.GetScalarValue()
+            [ArazzoConstants.ArazzoDocumentSelf] = static (o, v, c) => o.Self = v.GetScalarValue(),
+            [ArazzoConstants.ArazzoDocumentWorkflows] = static (o, v, c) => o.Workflows = v.CreateList(LoadWorkflow, c),
+            [ArazzoConstants.ArazzoDocumentComponents] = static (o, v, c) => o.Components = LoadComponent(v, c)
         };
     }
 
