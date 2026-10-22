@@ -69,6 +69,17 @@ public class ArazzoParameterValueUnionTests
         Assert.Throws<ArazzoSerializationException>(() => literal.SerializeAsV1_1(new OpenApiJsonWriter(new StringWriter())));
     }
 
+    [Theory]
+    [InlineData("$workflows.lookup")]
+    [InlineData("$message.payload#/id")]
+    public void InterfaceProjection_PreservesExpressionsWithoutSelectingAnOutputVersion(string expression)
+    {
+        IArazzoParameter parameter = new ArazzoParameter { Name = "id", Value = new ArazzoRuntimeExpression(expression) };
+        Assert.Equal(expression, parameter.Value?.GetValue<string>());
+        ArazzoParameterUnion union = new ArazzoParameter { Name = "id", Value = new ArazzoRuntimeExpression(expression) };
+        Assert.Equal(expression, union.Value?.GetValue<string>());
+    }
+
     [Fact]
     public void Conversions_RejectNullWrongAndConflictingMembers()
     {

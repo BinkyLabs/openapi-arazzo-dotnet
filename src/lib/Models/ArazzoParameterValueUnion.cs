@@ -66,6 +66,7 @@ public class ArazzoParameterValueUnion : IArazzoSerializable, IOpenApiElement
     internal JsonNode? ToJsonNode()
     {
         if (Any is not null && Expression is null && Selector is null) return Any;
+        if (Expression is not null && Any is null && Selector is null) return JsonValue.Create(Expression.Expression);
         using var text = new StringWriter();
         AsPayloadValue().SerializeAsV1_1(new OpenApiJsonWriter(text));
         return JsonNode.Parse(text.ToString());
