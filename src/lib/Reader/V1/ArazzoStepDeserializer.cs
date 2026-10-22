@@ -55,14 +55,7 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoStepOutputs, static (o, v, c) =>
         {
             ArazzoKeyValidator.ValidateDeserializationKeys(v, c, $"{nameof(ArazzoStep)}.{nameof(ArazzoStep.Outputs)}");
-            o.OutputValues = CreateJsonNodeMap(v, c);
-            var outputs = o.OutputValues
-                .Where(static x => x.Value is JsonValue)
-                .Select(static x => new KeyValuePair<string, string?>(x.Key, x.Value.GetScalarValue()))
-                .Where(static x => x.Value is not null)
-                .ToDictionary(static x => x.Key, static x => x.Value!);
-            ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressions(outputs, c, $"{nameof(ArazzoStep)}.{nameof(ArazzoStep.Outputs)}");
-            o.Outputs = outputs;
+            o.Outputs = LoadOutputMap(v, c);
         } }
     };
 
@@ -117,15 +110,4 @@ internal static partial class ArazzoV1Deserializer
         }
     }
 
-    private static Dictionary<string, JsonNode> CreateJsonNodeMap(JsonNode? node, ParsingContext context)
-    {
-        if (node is not JsonObject jsonMap)
-        {
-            throw new ArazzoReaderException($"Expected map while parsing {nameof(JsonNode)}", context);
-        }
-
-        return jsonMap
-            .Where(static property => property.Value is not null)
-            .ToDictionary(static property => property.Key, static property => property.Value!);
-    }
 }

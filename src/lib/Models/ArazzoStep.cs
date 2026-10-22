@@ -104,14 +104,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     /// <summary>
     /// Gets or sets output values as runtime expressions or selector objects.
     /// </summary>
-    public IDictionary<string, JsonNode>? OutputValues { get; set; }
-
-    /// <summary>
-    /// Gets or sets the output expressions.
-    /// Values must be valid runtime expressions as defined by
-    /// <see href="https://spec.openapis.org/arazzo/v1.0.1.html#runtime-expressions">the Arazzo specification</see>.
-    /// </summary>
-    public IDictionary<string, string>? Outputs { get; set; }
+    public IDictionary<string, ArazzoOutputValueUnion>? Outputs { get; set; }
 
     /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
@@ -145,7 +138,6 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
         ValidateParameters();
         ValidateActions();
         ArazzoKeyValidator.ValidateSerializationKeys(Outputs?.Keys, $"{nameof(ArazzoStep)}.{nameof(Outputs)}");
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressions(Outputs, $"{nameof(ArazzoStep)}.{nameof(Outputs)}", specVersion);
 
         writer.WriteStartObject();
 
@@ -224,20 +216,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
             }
         });
 
-        if (OutputValues is not null)
-        {
-            writer.WriteOptionalMap(
-                ArazzoConstants.ArazzoStepOutputs,
-                OutputValues,
-                static (w, v) => w.WriteAny(v));
-        }
-        else
-        {
-            writer.WriteOptionalMap(
-                ArazzoConstants.ArazzoStepOutputs,
-                Outputs,
-                (w, v) => w.WriteValue(v));
-        }
+        writer.WriteOptionalMap(ArazzoConstants.ArazzoStepOutputs, Outputs, callback);
 
         writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();

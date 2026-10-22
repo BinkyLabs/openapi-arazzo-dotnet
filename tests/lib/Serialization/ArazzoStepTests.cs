@@ -86,7 +86,7 @@ public class ArazzoStepTests
                     RetryLimit = 3
                 }
             },
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
                 ["userId"] = "$response.body#/id"
             },
@@ -346,7 +346,7 @@ public class ArazzoStepTests
                     RetryLimit = 3
                 }
             },
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
                 ["userId"] = "$response.body#/id"
             },
@@ -692,8 +692,8 @@ public class ArazzoStepTests
         Assert.Equal("$statusCode", step.SuccessCriteria[0].Context);
         Assert.NotNull(step.Outputs);
         Assert.Equal(2, step.Outputs!.Count);
-        Assert.Equal("$response.body#/name", step.Outputs["userName"]);
-        Assert.Equal("$response.body#/email", step.Outputs["userEmail"]);
+        Assert.Equal("$response.body#/name", step.Outputs["userName"].Expression?.Expression);
+        Assert.Equal("$response.body#/email", step.Outputs["userEmail"].Expression?.Expression);
         Assert.NotNull(step.Extensions);
         var extension = Assert.IsType<JsonNodeExtension>(step.Extensions!["x-custom"]);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("\"metadata\""), extension.Node));
@@ -706,7 +706,7 @@ public class ArazzoStepTests
         {
             StepId = "invalidOutputStep",
             OperationId = "getUser",
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
                 ["invalid key"] = "$response.body#/id"
             }
@@ -726,7 +726,7 @@ public class ArazzoStepTests
         {
             StepId = "invalidOutputStep",
             OperationId = "getUser",
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
                 ["invalid key"] = "$response.body#/id"
             }
@@ -1226,9 +1226,9 @@ public class ArazzoStepTests
         {
             StepId = "invalidOutputValueStep",
             OperationId = "getUser",
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
-                ["userId"] = "not-a-runtime-expression"
+                ["userId"] = new ArazzoOutputValueUnion()
             }
         };
         using var textWriter = new StringWriter();
@@ -1236,7 +1236,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1(writer));
 
-        Assert.Contains("Invalid value for key 'userId': 'not-a-runtime-expression'", exception.Message);
+        Assert.Contains("exactly one of Any, Expression, or Selector", exception.Message);
     }
 
     [Fact]
@@ -1246,9 +1246,9 @@ public class ArazzoStepTests
         {
             StepId = "invalidOutputValueStep",
             OperationId = "getUser",
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
-                ["userId"] = "not-a-runtime-expression"
+                ["userId"] = new ArazzoOutputValueUnion()
             }
         };
         using var textWriter = new StringWriter();
@@ -1256,7 +1256,7 @@ public class ArazzoStepTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1_1(writer));
 
-        Assert.Contains("Invalid value for key 'userId': 'not-a-runtime-expression'", exception.Message);
+        Assert.Contains("exactly one of Any, Expression, or Selector", exception.Message);
     }
 
     [Theory]
@@ -1278,7 +1278,7 @@ public class ArazzoStepTests
         var step = LoadStep(jsonNode, parsingContext, specVersion);
 
         Assert.NotNull(step.Outputs);
-        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Invalid value for key 'userId': 'not-a-runtime-expression'", StringComparison.Ordinal));
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Output values must be valid runtime expressions", StringComparison.Ordinal));
     }
 
     [Theory]

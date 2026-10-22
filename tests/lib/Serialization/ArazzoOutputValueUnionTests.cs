@@ -68,7 +68,7 @@ public class ArazzoOutputValueUnionTests
         Assert.NotNull(json);
         var context = new ParsingContext(new());
         context.ParseFragment<ArazzoWorkflow>(json, ArazzoSpecVersion.Arazzo1_1);
-        Assert.Contains(context.Diagnostic.Errors, e => e.Pointer.Contains("outputs/bad", StringComparison.Ordinal));
+        Assert.Contains(context.Diagnostic.Errors, e => e.Pointer?.Contains("outputs/bad", StringComparison.Ordinal) is true);
     }
 
     [Fact]
@@ -85,6 +85,36 @@ public class ArazzoOutputValueUnionTests
         Assert.Throws<ArgumentNullException>(() => (ArazzoSelector)(ArazzoOutputValueUnion)null!);
         Assert.Throws<ArgumentNullException>(() => (ArazzoOutputValueUnion)(ArazzoRuntimeExpression)null!);
         Assert.Throws<ArgumentNullException>(() => (ArazzoOutputValueUnion)(ArazzoSelector)null!);
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void StepOutputs_RoundTripAndRejectUnsupportedSelectors(ArazzoSpecVersion version)
+    {
+        var step = new ArazzoStep
+        {
+            StepId = "s",
+            OperationId = "op",
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion> { ["id"] = "$inputs.id" }
+        };
+        var context = new ParsingContext(new());
+        var parsed = context.ParseFragment<ArazzoStep>(Serialize(step, version), version);
+        Assert.NotNull(parsed);
+        Assert.NotNull(parsed.Outputs);
+        Assert.Equal("$inputs.id", parsed.Outputs["id"].Expression?.Expression);
+        Assert.Empty(context.Diagnostic.Errors);
+        step.Outputs["id"] = new ArazzoSelector { Context = "$response.body", Selector = "/id", Type = ArazzoPayloadRequirementTargetSelectorType.JsonPointer };
+        var json = Serialize(step, ArazzoSpecVersion.Arazzo1_1);
+        parsed = context.ParseFragment<ArazzoStep>(json, ArazzoSpecVersion.Arazzo1_1);
+        Assert.NotNull(parsed);
+        Assert.NotNull(parsed.Outputs);
+        Assert.NotNull(parsed.Outputs["id"].Selector);
+        Assert.Empty(context.Diagnostic.Errors);
+        Assert.Throws<ArazzoSerializationException>(() => Serialize(step, ArazzoSpecVersion.Arazzo1_0));
+        var v1 = new ParsingContext(new());
+        v1.ParseFragment<ArazzoStep>(json, ArazzoSpecVersion.Arazzo1_0);
+        Assert.Contains(v1.Diagnostic.Errors, e => e.Pointer?.Contains("outputs/id", StringComparison.Ordinal) is true && e.Message.Contains("not supported", StringComparison.Ordinal));
     }
 
     private static JsonNode Serialize(IArazzoSerializable value, ArazzoSpecVersion version)

@@ -90,8 +90,6 @@ BinkyLabs.OpenApi.Arazzo.ArazzoStep.CorrelationId.get -> string?
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.CorrelationId.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.DependsOn.get -> System.Collections.Generic.ISet<string!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.DependsOn.set -> void
-BinkyLabs.OpenApi.Arazzo.ArazzoStep.OutputValues.get -> System.Collections.Generic.IDictionary<string!, System.Text.Json.Nodes.JsonNode!>?
-BinkyLabs.OpenApi.Arazzo.ArazzoStep.OutputValues.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.Timeout.get -> int?
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.Timeout.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoStepAction
@@ -170,3 +168,5 @@ static BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion.implicit operator BinkyLa
 static BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion!(string! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion!
 static BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression!(BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression!
 static BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoSelector!(BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoSelector!
+*REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoStep.Outputs.get -> System.Collections.Generic.IDictionary<string!, string!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoStep.Outputs.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion!>?
