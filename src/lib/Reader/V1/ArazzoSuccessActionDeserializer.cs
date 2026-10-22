@@ -6,6 +6,22 @@ namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
 {
+    public static ArazzoSuccessActionUnion LoadSuccessActionUnion(JsonNode node, ParsingContext context)
+    {
+        if (node is JsonObject map && map.ContainsKey(ArazzoConstants.ArazzoReusableObjectReference) &&
+            (map.ContainsKey(ArazzoConstants.ArazzoResultActionName) || map.ContainsKey(ArazzoConstants.ArazzoResultActionType)))
+            throw new ArazzoReaderException("A success action must be either a Success Action Object or a Reusable Object, not both.", context);
+        var action = context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_1
+            ? V1_1.ArazzoV1_1Deserializer.LoadSuccessAction(node, context)
+            : LoadSuccessAction(node, context);
+        return action switch
+        {
+            ArazzoSuccessAction inline => inline,
+            ArazzoSuccessActionReference reference => reference,
+            _ => throw new ArazzoReaderException("Unsupported success action union member.", context)
+        };
+    }
+
     public static readonly FixedFieldMap<ArazzoSuccessAction> SuccessActionFixedFields = new()
     {
         { ArazzoConstants.ArazzoResultActionName, static (o, v, c) => o.Name = v.GetScalarValue() },

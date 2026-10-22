@@ -484,7 +484,7 @@ internal static partial class ArazzoSemanticReferenceValidator
     private static IEnumerable<string> ValidateReusableReferences<T>(IEnumerable<T>? items, string elementName, ArazzoDocument document)
     {
         foreach (var referenceHolder in (items ?? [])
-            .Select(static item => item is ArazzoParameterUnion union ? union.GetParameter() : (object?)item)
+            .Select(static item => ArazzoUnionHelper.Unwrap(item))
             .OfType<IArazzoReferenceHolder<BaseArazzoReference>>())
         {
             referenceHolder.Reference.EnsureHostDocumentIsSet(document);

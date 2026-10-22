@@ -762,7 +762,7 @@ public class ArazzoDocumentTests
 
     private static ArazzoDocument CreateDocument(
         ArazzoStep step,
-        IList<IArazzoSuccessAction>? successActions = null,
+        IList<ArazzoSuccessActionUnion>? successActions = null,
         IList<IArazzoFailureAction>? failureActions = null,
         IDictionary<string, ArazzoParameter>? parameters = null,
         ISet<string>? dependsOn = null,

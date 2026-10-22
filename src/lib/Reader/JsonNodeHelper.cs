@@ -51,6 +51,15 @@ internal static class JsonNodeHelper
         }).ToList();
     }
 
+    public static List<T> CreateUnionList<T>(this JsonNode? node, Func<JsonNode, ParsingContext, T> map, ParsingContext context)
+    {
+        if (node is not JsonArray array)
+            throw new ArazzoReaderException($"Expected list while parsing {typeof(T).Name}", context);
+        return array.Select(value => value is JsonObject
+            ? map(value, context)
+            : throw new ArazzoReaderException($"Expected object while parsing {typeof(T).Name}", context)).ToList();
+    }
+
     public static Dictionary<string, T> CreateMap<T>(this JsonNode? node, Func<JsonNode, ParsingContext, T> map, ParsingContext context)
     {
         if (node is not JsonObject jsonMap)

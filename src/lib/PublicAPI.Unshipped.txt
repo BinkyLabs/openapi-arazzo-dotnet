@@ -189,3 +189,23 @@ BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.In.get -> Microsoft.OpenApi.Parame
 BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.Value.get -> System.Text.Json.Nodes.JsonNode?
 *REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoStep.Parameters.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.IArazzoParameter!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.Parameters.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.ArazzoSuccessActionUnion() -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.SuccessAction.get -> BinkyLabs.OpenApi.Arazzo.ArazzoSuccessAction?
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.SuccessAction.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Reference.get -> BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionReference?
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Reference.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+static BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoSuccessAction! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionReference! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoSuccessAction!(BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoSuccessAction!
+static BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionReference!(BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionReference!
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Name.get -> string?
+*REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.SuccessActions.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.IArazzoSuccessAction!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.SuccessActions.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.WorkflowId.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.StepId.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Criteria.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.ArazzoCriterion!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Parameters.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.IArazzoParameter!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Type.get -> BinkyLabs.OpenApi.Arazzo.ArazzoSuccessType?

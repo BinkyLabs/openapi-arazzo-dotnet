@@ -40,7 +40,7 @@ public class ArazzoWorkflowTests
                     OperationPath = "{$sourceDescriptions.source1.url}#/paths/~1users~1{id}/get"
                 }
             },
-            SuccessActions = new List<IArazzoSuccessAction>
+            SuccessActions = new List<ArazzoSuccessActionUnion>
             {
                 new ArazzoSuccessAction
                 {
@@ -147,7 +147,7 @@ public class ArazzoWorkflowTests
                     OperationPath = "{$sourceDescriptions.source1.url}#/paths/~1users~1{id}/get"
                 }
             },
-            SuccessActions = new List<IArazzoSuccessAction>
+            SuccessActions = new List<ArazzoSuccessActionUnion>
             {
                 new ArazzoSuccessAction
                 {
@@ -904,7 +904,7 @@ public class ArazzoWorkflowTests
 
         var workflow = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
-        Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!));
+        Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!).Reference);
         Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!));
         var parameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!).Reference);
         Assert.Equal("7", parameter.Value?.GetValue<string>());
