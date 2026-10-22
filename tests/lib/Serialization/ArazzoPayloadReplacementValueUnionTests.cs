@@ -6,7 +6,7 @@ using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
-public class ArazzoPayloadReplacementValueTests
+public class ArazzoPayloadReplacementValueUnionTests
 {
     public static TheoryData<ArazzoSpecVersion, string> LiteralValues => new()
     {
@@ -53,7 +53,7 @@ public class ArazzoPayloadReplacementValueTests
         {
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(json), replacement.Value.Any));
             var fragmentContext = new ParsingContext(new());
-            var fragment = fragmentContext.ParseFragment<ArazzoPayloadReplacementValue>(replacement.Value.Any, version);
+            var fragment = fragmentContext.ParseFragment<ArazzoPayloadReplacementValueUnion>(replacement.Value.Any, version);
             Assert.NotNull(fragment);
             Assert.NotNull(fragment.Any);
             Assert.Null(fragment.Expression);
@@ -83,7 +83,7 @@ public class ArazzoPayloadReplacementValueTests
         var input = JsonValue.Create(expression);
         var context = new ParsingContext(new());
 
-        var value = context.ParseFragment<ArazzoPayloadReplacementValue>(input, version);
+        var value = context.ParseFragment<ArazzoPayloadReplacementValueUnion>(input, version);
 
         Assert.NotNull(value);
         Assert.NotNull(value.Expression);
@@ -112,14 +112,14 @@ public class ArazzoPayloadReplacementValueTests
     {
         var input = JsonValue.Create(expression);
         var v1Context = new ParsingContext(new());
-        var v1Value = v1Context.ParseFragment<ArazzoPayloadReplacementValue>(input, ArazzoSpecVersion.Arazzo1_0);
+        var v1Value = v1Context.ParseFragment<ArazzoPayloadReplacementValueUnion>(input, ArazzoSpecVersion.Arazzo1_0);
         Assert.NotNull(v1Value);
         Assert.NotNull(v1Value.Any);
         Assert.Null(v1Value.Expression);
         Assert.Empty(v1Context.Diagnostic.Errors);
 
         var v1_1Context = new ParsingContext(new());
-        var v1_1Value = v1_1Context.ParseFragment<ArazzoPayloadReplacementValue>(input, ArazzoSpecVersion.Arazzo1_1);
+        var v1_1Value = v1_1Context.ParseFragment<ArazzoPayloadReplacementValueUnion>(input, ArazzoSpecVersion.Arazzo1_1);
         Assert.NotNull(v1_1Value);
         Assert.NotNull(v1_1Value.Expression);
 
@@ -130,7 +130,7 @@ public class ArazzoPayloadReplacementValueTests
     [Fact]
     public void Expression_V1OnlyWorkflowReferenceCannotBeSerializedAsV1_1()
     {
-        ArazzoPayloadReplacementValue value = ArazzoRuntimeExpression.Build("$workflows.lookup");
+        ArazzoPayloadReplacementValueUnion value = ArazzoRuntimeExpression.Build("$workflows.lookup");
 
         Assert.Equal("\"$workflows.lookup\"", Serialize(value, ArazzoSpecVersion.Arazzo1_0));
         var exception = Assert.Throws<ArazzoSerializationException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_1));
@@ -202,7 +202,7 @@ public class ArazzoPayloadReplacementValueTests
     [InlineData(ArazzoSpecVersion.Arazzo1_1)]
     public void JsonNodeConversion_DoesNotReclassifyExpressionStrings(ArazzoSpecVersion version)
     {
-        ArazzoPayloadReplacementValue value = JsonValue.Create("$inputs.id");
+        ArazzoPayloadReplacementValueUnion value = JsonValue.Create("$inputs.id");
 
         Assert.NotNull(value.Any);
         Assert.Null(value.Expression);
@@ -215,8 +215,8 @@ public class ArazzoPayloadReplacementValueTests
         ArazzoRuntimeExpression? expression = null;
         ArazzoSelector? selector = null;
 
-        Assert.Throws<ArgumentNullException>(() => (ArazzoPayloadReplacementValue)expression!);
-        Assert.Throws<ArgumentNullException>(() => (ArazzoPayloadReplacementValue)selector!);
+        Assert.Throws<ArgumentNullException>(() => (ArazzoPayloadReplacementValueUnion)expression!);
+        Assert.Throws<ArgumentNullException>(() => (ArazzoPayloadReplacementValueUnion)selector!);
     }
 
     [Theory]
@@ -232,7 +232,7 @@ public class ArazzoPayloadReplacementValueTests
     [InlineData(ArazzoSpecVersion.Arazzo1_1, 7)]
     public void Serialize_RejectsEmptyAndConflictingBranches(ArazzoSpecVersion version, int branches)
     {
-        var value = new ArazzoPayloadReplacementValue
+        var value = new ArazzoPayloadReplacementValueUnion
         {
             Any = (branches & 1) != 0 ? JsonValue.Create(42) : null,
             Expression = (branches & 2) != 0 ? ArazzoRuntimeExpression.Build("$url") : null,
@@ -249,7 +249,7 @@ public class ArazzoPayloadReplacementValueTests
     [Fact]
     public void Serialize_RejectsNullWriter()
     {
-        ArazzoPayloadReplacementValue value = ArazzoRuntimeExpression.Build("$inputs.id");
+        ArazzoPayloadReplacementValueUnion value = ArazzoRuntimeExpression.Build("$inputs.id");
         Assert.Throws<ArgumentNullException>(() => value.SerializeAsV1(null!));
         Assert.Throws<ArgumentNullException>(() => value.SerializeAsV1_1(null!));
     }
@@ -294,7 +294,7 @@ public class ArazzoPayloadReplacementValueTests
     [Fact]
     public void Selector_V1SerializationThrowsExplicitUnsupportedException()
     {
-        ArazzoPayloadReplacementValue value = CreateSelector();
+        ArazzoPayloadReplacementValueUnion value = CreateSelector();
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_0));
         Assert.Contains("Selector payload replacement values are not supported in Arazzo 1.0", exception.Message, StringComparison.Ordinal);
@@ -306,7 +306,7 @@ public class ArazzoPayloadReplacementValueTests
     public void Selector_SerializationValidatesRequiredFieldsAndContext()
     {
         var selector = CreateSelector();
-        ArazzoPayloadReplacementValue value = selector;
+        ArazzoPayloadReplacementValueUnion value = selector;
         selector.Context = "$invalid";
         Assert.Throws<ArazzoSerializationException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_1));
         selector.Context = "$response.body";
@@ -369,7 +369,7 @@ public class ArazzoPayloadReplacementValueTests
         Assert.NotNull(input);
         var context = new ParsingContext(new());
 
-        var value = context.ParseFragment<ArazzoPayloadReplacementValue>(input, ArazzoSpecVersion.Arazzo1_1);
+        var value = context.ParseFragment<ArazzoPayloadReplacementValueUnion>(input, ArazzoSpecVersion.Arazzo1_1);
 
         Assert.NotNull(value);
         Assert.NotNull(value.Selector);
@@ -414,8 +414,8 @@ public class ArazzoPayloadReplacementValueTests
     [InlineData(ArazzoSpecVersion.Arazzo1_1)]
     public void SerializeYaml_WritesValuesWithoutWrapperNodes(ArazzoSpecVersion version)
     {
-        ArazzoPayloadReplacementValue literal = new JsonObject { ["id"] = 42 };
-        ArazzoPayloadReplacementValue expression = ArazzoRuntimeExpression.Build("$url");
+        ArazzoPayloadReplacementValueUnion literal = new JsonObject { ["id"] = 42 };
+        ArazzoPayloadReplacementValueUnion expression = ArazzoRuntimeExpression.Build("$url");
         var body = new ArazzoRequestBody
         {
             Replacements = new List<ArazzoPayloadReplacement>

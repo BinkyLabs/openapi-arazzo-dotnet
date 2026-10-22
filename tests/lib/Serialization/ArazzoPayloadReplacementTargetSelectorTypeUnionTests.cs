@@ -6,7 +6,7 @@ using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
-public class ArazzoPayloadReplacementTargetSelectorTypeTests
+public class ArazzoPayloadReplacementTargetSelectorTypeUnionTests
 {
     [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0, ArazzoPayloadRequirementTargetSelectorType.JsonPath, "jsonpath")]

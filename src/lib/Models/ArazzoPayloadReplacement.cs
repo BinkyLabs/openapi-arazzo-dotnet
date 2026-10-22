@@ -21,7 +21,7 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the replacement value.
     /// </summary>
-    public ArazzoPayloadReplacementValue? Value { get; set; }
+    public ArazzoPayloadReplacementValueUnion? Value { get; set; }
 
     /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }

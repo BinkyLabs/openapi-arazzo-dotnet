@@ -27,7 +27,7 @@ internal class ArazzoV1_1VersionService : BaseArazzoVersionService
         [typeof(ArazzoInfo)] = ArazzoV1_1Deserializer.LoadInfo,
         [typeof(ArazzoParameter)] = ArazzoV1_1Deserializer.LoadParameterObject,
         [typeof(ArazzoPayloadReplacement)] = ArazzoV1_1Deserializer.LoadPayloadReplacement,
-        [typeof(ArazzoPayloadReplacementValue)] = V1.ArazzoV1Deserializer.LoadPayloadReplacementValue,
+        [typeof(ArazzoPayloadReplacementValueUnion)] = V1.ArazzoV1Deserializer.LoadPayloadReplacementValue,
         [typeof(ArazzoPayloadReplacementTargetSelectorTypeUnion)] = V1.ArazzoV1Deserializer.LoadPayloadReplacementTargetSelectorType,
         [typeof(ArazzoRequestBody)] = ArazzoV1_1Deserializer.LoadRequestBody,
         [typeof(ArazzoComponent)] = ArazzoV1_1Deserializer.LoadComponent,

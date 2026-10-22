@@ -10,7 +10,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// Represents a literal JSON value, runtime expression, or selector used in a payload replacement.
 /// Exactly one of <see cref="Any"/>, <see cref="Expression"/>, or <see cref="Selector"/> must be set.
 /// </summary>
-public class ArazzoPayloadReplacementValue : IArazzoSerializable, IOpenApiElement
+public class ArazzoPayloadReplacementValueUnion : IArazzoSerializable, IOpenApiElement
 {
     /// <summary>
     /// Gets or sets the literal JSON value. Use <see cref="JsonNullSentinel.JsonNull"/> for an explicit JSON null.
@@ -31,13 +31,13 @@ public class ArazzoPayloadReplacementValue : IArazzoSerializable, IOpenApiElemen
     /// Converts a JSON value to a payload replacement value.
     /// </summary>
     /// <param name="value">The JSON value, or null for an explicit JSON null.</param>
-    public static implicit operator ArazzoPayloadReplacementValue(JsonNode? value) => new() { Any = value ?? JsonNullSentinel.JsonNull };
+    public static implicit operator ArazzoPayloadReplacementValueUnion(JsonNode? value) => new() { Any = value ?? JsonNullSentinel.JsonNull };
 
     /// <summary>
     /// Converts a runtime expression to a payload replacement value.
     /// </summary>
     /// <param name="value">The runtime expression.</param>
-    public static implicit operator ArazzoPayloadReplacementValue(ArazzoRuntimeExpression value)
+    public static implicit operator ArazzoPayloadReplacementValueUnion(ArazzoRuntimeExpression value)
     {
         ArgumentNullException.ThrowIfNull(value);
         return new() { Expression = value };
@@ -47,7 +47,7 @@ public class ArazzoPayloadReplacementValue : IArazzoSerializable, IOpenApiElemen
     /// Converts a selector to a payload replacement value.
     /// </summary>
     /// <param name="value">The selector.</param>
-    public static implicit operator ArazzoPayloadReplacementValue(ArazzoSelector value)
+    public static implicit operator ArazzoPayloadReplacementValueUnion(ArazzoSelector value)
     {
         ArgumentNullException.ThrowIfNull(value);
         return new() { Selector = value };
@@ -65,7 +65,7 @@ public class ArazzoPayloadReplacementValue : IArazzoSerializable, IOpenApiElemen
 
         if ((Any is null ? 0 : 1) + (Expression is null ? 0 : 1) + (Selector is null ? 0 : 1) != 1)
         {
-            throw new ArazzoSerializationException($"{nameof(ArazzoPayloadReplacementValue)} must have exactly one of Any, Expression, or Selector set.");
+            throw new ArazzoSerializationException($"{nameof(ArazzoPayloadReplacementValueUnion)} must have exactly one of Any, Expression, or Selector set.");
         }
 
         if (Selector is not null)
@@ -81,7 +81,7 @@ public class ArazzoPayloadReplacementValue : IArazzoSerializable, IOpenApiElemen
         {
             if (!ArazzoRuntimeExpressionValidator.IsRuntimeExpression(Expression.Expression, specVersion))
             {
-                throw new ArazzoSerializationException($"{nameof(ArazzoPayloadReplacementValue)}.{nameof(Expression)} must be a valid runtime expression for {specVersion}. Invalid value: '{Expression.Expression}'.");
+                throw new ArazzoSerializationException($"{nameof(ArazzoPayloadReplacementValueUnion)}.{nameof(Expression)} must be a valid runtime expression for {specVersion}. Invalid value: '{Expression.Expression}'.");
             }
 
             writer.WriteValue(Expression.Expression);

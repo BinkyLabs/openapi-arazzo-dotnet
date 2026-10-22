@@ -9,7 +9,7 @@ namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
 {
-    public static ArazzoPayloadReplacementValue LoadPayloadReplacementValue(JsonNode node, ParsingContext context)
+    public static ArazzoPayloadReplacementValueUnion LoadPayloadReplacementValue(JsonNode node, ParsingContext context)
     {
         if (node is JsonObject jsonObject && jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorContext))
         {
