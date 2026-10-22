@@ -130,7 +130,7 @@ public class ArazzoPayloadReplacementValueUnionTests
     [Fact]
     public void Expression_V1OnlyWorkflowReferenceCannotBeSerializedAsV1_1()
     {
-        ArazzoPayloadReplacementValueUnion value = ArazzoRuntimeExpression.Build("$workflows.lookup");
+        ArazzoPayloadReplacementValueUnion value = new ArazzoRuntimeExpression("$workflows.lookup");
 
         Assert.Equal("\"$workflows.lookup\"", Serialize(value, ArazzoSpecVersion.Arazzo1_0));
         var exception = Assert.Throws<ArazzoSerializationException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_1));
@@ -141,7 +141,7 @@ public class ArazzoPayloadReplacementValueUnionTests
     public void ImplicitConversions_PreserveAssignedInstancesAndChooseOnlyOneBranch()
     {
         JsonNode node = new JsonObject { ["id"] = 42 };
-        var expression = ArazzoRuntimeExpression.Build("$inputs.id");
+        var expression = new ArazzoRuntimeExpression("$inputs.id");
         var selector = CreateSelector();
 
         var literalReplacement = new ArazzoPayloadReplacement { Value = node };
@@ -189,7 +189,7 @@ public class ArazzoPayloadReplacementValueUnionTests
         var replacement = new ArazzoPayloadReplacement
         {
             Target = "/id",
-            Value = ArazzoRuntimeExpression.Build(expression)
+            Value = new ArazzoRuntimeExpression(expression)
         };
 
         Assert.True(JsonNode.DeepEquals(
@@ -235,7 +235,7 @@ public class ArazzoPayloadReplacementValueUnionTests
         var value = new ArazzoPayloadReplacementValueUnion
         {
             Any = (branches & 1) != 0 ? JsonValue.Create(42) : null,
-            Expression = (branches & 2) != 0 ? ArazzoRuntimeExpression.Build("$url") : null,
+            Expression = (branches & 2) != 0 ? new ArazzoRuntimeExpression("$url") : null,
             Selector = (branches & 4) != 0 ? CreateSelector() : null
         };
 
@@ -249,7 +249,7 @@ public class ArazzoPayloadReplacementValueUnionTests
     [Fact]
     public void Serialize_RejectsNullWriter()
     {
-        ArazzoPayloadReplacementValueUnion value = ArazzoRuntimeExpression.Build("$inputs.id");
+        ArazzoPayloadReplacementValueUnion value = new ArazzoRuntimeExpression("$inputs.id");
         Assert.Throws<ArgumentNullException>(() => value.SerializeAsV1(null!));
         Assert.Throws<ArgumentNullException>(() => value.SerializeAsV1_1(null!));
     }
@@ -415,7 +415,7 @@ public class ArazzoPayloadReplacementValueUnionTests
     public void SerializeYaml_WritesValuesWithoutWrapperNodes(ArazzoSpecVersion version)
     {
         ArazzoPayloadReplacementValueUnion literal = new JsonObject { ["id"] = 42 };
-        ArazzoPayloadReplacementValueUnion expression = ArazzoRuntimeExpression.Build("$url");
+        ArazzoPayloadReplacementValueUnion expression = new ArazzoRuntimeExpression("$url");
         var body = new ArazzoRequestBody
         {
             Replacements = new List<ArazzoPayloadReplacement>

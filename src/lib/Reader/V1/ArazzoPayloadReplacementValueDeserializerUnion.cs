@@ -24,7 +24,7 @@ internal static partial class ArazzoV1Deserializer
         if (node is JsonValue value && value.TryGetValue<string>(out var expression) &&
             ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression, context.Diagnostic.SpecificationVersion))
         {
-            return new() { Expression = ArazzoRuntimeExpression.Build(expression) };
+            return new() { Expression = new ArazzoRuntimeExpression(expression) };
         }
 
         return new() { Any = node };

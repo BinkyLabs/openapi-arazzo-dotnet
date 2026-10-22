@@ -17,21 +17,15 @@ public sealed class ArazzoRuntimeExpression : IEquatable<ArazzoRuntimeExpression
     /// </summary>
     public string Expression { get; }
 
-    private ArazzoRuntimeExpression(string expression)
-    {
-        Expression = expression;
-    }
-
     /// <summary>
-    /// Builds a runtime expression that is valid in at least one supported Arazzo specification version.
+    /// Initializes a runtime expression that is valid in at least one supported Arazzo specification version.
     /// Serialization validates the expression against the output specification version.
     /// </summary>
     /// <param name="expression">The runtime expression string.</param>
-    /// <returns>The runtime expression.</returns>
     /// <exception cref="ArgumentNullException">The expression is null.</exception>
     /// <exception cref="ArgumentException">The expression is empty.</exception>
     /// <exception cref="ArazzoException">The expression does not match the Arazzo runtime-expression grammar.</exception>
-    public static ArazzoRuntimeExpression Build(string expression)
+    public ArazzoRuntimeExpression(string expression)
     {
         ArgumentException.ThrowIfNullOrEmpty(expression);
 
@@ -41,7 +35,7 @@ public sealed class ArazzoRuntimeExpression : IEquatable<ArazzoRuntimeExpression
             throw new ArazzoException($"The runtime expression '{expression}' has invalid format.");
         }
 
-        return new(expression);
+        Expression = expression;
     }
 
     /// <inheritdoc/>

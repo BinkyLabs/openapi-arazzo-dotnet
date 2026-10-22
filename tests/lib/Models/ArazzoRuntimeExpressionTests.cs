@@ -27,9 +27,9 @@ public class ArazzoRuntimeExpressionTests
     [InlineData("$request.payload#/orderId")]
     [InlineData("$response.payload.orderId")]
     [InlineData("$self")]
-    public void Build_AcceptsExpressionsFromBothArazzoVersions(string expression)
+    public void Constructor_AcceptsExpressionsFromBothArazzoVersions(string expression)
     {
-        var result = ArazzoRuntimeExpression.Build(expression);
+        var result = new ArazzoRuntimeExpression(expression);
 
         Assert.Equal(expression, result.Expression);
         Assert.Equal(expression, result.ToString());
@@ -48,29 +48,29 @@ public class ArazzoRuntimeExpressionTests
     [InlineData("$response.body.id")]
     [InlineData("prefix {$inputs.id}")]
     [InlineData("{$request.query.id}")]
-    public void Build_RejectsLiteralsInvalidExpressionsAndOpenApiCompositeExpressions(string expression)
+    public void Constructor_RejectsLiteralsInvalidExpressionsAndOpenApiCompositeExpressions(string expression)
     {
-        var exception = Assert.Throws<ArazzoException>(() => ArazzoRuntimeExpression.Build(expression));
+        var exception = Assert.Throws<ArazzoException>(() => new ArazzoRuntimeExpression(expression));
 
         Assert.Contains(expression, exception.Message, StringComparison.Ordinal);
         Assert.Contains("invalid format", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Build_RejectsNullAndEmptyExpressions()
+    public void Constructor_RejectsNullAndEmptyExpressions()
     {
-        var nullException = Assert.Throws<ArgumentNullException>(() => ArazzoRuntimeExpression.Build(null!));
+        var nullException = Assert.Throws<ArgumentNullException>(() => new ArazzoRuntimeExpression(null!));
         Assert.Equal("expression", nullException.ParamName);
-        var emptyException = Assert.Throws<ArgumentException>(() => ArazzoRuntimeExpression.Build(""));
+        var emptyException = Assert.Throws<ArgumentException>(() => new ArazzoRuntimeExpression(""));
         Assert.Equal("expression", emptyException.ParamName);
     }
 
     [Fact]
     public void Equality_UsesExpressionValueAndSupportsHashCollections()
     {
-        var expression = ArazzoRuntimeExpression.Build("$inputs.userId");
-        var sameExpression = ArazzoRuntimeExpression.Build("$inputs.userId");
-        var differentlyCasedExpression = ArazzoRuntimeExpression.Build("$inputs.UserId");
+        var expression = new ArazzoRuntimeExpression("$inputs.userId");
+        var sameExpression = new ArazzoRuntimeExpression("$inputs.userId");
+        var differentlyCasedExpression = new ArazzoRuntimeExpression("$inputs.UserId");
 
         Assert.NotSame(expression, sameExpression);
         Assert.True(expression.Equals(sameExpression));

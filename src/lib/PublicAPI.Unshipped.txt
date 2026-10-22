@@ -37,6 +37,7 @@ BinkyLabs.OpenApi.Arazzo.ArazzoPayloadRequirementTargetSelectorType.JsonPath = 0
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadRequirementTargetSelectorType.JsonPointer = 2 -> BinkyLabs.OpenApi.Arazzo.ArazzoPayloadRequirementTargetSelectorType
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadRequirementTargetSelectorType.XPath = 1 -> BinkyLabs.OpenApi.Arazzo.ArazzoPayloadRequirementTargetSelectorType
 BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression
+BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression.ArazzoRuntimeExpression(string! expression) -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression.Equals(BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression? other) -> bool
 BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression.Expression.get -> string!
 BinkyLabs.OpenApi.Arazzo.ArazzoSpecVersion.Arazzo1_1 = 1 -> BinkyLabs.OpenApi.Arazzo.ArazzoSpecVersion
@@ -109,6 +110,5 @@ static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementTargetSelectorTypeUnion.
 static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!
 static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoSelector! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!
 static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!(System.Text.Json.Nodes.JsonNode? value) -> BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!
-static BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression.Build(string! expression) -> BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression!
 virtual BinkyLabs.OpenApi.Arazzo.BaseArazzoReference.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
 virtual BinkyLabs.OpenApi.Arazzo.BaseArazzoReferenceHolder<T, U, V>.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
