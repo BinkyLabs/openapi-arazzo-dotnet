@@ -79,7 +79,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     /// <summary>
     /// Gets or sets the list of parameters.
     /// </summary>
-    public List<IArazzoParameter>? Parameters { get; set; }
+    public List<ArazzoParameterUnion>? Parameters { get; set; }
 
     /// <summary>
     /// Gets or sets the request body.

@@ -73,6 +73,31 @@ public class ArazzoParameterUnionTests
         Assert.Throws<ArazzoReaderException>(() => new ParsingContext(new()).ParseFragment<ArazzoParameterUnion>(json, version));
     }
 
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void StepParameters_RoundTripBothBranchesAndValidateLocation(ArazzoSpecVersion version)
+    {
+        var parameter = new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "literal" };
+        var step = new ArazzoStep
+        {
+            StepId = "s",
+            OperationId = "op",
+            Parameters = [parameter, new ArazzoParameterReference("shared")]
+        };
+        var json = Serialize(step, version);
+        var context = new ParsingContext(new());
+        var parsed = context.ParseFragment<ArazzoStep>(json, version);
+        Assert.NotNull(parsed);
+        Assert.NotNull(parsed.Parameters);
+        Assert.NotNull(parsed.Parameters[0].Parameter);
+        Assert.NotNull(parsed.Parameters[1].Reference);
+        Assert.Empty(context.Diagnostic.Errors);
+        Assert.True(JsonNode.DeepEquals(json, Serialize(parsed, version)));
+        parameter.In = null;
+        Assert.Throws<ArazzoSerializationException>(() => Serialize(step, version));
+    }
+
     private static JsonNode Serialize(IArazzoSerializable value, ArazzoSpecVersion version)
     {
         using var text = new StringWriter();

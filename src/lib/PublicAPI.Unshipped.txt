@@ -187,3 +187,5 @@ BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Parameters.get -> System.Collections.Gen
 BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.Name.get -> string?
 BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.In.get -> Microsoft.OpenApi.ParameterLocation?
 BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion.Value.get -> System.Text.Json.Nodes.JsonNode?
+*REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoStep.Parameters.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.IArazzoParameter!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoStep.Parameters.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.ArazzoParameterUnion!>?

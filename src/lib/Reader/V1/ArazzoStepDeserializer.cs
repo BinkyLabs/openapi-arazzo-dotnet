@@ -39,7 +39,7 @@ internal static partial class ArazzoV1Deserializer
             }
         } },
         { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepDependsOn), static (o, v, c) => o.DependsOn = v.CreateSimpleList(static n => n.GetScalarValue()!, c).ToHashSet(StringComparer.Ordinal) },
-        { ArazzoConstants.ArazzoStepParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
+        { ArazzoConstants.ArazzoStepParameters, static (o, v, c) => o.Parameters = v.CreateList(LoadParameterUnion, c) },
         { ArazzoConstants.ArazzoStepRequestBody, static (o, v, c) => o.RequestBody = LoadRequestBody(v, c) },
         { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v, c) => o.SuccessCriteria = v.CreateList(LoadCriterion, c) },
         { ArazzoConstants.ArazzoStepOnSuccess, static (o, v, c) =>
