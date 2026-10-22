@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 
-using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -24,7 +23,7 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the replacement value.
     /// </summary>
-    public JsonNode? Value { get; set; }
+    public ArazzoPayloadReplacementValue? Value { get; set; }
 
     /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
@@ -53,7 +52,6 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
 
         ArgumentException.ThrowIfNullOrEmpty(Target);
         ArgumentNullException.ThrowIfNull(Value);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Value, $"{nameof(ArazzoPayloadReplacement)}.{nameof(Value)}", specVersion);
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoPayloadReplacementTarget, Target);
@@ -63,7 +61,7 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
                 : ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType,
             TargetSelectorType,
             static (w, v) => w.WriteAny(v));
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoPayloadReplacementValue, Value, static (w, v) => w.WriteAny(v));
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoPayloadReplacementValue, Value, callback);
         writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }

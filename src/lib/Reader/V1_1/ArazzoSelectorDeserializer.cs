@@ -27,6 +27,11 @@ internal static partial class ArazzoV1_1Deserializer
     public static ArazzoSelector LoadSelector(JsonNode node, ParsingContext context)
     {
         context.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_1;
+        return LoadSelectorInternal(node, context);
+    }
+
+    internal static ArazzoSelector LoadSelectorInternal(JsonNode node, ParsingContext context)
+    {
         var mapNode = node.CheckMapNode("Selector", context);
         var selector = new ArazzoSelector();
         mapNode.ParseMap(selector, SelectorFixedFields, SelectorPatternFields, context);

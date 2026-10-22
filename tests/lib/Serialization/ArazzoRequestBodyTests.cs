@@ -136,7 +136,9 @@ public class ArazzoRequestBodyTests
         Assert.NotNull(requestBody.Replacements);
         Assert.Single(requestBody.Replacements!);
         Assert.Equal("/count", requestBody.Replacements![0].Target);
-        Assert.True(JsonNode.DeepEquals(JsonNode.Parse("\"11\""), requestBody.Replacements![0].Value), "Replacement value does not match expected value.");
+        var replacementValue = requestBody.Replacements[0].Value;
+        Assert.NotNull(replacementValue);
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse("\"11\""), replacementValue.Any), "Replacement value does not match expected value.");
         Assert.NotNull(requestBody.Extensions);
         var extension = Assert.IsType<JsonNodeExtension>(requestBody.Extensions!["x-flag"]);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("true"), extension.Node));

@@ -1,7 +1,5 @@
 using System.Text.Json.Nodes;
 
-using BinkyLabs.OpenApi.Arazzo.Validation;
-
 using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
@@ -12,7 +10,7 @@ internal static partial class ArazzoV1Deserializer
     {
         { ArazzoConstants.ArazzoPayloadReplacementTarget, static (o, v, c) => o.Target = v.GetScalarValue() },
         { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType), static (o, v, c) => o.TargetSelectorType = v },
-        { ArazzoConstants.ArazzoPayloadReplacementValue, static (o, v, c) => o.Value = v }
+        { ArazzoConstants.ArazzoPayloadReplacementValue, static (o, v, c) => o.Value = LoadPayloadReplacementValue(v, c) }
     };
 
     public static PatternFieldMap<ArazzoPayloadReplacement> GetPayloadReplacementPatternFields() =>
@@ -32,8 +30,11 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("PayloadReplacement", context);
         var replacement = new ArazzoPayloadReplacement();
         mapNode.ParseMap(replacement, payloadReplacementFixedFields, payloadReplacementPatternFields, context);
+        if (mapNode.ContainsKey(ArazzoConstants.ArazzoPayloadReplacementValue) && mapNode[ArazzoConstants.ArazzoPayloadReplacementValue] is null)
+        {
+            replacement.Value = new() { Any = JsonNullSentinel.JsonNull };
+        }
         ValidatePayloadReplacementRequiredFields(replacement, context);
-        ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(replacement.Value, context, $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Value)}");
 
         return replacement;
     }
