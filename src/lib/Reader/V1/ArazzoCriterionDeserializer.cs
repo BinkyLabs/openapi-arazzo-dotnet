@@ -10,23 +10,19 @@ internal static partial class ArazzoV1Deserializer
     {
         { ArazzoConstants.ArazzoCriterionContext, static (o, v, c) => o.Context = v.GetScalarValue() },
         { ArazzoConstants.ArazzoCriterionCondition, static (o, v, c) => o.Condition = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoCriterionType, static (o, v, c) => {
-            if (v is JsonValue && v.GetScalarValue().TryGetEnumFromDisplayName<ArazzoCriterionExpressionTypeType>(c, out var typeValue))
-            {
-                // Type is a string (Simple or Regex)
-                o.Type = new ArazzoCriterionExpressionType
-                {
-                    Type = typeValue,
-                    Version = null
-                };
-            }
-            else if (v is JsonObject)
-            {
-                // Type is an object (JsonPath or XPath)
-                o.Type = LoadCriterionExpressionType(v, c);
-            }
-        }}
+        { ArazzoConstants.ArazzoCriterionType, static (o, v, c) => o.Type = LoadCriterionTypeUnion(v, c) }
     };
+
+    public static ArazzoCriterionTypeUnion LoadCriterionTypeUnion(JsonNode node, ParsingContext context)
+    {
+        if (node is JsonObject map && map.ContainsKey(ArazzoConstants.ArazzoCriterionExpressionTypeType))
+            return new() { ExpressionType = LoadCriterionExpressionType(node, context) };
+        if (node is JsonValue value && value.TryGetValue<string>(out var text) &&
+            text.TryGetEnumFromDisplayName<ArazzoCriterionExpressionTypeType>(out var type) &&
+            type is not ArazzoCriterionExpressionTypeType.JsonPointer)
+            return new() { Type = type };
+        throw new ArazzoReaderException("Criterion type must be simple, regex, jsonpath, xpath, or an Expression Type Object.", context);
+    }
 
     public static PatternFieldMap<ArazzoCriterion> GetCriterionPatternFields() =>
     new()

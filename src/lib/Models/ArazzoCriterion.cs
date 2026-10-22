@@ -17,9 +17,9 @@ public class ArazzoCriterion : IArazzoSerializable, IArazzoExtensible
 
     /// <summary>
     /// Gets or sets the criterion expression type.
-    /// Can be serialized as a string (for Simple or Regex types) or as an object (for JsonPath or XPath types).
+    /// Can be a type name or an Expression Type Object.
     /// </summary>
-    public ArazzoCriterionExpressionType? Type { get; set; }
+    public ArazzoCriterionTypeUnion? Type { get; set; }
 
     /// <summary>
     /// Gets or sets the condition expression.
@@ -62,25 +62,7 @@ public class ArazzoCriterion : IArazzoSerializable, IArazzoExtensible
             writer.WriteProperty(ArazzoConstants.ArazzoCriterionContext, Context);
         }
 
-        // Handle type field - can be string or object depending on the type's sub-type
-        if (Type != null)
-        {
-            if (Type.Type == ArazzoCriterionExpressionTypeType.Simple || Type.Type == ArazzoCriterionExpressionTypeType.Regex)
-            {
-                // For Simple and Regex types, serialize as a string
-                if (Type.Version.HasValue)
-                {
-                    throw new ArazzoException($"Criterion expression type of '{Type.Type?.GetDisplayName()}' cannot have a version property.");
-                }
-
-                writer.WriteProperty(ArazzoConstants.ArazzoCriterionType, Type.Type.Value.GetDisplayName());
-            }
-            else
-            {
-                // For other types (JsonPath, XPath), serialize as an object
-                writer.WriteOptionalObject(ArazzoConstants.ArazzoCriterionType, Type, callback);
-            }
-        }
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoCriterionType, Type, callback);
 
         writer.WriteProperty(ArazzoConstants.ArazzoCriterionCondition, Condition);
         writer.WriteArazzoExtensions(Extensions, specVersion);

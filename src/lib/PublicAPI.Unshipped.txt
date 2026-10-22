@@ -1,4 +1,18 @@
 #nullable enable
+*REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoCriterion.Type.get -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType?
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterion.Type.get -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion?
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.ArazzoCriterionTypeUnion() -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.Type.get -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionTypeType?
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.Type.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.ExpressionType.get -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType?
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.ExpressionType.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+static BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionTypeType value) -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionTypeType(BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionTypeType
+static BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType!(BinkyLabs.OpenApi.Arazzo.ArazzoCriterionTypeUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoCriterionExpressionType!
 abstract BinkyLabs.OpenApi.Arazzo.ArazzoResultAction<T>.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoComponent.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoCriterion.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void

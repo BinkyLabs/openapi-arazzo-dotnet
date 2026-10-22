@@ -14,11 +14,7 @@ public class ArazzoCriterionTests
         var criterion = new ArazzoCriterion
         {
             Context = "$response.body",
-            Type = new ArazzoCriterionExpressionType
-            {
-                Type = ArazzoCriterionExpressionTypeType.Simple,
-                Version = null
-            },
+            Type = ArazzoCriterionExpressionTypeType.Simple,
             Condition = "$.status == 200",
             Extensions = new Dictionary<string, IArazzoExtension>
             {
@@ -53,11 +49,7 @@ public class ArazzoCriterionTests
         var criterion = new ArazzoCriterion
         {
             Context = "$response.body",
-            Type = new ArazzoCriterionExpressionType
-            {
-                Type = ArazzoCriterionExpressionTypeType.Simple,
-                Version = null
-            },
+            Type = ArazzoCriterionExpressionTypeType.Simple,
             Condition = "$.status == 200",
             Extensions = new Dictionary<string, IArazzoExtension>
             {
@@ -92,11 +84,7 @@ public class ArazzoCriterionTests
         var criterion = new ArazzoCriterion
         {
             Context = "$response.body",
-            Type = new ArazzoCriterionExpressionType
-            {
-                Type = ArazzoCriterionExpressionTypeType.Regex,
-                Version = null
-            },
+            Type = ArazzoCriterionExpressionTypeType.Regex,
             Condition = "/^[0-9]{3}$/"
         };
         using var textWriter = new StringWriter();
@@ -125,11 +113,7 @@ public class ArazzoCriterionTests
         var criterion = new ArazzoCriterion
         {
             Context = "$response.body",
-            Type = new ArazzoCriterionExpressionType
-            {
-                Type = ArazzoCriterionExpressionTypeType.Regex,
-                Version = null
-            },
+            Type = ArazzoCriterionExpressionTypeType.Regex,
             Condition = "/^[0-9]{3}$/"
         };
         using var textWriter = new StringWriter();
@@ -359,7 +343,7 @@ public class ArazzoCriterionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var ex = Assert.Throws<ArazzoException>(() => criterion.SerializeAsV1(writer));
-        Assert.Contains("cannot have a version property", ex.Message);
+        Assert.Contains("NOT supported", ex.Message);
     }
 
 
@@ -380,7 +364,7 @@ public class ArazzoCriterionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var ex = Assert.Throws<ArazzoException>(() => criterion.SerializeAsV1_1(writer));
-        Assert.Contains("cannot have a version property", ex.Message);
+        Assert.Contains("NOT supported", ex.Message);
     }
 
     [Fact]
@@ -400,7 +384,7 @@ public class ArazzoCriterionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var ex = Assert.Throws<ArazzoException>(() => criterion.SerializeAsV1(writer));
-        Assert.Contains("cannot have a version property", ex.Message);
+        Assert.Contains("NOT supported", ex.Message);
     }
 
 
@@ -421,7 +405,7 @@ public class ArazzoCriterionTests
         var writer = new OpenApiJsonWriter(textWriter);
 
         var ex = Assert.Throws<ArazzoException>(() => criterion.SerializeAsV1_1(writer));
-        Assert.Contains("cannot have a version property", ex.Message);
+        Assert.Contains("NOT supported", ex.Message);
     }
 
     [Theory]
@@ -446,7 +430,7 @@ public class ArazzoCriterionTests
         Assert.Equal("$response.body", criterion.Context);
         Assert.NotNull(criterion.Type);
         Assert.Equal(ArazzoCriterionExpressionTypeType.Simple, criterion.Type.Type);
-        Assert.Null(criterion.Type.Version);
+        Assert.Null(criterion.Type.ExpressionType?.Version);
         Assert.Equal("$.status == 200", criterion.Condition);
         Assert.NotNull(criterion.Extensions);
         var extension = Assert.IsType<JsonNodeExtension>(criterion.Extensions!["x-flag"]);
@@ -474,7 +458,7 @@ public class ArazzoCriterionTests
         Assert.Equal("$response.body", criterion.Context);
         Assert.NotNull(criterion.Type);
         Assert.Equal(ArazzoCriterionExpressionTypeType.Regex, criterion.Type.Type);
-        Assert.Null(criterion.Type.Version);
+        Assert.Null(criterion.Type.ExpressionType?.Version);
         Assert.Equal("/^[0-9]+$/", criterion.Condition);
     }
 
@@ -501,8 +485,9 @@ public class ArazzoCriterionTests
         Assert.NotNull(criterion);
         Assert.Equal("$response.body", criterion.Context);
         Assert.NotNull(criterion.Type);
-        Assert.Equal(ArazzoCriterionExpressionTypeType.JsonPath, criterion.Type.Type);
-        Assert.Equal(ArazzoCriterionExpressionVersion.DraftGoessnerDispatchJsonPath00, criterion.Type.Version);
+        Assert.NotNull(criterion.Type.ExpressionType);
+        Assert.Equal(ArazzoCriterionExpressionTypeType.JsonPath, criterion.Type.ExpressionType.Type);
+        Assert.Equal(ArazzoCriterionExpressionVersion.DraftGoessnerDispatchJsonPath00, criterion.Type.ExpressionType?.Version);
         Assert.Equal("$.status", criterion.Condition);
     }
 
@@ -529,8 +514,9 @@ public class ArazzoCriterionTests
         Assert.NotNull(criterion);
         Assert.Equal("$response.body", criterion.Context);
         Assert.NotNull(criterion.Type);
-        Assert.Equal(ArazzoCriterionExpressionTypeType.XPath, criterion.Type.Type);
-        Assert.Equal(ArazzoCriterionExpressionVersion.XPath20, criterion.Type.Version);
+        Assert.NotNull(criterion.Type.ExpressionType);
+        Assert.Equal(ArazzoCriterionExpressionTypeType.XPath, criterion.Type.ExpressionType.Type);
+        Assert.Equal(ArazzoCriterionExpressionVersion.XPath20, criterion.Type.ExpressionType?.Version);
         Assert.Equal("/response/status/text()", criterion.Condition);
     }
 
@@ -564,11 +550,7 @@ public class ArazzoCriterionTests
         var originalCriterion = new ArazzoCriterion
         {
             Context = "$response.body",
-            Type = new ArazzoCriterionExpressionType
-            {
-                Type = ArazzoCriterionExpressionTypeType.Simple,
-                Version = null
-            },
+            Type = ArazzoCriterionExpressionTypeType.Simple,
             Condition = "match_pattern"
         };
 
@@ -634,7 +616,7 @@ public class ArazzoCriterionTests
         Assert.Equal(originalCriterion.Context, deserializedCriterion.Context);
         Assert.NotNull(deserializedCriterion.Type);
         Assert.Equal(originalCriterion.Type.Type, deserializedCriterion.Type.Type);
-        Assert.Equal(originalCriterion.Type.Version, deserializedCriterion.Type.Version);
+        Assert.Equal(originalCriterion.Type.ExpressionType?.Version, deserializedCriterion.Type.ExpressionType?.Version);
         Assert.Equal(originalCriterion.Condition, deserializedCriterion.Condition);
     }
 
@@ -701,10 +683,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Type = new ArazzoCriterionExpressionType
-            {
-                Type = ArazzoCriterionExpressionTypeType.Regex
-            },
+            Type = ArazzoCriterionExpressionTypeType.Regex,
             Condition = "/^[0-9]+$/"
         };
         using var textWriter = new StringWriter();
@@ -721,10 +700,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Type = new ArazzoCriterionExpressionType
-            {
-                Type = ArazzoCriterionExpressionTypeType.Regex
-            },
+            Type = ArazzoCriterionExpressionTypeType.Regex,
             Condition = "/^[0-9]+$/"
         };
         using var textWriter = new StringWriter();

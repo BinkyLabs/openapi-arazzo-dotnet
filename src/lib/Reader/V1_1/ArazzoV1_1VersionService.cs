@@ -21,6 +21,7 @@ internal class ArazzoV1_1VersionService : BaseArazzoVersionService
     {
         [typeof(JsonNodeExtension)] = static (node, _) => new JsonNodeExtension(node),
         [typeof(ArazzoCriterion)] = ArazzoV1_1Deserializer.LoadCriterion,
+        [typeof(ArazzoCriterionTypeUnion)] = V1.ArazzoV1Deserializer.LoadCriterionTypeUnion,
         [typeof(ArazzoCriterionExpressionType)] = ArazzoV1_1Deserializer.LoadCriterionExpressionType,
         [typeof(ArazzoSelector)] = ArazzoV1_1Deserializer.LoadSelector,
         [typeof(ArazzoDocument)] = ArazzoV1_1Deserializer.LoadDocument,

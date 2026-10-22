@@ -159,7 +159,7 @@ public class SerializationErrorPathTests
         {
             Context = "$response.body",
             Condition = "x==1",
-            Type = new ArazzoCriterionExpressionType { Type = ArazzoCriterionExpressionTypeType.Simple }
+            Type = ArazzoCriterionExpressionTypeType.Simple
         };
         var w = MakeWriter(out var sw);
         c.SerializeAsV1(w);
