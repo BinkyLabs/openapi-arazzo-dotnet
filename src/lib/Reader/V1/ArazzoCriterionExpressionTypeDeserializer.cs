@@ -67,7 +67,9 @@ internal static partial class ArazzoV1Deserializer
 
     private static void ApplyDefaultVersion(ArazzoCriterionExpressionType expressionType, ParsingContext context)
     {
-        if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_1 && expressionType.Type.HasValue && !expressionType.Version.HasValue)
+        if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_1
+            && (expressionType.Type is ArazzoCriterionExpressionTypeType.JsonPath or ArazzoCriterionExpressionTypeType.XPath or ArazzoCriterionExpressionTypeType.JsonPointer)
+            && !expressionType.Version.HasValue)
         {
             expressionType.Version = ArazzoCriterionExpressionType.GetDefaultVersion(expressionType.Type.Value);
         }
