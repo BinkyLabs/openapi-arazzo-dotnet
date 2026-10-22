@@ -211,3 +211,25 @@ BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Parameters.get -> System.Colle
 BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Type.get -> BinkyLabs.OpenApi.Arazzo.ArazzoSuccessType?
 *REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoStep.OnSuccess.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.IArazzoSuccessAction!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.OnSuccess.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.ArazzoFailureActionUnion() -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.FailureAction.get -> BinkyLabs.OpenApi.Arazzo.ArazzoFailureAction?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.FailureAction.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.Reference.get -> BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionReference?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.Reference.set -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.SerializeAsV1_1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
+static BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoFailureAction! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion!(BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionReference! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoFailureAction!(BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoFailureAction!
+static BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionReference!(BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionReference!
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.Name.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.WorkflowId.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.StepId.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.Criteria.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.ArazzoCriterion!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.Parameters.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.IArazzoParameter!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.Type.get -> BinkyLabs.OpenApi.Arazzo.ArazzoFailureType?
+*REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.FailureActions.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.IArazzoFailureAction!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.FailureActions.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.RetryAfter.get -> decimal?
+BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.RetryLimit.get -> ulong

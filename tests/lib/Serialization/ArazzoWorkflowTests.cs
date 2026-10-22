@@ -48,7 +48,7 @@ public class ArazzoWorkflowTests
                     Type = ArazzoSuccessType.End
                 }
             },
-            FailureActions = new List<IArazzoFailureAction>
+            FailureActions = new List<ArazzoFailureActionUnion>
             {
                 new ArazzoFailureAction
                 {
@@ -155,7 +155,7 @@ public class ArazzoWorkflowTests
                     Type = ArazzoSuccessType.End
                 }
             },
-            FailureActions = new List<IArazzoFailureAction>
+            FailureActions = new List<ArazzoFailureActionUnion>
             {
                 new ArazzoFailureAction
                 {
@@ -905,7 +905,7 @@ public class ArazzoWorkflowTests
         var workflow = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!).Reference);
-        Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!));
+        Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!).Reference);
         var parameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!).Reference);
         Assert.Equal("7", parameter.Value?.GetValue<string>());
     }

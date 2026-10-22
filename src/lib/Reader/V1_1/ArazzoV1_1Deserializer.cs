@@ -226,7 +226,7 @@ internal static partial class ArazzoV1_1Deserializer
             },
             [ArazzoConstants.ArazzoWorkflowFailureActions] = static (o, v, c) =>
             {
-                o.FailureActions = v.CreateList<IArazzoFailureAction>(LoadFailureAction, c);
+                o.FailureActions = v.CreateUnionList(ArazzoV1Deserializer.LoadFailureActionUnion, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.FailureActions, c, $"{nameof(ArazzoWorkflow)} failureActions");
             }
         };

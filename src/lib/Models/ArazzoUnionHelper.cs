@@ -6,6 +6,7 @@ internal static class ArazzoUnionHelper
     {
         ArazzoParameterUnion parameter => parameter.GetParameter(),
         ArazzoSuccessActionUnion action => action.GetAction(),
+        ArazzoFailureActionUnion action => action.GetAction(),
         _ => value
     };
 }

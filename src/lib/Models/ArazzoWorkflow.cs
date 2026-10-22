@@ -48,7 +48,7 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the list of failure actions.
     /// </summary>
-    public IList<IArazzoFailureAction>? FailureActions { get; set; }
+    public IList<ArazzoFailureActionUnion>? FailureActions { get; set; }
 
     /// <summary>
     /// Gets or sets output values as runtime expressions or selector objects.
