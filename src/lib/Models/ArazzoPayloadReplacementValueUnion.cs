@@ -58,6 +58,10 @@ public class ArazzoPayloadReplacementValueUnion : IArazzoSerializable, IOpenApiE
     /// <param name="value">The JSON value, or null for an explicit JSON null.</param>
     public static implicit operator ArazzoPayloadReplacementValueUnion(JsonNode? value) => new() { Any = value ?? JsonNullSentinel.JsonNull };
 
+    /// <summary>Converts a literal string to a payload replacement value.</summary>
+    /// <param name="value">The literal string, or null for an explicit JSON null.</param>
+    public static implicit operator ArazzoPayloadReplacementValueUnion(string? value) => (JsonNode?)JsonValue.Create(value);
+
     /// <summary>
     /// Converts a runtime expression to a payload replacement value.
     /// </summary>
@@ -76,6 +80,30 @@ public class ArazzoPayloadReplacementValueUnion : IArazzoSerializable, IOpenApiE
     {
         ArgumentNullException.ThrowIfNull(value);
         return new() { Selector = value };
+    }
+
+    /// <summary>Gets the active literal, throwing for a different or conflicting member.</summary>
+    /// <param name="value">The union.</param>
+    public static implicit operator JsonNode(ArazzoPayloadReplacementValueUnion value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return value.Any is { } any && value.Expression is null && value.Selector is null ? any : throw new InvalidCastException("The literal is not the only populated member.");
+    }
+
+    /// <summary>Gets the active expression, throwing for a different or conflicting member.</summary>
+    /// <param name="value">The union.</param>
+    public static implicit operator ArazzoRuntimeExpression(ArazzoPayloadReplacementValueUnion value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return value.Expression is { } expression && value.Any is null && value.Selector is null ? expression : throw new InvalidCastException("The expression is not the only populated member.");
+    }
+
+    /// <summary>Gets the active selector, throwing for a different or conflicting member.</summary>
+    /// <param name="value">The union.</param>
+    public static implicit operator ArazzoSelector(ArazzoPayloadReplacementValueUnion value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return value.Selector is { } selector && value.Any is null && value.Expression is null ? selector : throw new InvalidCastException("The selector is not the only populated member.");
     }
 
     /// <inheritdoc/>

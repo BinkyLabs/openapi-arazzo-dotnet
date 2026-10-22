@@ -210,6 +210,51 @@ public class ArazzoPayloadReplacementValueUnionTests
     }
 
     [Fact]
+    public void ReverseConversions_PreserveActiveMembers()
+    {
+        var node = JsonValue.Create(42);
+        var expression = new ArazzoRuntimeExpression("$inputs.id");
+        var selector = CreateSelector();
+        ArazzoPayloadReplacementValueUnion value = node;
+        JsonNode actualNode = value;
+        Assert.Same(node, actualNode);
+        value = expression;
+        ArazzoRuntimeExpression actualExpression = value;
+        Assert.Same(expression, actualExpression);
+        value = selector;
+        ArazzoSelector actualSelector = value;
+        Assert.Same(selector, actualSelector);
+        value = (JsonNode?)null;
+        actualNode = value;
+        Assert.True(actualNode.IsJsonNullSentinel());
+        value = "literal";
+        Assert.Equal("literal", value.Any?.GetValue<string>());
+        Assert.Null(value.Expression);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    public void ReverseConversions_RejectInactiveOrConflictingMembers(int branches)
+    {
+        var value = new ArazzoPayloadReplacementValueUnion
+        {
+            Any = (branches & 1) != 0 ? JsonValue.Create(42) : null,
+            Expression = (branches & 2) != 0 ? new("$inputs.id") : null,
+            Selector = (branches & 4) != 0 ? CreateSelector() : null
+        };
+        if (branches != 1) Assert.Throws<InvalidCastException>(() => (JsonNode)value);
+        if (branches != 2) Assert.Throws<InvalidCastException>(() => (ArazzoRuntimeExpression)value);
+        if (branches != 4) Assert.Throws<InvalidCastException>(() => (ArazzoSelector)value);
+    }
+
+    [Fact]
     public void ImplicitModelConversions_RejectNull()
     {
         ArazzoRuntimeExpression? expression = null;
@@ -217,6 +262,9 @@ public class ArazzoPayloadReplacementValueUnionTests
 
         Assert.Throws<ArgumentNullException>(() => (ArazzoPayloadReplacementValueUnion)expression!);
         Assert.Throws<ArgumentNullException>(() => (ArazzoPayloadReplacementValueUnion)selector!);
+        Assert.Throws<ArgumentNullException>(() => (JsonNode)(ArazzoPayloadReplacementValueUnion)null!);
+        Assert.Throws<ArgumentNullException>(() => (ArazzoRuntimeExpression)(ArazzoPayloadReplacementValueUnion)null!);
+        Assert.Throws<ArgumentNullException>(() => (ArazzoSelector)(ArazzoPayloadReplacementValueUnion)null!);
     }
 
     [Theory]

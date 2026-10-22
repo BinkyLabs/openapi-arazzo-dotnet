@@ -235,3 +235,7 @@ BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.RetryAfter.get -> decimal?
 BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion.RetryLimit.get -> ulong
 *REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoStep.OnFailure.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.IArazzoFailureAction!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoStep.OnFailure.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.ArazzoFailureActionUnion!>?
+static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!(string? value) -> BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion!
+static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion.implicit operator System.Text.Json.Nodes.JsonNode!(BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion! value) -> System.Text.Json.Nodes.JsonNode!
+static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression!(BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression!
+static BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoSelector!(BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacementValueUnion! value) -> BinkyLabs.OpenApi.Arazzo.ArazzoSelector!
