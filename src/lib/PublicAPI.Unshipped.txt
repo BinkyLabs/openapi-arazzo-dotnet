@@ -209,3 +209,5 @@ BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.StepId.get -> string?
 BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Criteria.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.ArazzoCriterion!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Parameters.get -> System.Collections.Generic.IList<BinkyLabs.OpenApi.Arazzo.IArazzoParameter!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion.Type.get -> BinkyLabs.OpenApi.Arazzo.ArazzoSuccessType?
+*REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoStep.OnSuccess.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.IArazzoSuccessAction!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoStep.OnSuccess.get -> System.Collections.Generic.List<BinkyLabs.OpenApi.Arazzo.ArazzoSuccessActionUnion!>?

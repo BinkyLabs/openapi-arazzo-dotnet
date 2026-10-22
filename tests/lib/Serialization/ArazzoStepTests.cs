@@ -67,7 +67,7 @@ public class ArazzoStepTests
                     Condition = "200"
                 }
             },
-            OnSuccess = new List<IArazzoSuccessAction>
+            OnSuccess = new List<ArazzoSuccessActionUnion>
             {
                 new ArazzoSuccessAction
                 {
@@ -327,7 +327,7 @@ public class ArazzoStepTests
                     Condition = "200"
                 }
             },
-            OnSuccess = new List<IArazzoSuccessAction>
+            OnSuccess = new List<ArazzoSuccessActionUnion>
             {
                 new ArazzoSuccessAction
                 {

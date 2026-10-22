@@ -44,7 +44,7 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v, c) => o.SuccessCriteria = v.CreateList(LoadCriterion, c) },
         { ArazzoConstants.ArazzoStepOnSuccess, static (o, v, c) =>
         {
-            o.OnSuccess = v.CreateList<IArazzoSuccessAction>(LoadSuccessAction, c);
+            o.OnSuccess = v.CreateUnionList(LoadSuccessActionUnion, c);
             ArazzoActionListValidator.ValidateDeserialization(o.OnSuccess, c, $"{nameof(ArazzoStep)} onSuccess");
         } },
         { ArazzoConstants.ArazzoStepOnFailure, static (o, v, c) =>

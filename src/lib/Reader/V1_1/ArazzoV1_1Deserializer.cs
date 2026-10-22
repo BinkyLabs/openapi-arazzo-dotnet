@@ -165,7 +165,7 @@ internal static partial class ArazzoV1_1Deserializer
             [ArazzoConstants.ArazzoStepRequestBody] = static (o, v, c) => o.RequestBody = LoadRequestBody(v, c),
             [ArazzoConstants.ArazzoStepOnSuccess] = static (o, v, c) =>
             {
-                o.OnSuccess = v.CreateList<IArazzoSuccessAction>(LoadSuccessAction, c);
+                o.OnSuccess = v.CreateUnionList(ArazzoV1Deserializer.LoadSuccessActionUnion, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.OnSuccess, c, $"{nameof(ArazzoStep)} onSuccess");
             },
             [ArazzoConstants.ArazzoStepOnFailure] = static (o, v, c) =>

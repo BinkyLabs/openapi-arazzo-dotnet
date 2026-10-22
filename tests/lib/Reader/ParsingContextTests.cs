@@ -739,7 +739,7 @@ public class ParsingContextTests
         Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Parameters![0].Reference);
         Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Steps![0].Parameters![0].Reference);
         Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].SuccessActions![0].Reference);
-        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].Steps![0].OnSuccess![0]);
+        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].Steps![0].OnSuccess![0].Reference);
         Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].FailureActions![0]);
         Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].Steps![0].OnFailure![0]);
     }

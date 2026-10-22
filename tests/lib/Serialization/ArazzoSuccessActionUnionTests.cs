@@ -82,6 +82,35 @@ public class ArazzoSuccessActionUnionTests
         Assert.Contains(context.Diagnostic.Errors, e => e.Message.Contains("Expected object", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void StepActions_RoundTripBothBranchesAndRejectDuplicates(ArazzoSpecVersion version)
+    {
+        var reference = new ArazzoSuccessActionReference("shared");
+        var step = new ArazzoStep
+        {
+            StepId = "s",
+            OperationId = "op",
+            OnSuccess = [new ArazzoSuccessAction { Name = "finish", Type = ArazzoSuccessType.End }, reference]
+        };
+        var json = Serialize(step, version);
+        var context = new ParsingContext(new());
+        var parsed = context.ParseFragment<ArazzoStep>(json, version);
+        Assert.NotNull(parsed);
+        Assert.NotNull(parsed.OnSuccess);
+        Assert.NotNull(parsed.OnSuccess[0].SuccessAction);
+        Assert.NotNull(parsed.OnSuccess[1].Reference);
+        Assert.Empty(context.Diagnostic.Errors);
+        Assert.True(JsonNode.DeepEquals(json, Serialize(parsed, version)));
+        step.OnSuccess.Add(reference);
+        Assert.Throws<ArazzoSerializationException>(() => Serialize(step, version));
+        json["onSuccess"]?.AsArray().Add(json["onSuccess"]?[1]?.DeepClone());
+        context = new(new());
+        context.ParseFragment<ArazzoStep>(json, version);
+        Assert.Contains(context.Diagnostic.Errors, e => e.Message.Contains("duplicate action", StringComparison.Ordinal));
+    }
+
     private static JsonNode Serialize(IArazzoSerializable value, ArazzoSpecVersion version)
     {
         using var text = new StringWriter();

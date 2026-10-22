@@ -94,7 +94,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     /// <summary>
     /// Gets or sets the success actions.
     /// </summary>
-    public List<IArazzoSuccessAction>? OnSuccess { get; set; }
+    public List<ArazzoSuccessActionUnion>? OnSuccess { get; set; }
 
     /// <summary>
     /// Gets or sets the failure actions.
