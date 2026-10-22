@@ -119,7 +119,7 @@ internal static partial class ArazzoV1_1Deserializer
     {
         return new FixedFieldMap<ArazzoDocument>(
             ArazzoV1Deserializer.DocumentFixedFields,
-            new HashSet<string>(StringComparer.Ordinal) { "x-$self" })
+            new HashSet<string>(StringComparer.Ordinal) { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoDocumentSelf) })
         {
             [ArazzoConstants.ArazzoDocumentSelf] = static (o, v, c) => o.Self = v.GetScalarValue(),
             [ArazzoConstants.ArazzoDocumentWorkflows] = static (o, v, c) => o.Workflows = v.CreateList(LoadWorkflow, c),
@@ -133,11 +133,11 @@ internal static partial class ArazzoV1_1Deserializer
             ArazzoV1Deserializer.StepFixedFields,
             new HashSet<string>(StringComparer.Ordinal)
             {
-                "x-channelPath",
-                "x-action",
-                "x-correlationId",
-                "x-timeout",
-                "x-dependsOn"
+                ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepChannelPath),
+                ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepAction),
+                ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepCorrelationId),
+                ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepTimeout),
+                ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepDependsOn)
             })
         {
             [ArazzoConstants.ArazzoStepChannelPath] = static (o, v, c) => o.ChannelPath = v.GetScalarValue(),
@@ -180,7 +180,7 @@ internal static partial class ArazzoV1_1Deserializer
     {
         return new FixedFieldMap<ArazzoPayloadReplacement>(
             ArazzoV1Deserializer.PayloadReplacementFixedFields,
-            new HashSet<string>(StringComparer.Ordinal) { "x-targetSelectorType" })
+            new HashSet<string>(StringComparer.Ordinal) { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType) })
         {
             [ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType] = static (o, v, c) => o.TargetSelectorType = v
         };
@@ -198,7 +198,7 @@ internal static partial class ArazzoV1_1Deserializer
     {
         return new FixedFieldMap<ArazzoSuccessAction>(
             ArazzoV1Deserializer.SuccessActionFixedFields,
-            new HashSet<string>(StringComparer.Ordinal) { "x-parameters" })
+            new HashSet<string>(StringComparer.Ordinal) { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoResultActionParameters) })
         {
             [ArazzoConstants.ArazzoResultActionParameters] = static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c)
         };
@@ -208,7 +208,7 @@ internal static partial class ArazzoV1_1Deserializer
     {
         return new FixedFieldMap<ArazzoFailureAction>(
             ArazzoV1Deserializer.FailureActionFixedFields,
-            new HashSet<string>(StringComparer.Ordinal) { "x-parameters" })
+            new HashSet<string>(StringComparer.Ordinal) { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoResultActionParameters) })
         {
             [ArazzoConstants.ArazzoResultActionParameters] = static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c)
         };

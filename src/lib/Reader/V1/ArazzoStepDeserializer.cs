@@ -15,9 +15,9 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoStepStepId, static (o, v, c) => o.StepId = v.GetScalarValue() },
         { ArazzoConstants.ArazzoStepOperationId, static (o, v, c) => o.OperationId = v.GetScalarValue() },
         { ArazzoConstants.ArazzoStepOperationPath, static (o, v, c) => o.OperationPath = v.GetScalarValue() },
-        { "x-channelPath", static (o, v, c) => o.ChannelPath = v.GetScalarValue() },
+        { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepChannelPath), static (o, v, c) => o.ChannelPath = v.GetScalarValue() },
         { ArazzoConstants.ArazzoStepWorkflowId, static (o, v, c) => o.WorkflowId = v.GetScalarValue() },
-        { "x-action", static (o, v, c) =>
+        { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepAction), static (o, v, c) =>
         {
             if (!v.GetScalarValue().TryGetEnumFromDisplayName<ArazzoStepAction>(c, out var action))
             {
@@ -25,8 +25,8 @@ internal static partial class ArazzoV1Deserializer
             }
             o.Action = action;
         } },
-        { "x-correlationId", static (o, v, c) => o.CorrelationId = v.GetScalarValue() },
-        { "x-timeout", static (o, v, c) =>
+        { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepCorrelationId), static (o, v, c) => o.CorrelationId = v.GetScalarValue() },
+        { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepTimeout), static (o, v, c) =>
         {
             var value = v.GetScalarValue();
             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var timeout))
@@ -35,10 +35,10 @@ internal static partial class ArazzoV1Deserializer
             }
             else
             {
-                c.Diagnostic.Errors.Add(new OpenApiError($"{c.GetLocation()}/x-timeout", $"{nameof(ArazzoStep)} timeout must be an integer. Invalid value: '{value}'."));
+                c.Diagnostic.Errors.Add(new OpenApiError($"{c.GetLocation()}/{ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepTimeout)}", $"{nameof(ArazzoStep)} timeout must be an integer. Invalid value: '{value}'."));
             }
         } },
-        { "x-dependsOn", static (o, v, c) => o.DependsOn = v.CreateSimpleList(static n => n.GetScalarValue()!, c).ToHashSet(StringComparer.Ordinal) },
+        { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepDependsOn), static (o, v, c) => o.DependsOn = v.CreateSimpleList(static n => n.GetScalarValue()!, c).ToHashSet(StringComparer.Ordinal) },
         { ArazzoConstants.ArazzoStepParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
         { ArazzoConstants.ArazzoStepRequestBody, static (o, v, c) => o.RequestBody = LoadRequestBody(v, c) },
         { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v, c) => o.SuccessCriteria = v.CreateList(LoadCriterion, c) },

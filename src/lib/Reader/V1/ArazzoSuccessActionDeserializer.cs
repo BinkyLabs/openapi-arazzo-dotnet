@@ -20,7 +20,7 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoResultActionWorkflowId, static (o, v, c) => o.WorkflowId = v.GetScalarValue() },
         { ArazzoConstants.ArazzoResultActionStepId, static (o, v, c) => o.StepId = v.GetScalarValue() },
         { ArazzoConstants.ArazzoResultActionCriteria, static (o, v, c) => o.Criteria = v.CreateList(LoadCriterion, c) },
-        { "x-parameters", static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) }
+        { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoResultActionParameters), static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) }
     };
 
     public static PatternFieldMap<ArazzoSuccessAction> GetSuccessActionPatternFields() =>
