@@ -41,6 +41,7 @@ internal class ArazzoV1VersionService : BaseArazzoVersionService
         [typeof(ArazzoSuccessAction)] = ArazzoV1Deserializer.LoadSuccessActionObject,
         [typeof(ArazzoFailureAction)] = ArazzoV1Deserializer.LoadFailureActionObject,
         [typeof(ArazzoWorkflow)] = ArazzoV1Deserializer.LoadWorkflow,
+        [typeof(ArazzoOutputValueUnion)] = ArazzoV1Deserializer.LoadOutputValueUnion,
     };
 
     public override ArazzoDocument LoadDocument(JsonNode jsonNode, Uri location, ParsingContext context)

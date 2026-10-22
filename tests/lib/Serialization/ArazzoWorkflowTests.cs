@@ -56,7 +56,7 @@ public class ArazzoWorkflowTests
                     Type = ArazzoFailureType.End
                 }
             },
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
                 ["user"] = "$response.body#/user"
             },
@@ -163,7 +163,7 @@ public class ArazzoWorkflowTests
                     Type = ArazzoFailureType.End
                 }
             },
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
                 ["user"] = "$response.body#/user"
             },
@@ -453,7 +453,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
                 ["invalid key"] = "$response.body#/id"
             }
@@ -476,7 +476,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
                 ["invalid key"] = "$response.body#/id"
             }
@@ -499,9 +499,9 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
-                ["userId"] = "response.body#/id"
+                ["userId"] = new ArazzoOutputValueUnion()
             }
         };
         using var textWriter = new StringWriter();
@@ -509,7 +509,7 @@ public class ArazzoWorkflowTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => workflow.SerializeAsV1(writer));
 
-        Assert.Contains("Values in ArazzoWorkflow.Outputs must be valid runtime expressions", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("exactly one of Any, Expression, or Selector", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -522,9 +522,9 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
-            Outputs = new Dictionary<string, string>
+            Outputs = new Dictionary<string, ArazzoOutputValueUnion>
             {
-                ["userId"] = "response.body#/id"
+                ["userId"] = new ArazzoOutputValueUnion()
             }
         };
         using var textWriter = new StringWriter();
@@ -532,7 +532,7 @@ public class ArazzoWorkflowTests
 
         var exception = Assert.Throws<ArazzoSerializationException>(() => workflow.SerializeAsV1_1(writer));
 
-        Assert.Contains("Values in ArazzoWorkflow.Outputs must be valid runtime expressions", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("exactly one of Any, Expression, or Selector", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -870,7 +870,7 @@ public class ArazzoWorkflowTests
         var workflow = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
         Assert.NotNull(workflow.Outputs);
-        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Values in ArazzoWorkflow.Outputs must be valid runtime expressions", StringComparison.Ordinal));
+        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("Output values must be valid runtime expressions", StringComparison.Ordinal));
     }
 
     [Theory]

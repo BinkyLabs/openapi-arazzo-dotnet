@@ -38,13 +38,7 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoWorkflowOutputs, static (o, v, c) =>
         {
             ArazzoKeyValidator.ValidateDeserializationKeys(v, c, $"{nameof(ArazzoWorkflow)}.{nameof(ArazzoWorkflow.Outputs)}");
-            o.OutputValues = CreateJsonNodeMap(v, c);
-            o.Outputs = o.OutputValues
-                .Where(static x => x.Value is JsonValue)
-                .Select(static x => new KeyValuePair<string, string?>(x.Key, x.Value.GetScalarValue()))
-                .Where(static x => x.Value is not null)
-                .ToDictionary(static x => x.Key, static x => x.Value!);
-            ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressions(o.Outputs, c, $"{nameof(ArazzoWorkflow)}.{nameof(ArazzoWorkflow.Outputs)}");
+            o.Outputs = LoadOutputMap(v, c);
         } },
         { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
     };
