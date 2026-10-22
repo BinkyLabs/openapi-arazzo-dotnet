@@ -9,7 +9,7 @@ internal static partial class ArazzoV1Deserializer
     public static readonly FixedFieldMap<ArazzoPayloadReplacement> PayloadReplacementFixedFields = new()
     {
         { ArazzoConstants.ArazzoPayloadReplacementTarget, static (o, v, c) => o.Target = v.GetScalarValue() },
-        { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType), static (o, v, c) => o.TargetSelectorType = v },
+        { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType), static (o, v, c) => o.TargetSelectorType = LoadPayloadReplacementTargetSelectorType(v, c) },
         { ArazzoConstants.ArazzoPayloadReplacementValue, static (o, v, c) => o.Value = LoadPayloadReplacementValue(v, c) }
     };
 

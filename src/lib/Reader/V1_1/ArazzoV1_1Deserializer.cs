@@ -182,7 +182,7 @@ internal static partial class ArazzoV1_1Deserializer
             ArazzoV1Deserializer.PayloadReplacementFixedFields,
             new HashSet<string>(StringComparer.Ordinal) { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType) })
         {
-            [ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType] = static (o, v, c) => o.TargetSelectorType = v
+            [ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType] = static (o, v, c) => o.TargetSelectorType = ArazzoV1Deserializer.LoadPayloadReplacementTargetSelectorType(v, c)
         };
     }
 

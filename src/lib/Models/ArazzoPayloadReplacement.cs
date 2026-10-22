@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -18,7 +16,7 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the selector type used to resolve the target.
     /// </summary>
-    public JsonNode? TargetSelectorType { get; set; }
+    public ArazzoPayloadReplacementTargetSelectorTypeUnion? TargetSelectorType { get; set; }
 
     /// <summary>
     /// Gets or sets the replacement value.
@@ -60,7 +58,7 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
                 ? ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType)
                 : ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType,
             TargetSelectorType,
-            static (w, v) => w.WriteAny(v));
+            callback);
         writer.WriteOptionalObject(ArazzoConstants.ArazzoPayloadReplacementValue, Value, callback);
         writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
