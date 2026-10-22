@@ -25,8 +25,26 @@ internal static partial class ArazzoV1Deserializer
             }
             o.In = _in;
         } },
-        { ArazzoConstants.ArazzoParameterValue, static (o, v, c) => o.Value = v }
+        { ArazzoConstants.ArazzoParameterValue, static (o, v, c) => o.Value = LoadParameterValueUnion(v, c) }
     };
+
+    public static ArazzoParameterValueUnion LoadParameterValueUnion(JsonNode node, ParsingContext context)
+    {
+        if (node is JsonObject)
+        {
+            if (node.AsObject().ContainsKey(ArazzoConstants.ArazzoSelectorContext))
+            {
+                if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+                    throw new ArazzoReaderException("Selector parameter values are not supported in Arazzo 1.0.", context);
+                return new() { Selector = V1_1.ArazzoV1_1Deserializer.LoadSelectorInternal(node, context) };
+            }
+            if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+                return new() { Any = node };
+            throw new ArazzoReaderException("Arazzo 1.1 parameter object values must be Selector Objects.", context);
+        }
+        var value = LoadPayloadReplacementValue(node, context);
+        return new() { Any = value.Any, Expression = value.Expression, Selector = value.Selector };
+    }
 
     public static PatternFieldMap<ArazzoParameter> GetParameterPatternFields() =>
     new()
@@ -68,7 +86,8 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("Parameter", context);
         var parameter = new ArazzoParameter();
         mapNode.ParseMap(parameter, parameterFixedFields, parameterPatternFields, context);
-        ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(parameter.Value, context, $"{nameof(ArazzoParameter)}.{nameof(ArazzoParameter.Value)}");
+        if (mapNode.ContainsKey(ArazzoConstants.ArazzoParameterValue) && mapNode[ArazzoConstants.ArazzoParameterValue] is null)
+            parameter.Value = new() { Any = JsonNullSentinel.JsonNull };
         ArazzoParameterValidator.ValidateDeserializationRequiredFields(parameter, context);
 
         return parameter;

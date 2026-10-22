@@ -18,7 +18,9 @@ public class ArazzoParameter : IArazzoParameter, IArazzoExtensible
     public ParameterLocation? In { get; set; }
 
     /// <inheritdoc/>
-    public JsonNode? Value { get; set; }
+    public ArazzoParameterValueUnion? Value { get; set; }
+
+    JsonNode? IArazzoParameter.Value => Value?.ToJsonNode();
 
     /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
@@ -47,7 +49,6 @@ public class ArazzoParameter : IArazzoParameter, IArazzoExtensible
 
         ArgumentException.ThrowIfNullOrEmpty(Name);
         ArgumentNullException.ThrowIfNull(Value);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Value, $"{nameof(ArazzoParameter)}.{nameof(Value)}", specVersion);
 
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterName, Name);
@@ -60,7 +61,7 @@ public class ArazzoParameter : IArazzoParameter, IArazzoExtensible
             }
             writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterIn, locationName);
         }
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, Value, static (w, v) => w.WriteAny(v));
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, Value, callback);
         writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }

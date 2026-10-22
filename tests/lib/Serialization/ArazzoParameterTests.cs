@@ -155,7 +155,8 @@ public class ArazzoParameterTests
 
         Assert.Equal("limit", parameter.Name);
         Assert.Equal(ParameterLocation.Query, parameter.In);
-        Assert.True(JsonNode.DeepEquals(JsonNode.Parse("\"10\""), parameter.Value), "Parameter value does not match expected value.");
+        Assert.NotNull(parameter.Value);
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse("\"10\""), parameter.Value.Any), "Parameter value does not match expected value.");
         Assert.NotNull(parameter.Extensions);
         var extension = Assert.IsType<JsonNodeExtension>(parameter.Extensions!["x-flag"]);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse("true"), extension.Node));
@@ -291,7 +292,7 @@ public class ArazzoParameterTests
 
         var parameter = Assert.IsType<ArazzoParameter>(LoadParameter(jsonNode, parsingContext, version));
 
-        Assert.Equal("25", parameter.Value?.GetValue<string>());
+        Assert.Equal("25", parameter.Value?.Any?.GetValue<string>());
         Assert.Null(parameter.Name);
     }
 
@@ -335,7 +336,7 @@ public class ArazzoParameterTests
     }
 
     [Fact]
-    public void SerializeAsV1_WithInvalidRuntimeExpressionValue_ThrowsArazzoSerializationException()
+    public void SerializeAsV1_WithNonExpressionString_WritesLiteral()
     {
         var parameter = new ArazzoParameter
         {
@@ -346,14 +347,13 @@ public class ArazzoParameterTests
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
 
-        var exception = Assert.Throws<ArazzoSerializationException>(() => parameter.SerializeAsV1(writer));
-
-        Assert.Contains("ArazzoParameter.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
+        parameter.SerializeAsV1(writer);
+        Assert.Equal("$response.statusCode", JsonNode.Parse(textWriter.ToString())?["value"]?.GetValue<string>());
     }
 
 
     [Fact]
-    public void SerializeAsV1_1_WithInvalidRuntimeExpressionValue_ThrowsArazzoSerializationException()
+    public void SerializeAsV1_1_WithNonExpressionString_WritesLiteral()
     {
         var parameter = new ArazzoParameter
         {
@@ -364,15 +364,14 @@ public class ArazzoParameterTests
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
 
-        var exception = Assert.Throws<ArazzoSerializationException>(() => parameter.SerializeAsV1_1(writer));
-
-        Assert.Contains("ArazzoParameter.Value contains an invalid runtime expression", exception.Message, StringComparison.Ordinal);
+        parameter.SerializeAsV1_1(writer);
+        Assert.Equal("$response.statusCode", JsonNode.Parse(textWriter.ToString())?["value"]?.GetValue<string>());
     }
 
     [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0)]
     [InlineData(ArazzoSpecVersion.Arazzo1_1)]
-    public void Deserialize_WithInvalidRuntimeExpressionValue_AddsDiagnosticError(ArazzoSpecVersion version)
+    public void Deserialize_WithNonExpressionString_KeepsLiteral(ArazzoSpecVersion version)
     {
         var jsonNode = JsonNode.Parse(
             """
@@ -384,9 +383,9 @@ public class ArazzoParameterTests
             """)!;
         var parsingContext = new ParsingContext(new());
 
-        _ = LoadParameterObject(jsonNode, parsingContext, version);
-
-        Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoParameter.Value contains an invalid runtime expression", StringComparison.Ordinal));
+        var parameter = LoadParameterObject(jsonNode, parsingContext, version);
+        Assert.Equal("$response.statusCode", parameter.Value?.Any?.GetValue<string>());
+        Assert.Empty(parsingContext.Diagnostic.Errors);
     }
 
 

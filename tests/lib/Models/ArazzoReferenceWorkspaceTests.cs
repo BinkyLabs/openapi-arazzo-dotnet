@@ -425,7 +425,7 @@ public class ArazzoReferenceWorkspaceTests
         Assert.Equal("42", reference.Value?.GetValue<string>());
 
         var overridden = Assert.IsType<ArazzoParameter>(reference.CopyReferenceAsTargetElementWithOverrides(parameter));
-        Assert.Equal("42", overridden.Value?.GetValue<string>());
+        Assert.Equal("42", overridden.Value?.Any?.GetValue<string>());
         Assert.NotSame(parameter.Value, overridden.Value);
         Assert.Equal("value", Assert.IsType<JsonNodeExtension>(overridden.Extensions!["x-extra"]).Node.GetValue<string>());
     }
