@@ -63,7 +63,7 @@ public class ArazzoStepTests
             {
                 new ArazzoCriterion
                 {
-                    Context = "$statusCode",
+                    Context = new("$statusCode"),
                     Condition = "200"
                 }
             },
@@ -323,7 +323,7 @@ public class ArazzoStepTests
             {
                 new ArazzoCriterion
                 {
-                    Context = "$statusCode",
+                    Context = new("$statusCode"),
                     Condition = "200"
                 }
             },
@@ -689,7 +689,9 @@ public class ArazzoStepTests
         Assert.Equal("userId", step.Parameters[0].Name);
         Assert.NotNull(step.SuccessCriteria);
         Assert.Single(step.SuccessCriteria!);
-        Assert.Equal("$statusCode", step.SuccessCriteria[0].Context);
+        var context = step.SuccessCriteria[0].Context;
+        Assert.NotNull(context);
+        Assert.Equal("$statusCode", context.Expression);
         Assert.NotNull(step.Outputs);
         Assert.Equal(2, step.Outputs!.Count);
         Assert.Equal("$response.body#/name", step.Outputs["userName"].Expression?.Expression);

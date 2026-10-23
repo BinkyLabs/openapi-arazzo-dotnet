@@ -8,7 +8,7 @@ internal static partial class ArazzoV1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoCriterion> CriterionFixedFields = new()
     {
-        { ArazzoConstants.ArazzoCriterionContext, static (o, v, c) => o.Context = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoCriterionContext, static (o, v, c) => o.Context = ArazzoRuntimeExpressionValidator.ParseDeserializationExpression(v.GetScalarValue(), c, $"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Context)}") },
         { ArazzoConstants.ArazzoCriterionCondition, static (o, v, c) => o.Condition = v.GetScalarValue() },
         { ArazzoConstants.ArazzoCriterionType, static (o, v, c) => o.Type = LoadCriterionTypeUnion(v, c) }
     };
@@ -42,7 +42,6 @@ internal static partial class ArazzoV1Deserializer
         var criterion = new ArazzoCriterion();
         mapNode.ParseMap(criterion, criterionFixedFields, criterionPatternFields, context);
         ArazzoCriterionValidator.ValidateDeserialization(criterion, context);
-        ArazzoRuntimeExpressionValidator.ValidateDeserializationExpression(criterion.Context, context, $"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Context)}");
 
         return criterion;
     }

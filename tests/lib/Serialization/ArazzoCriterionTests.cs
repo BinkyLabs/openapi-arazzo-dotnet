@@ -13,7 +13,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = ArazzoCriterionExpressionTypeType.Simple,
             Condition = "$.status == 200",
             Extensions = new Dictionary<string, IArazzoExtension>
@@ -48,7 +48,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = ArazzoCriterionExpressionTypeType.Simple,
             Condition = "$.status == 200",
             Extensions = new Dictionary<string, IArazzoExtension>
@@ -83,7 +83,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = ArazzoCriterionExpressionTypeType.Regex,
             Condition = "/^[0-9]{3}$/"
         };
@@ -112,7 +112,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = ArazzoCriterionExpressionTypeType.Regex,
             Condition = "/^[0-9]{3}$/"
         };
@@ -140,7 +140,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.JsonPath,
@@ -176,7 +176,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.JsonPath,
@@ -211,7 +211,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.XPath,
@@ -247,7 +247,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.XPath,
@@ -331,7 +331,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.Simple,
@@ -352,7 +352,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.Simple,
@@ -372,7 +372,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.Regex,
@@ -393,7 +393,7 @@ public class ArazzoCriterionTests
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.Regex,
@@ -427,7 +427,8 @@ public class ArazzoCriterionTests
         var criterion = parsingContext.ParseFragment<ArazzoCriterion>(jsonNode, specVersion);
 
         Assert.NotNull(criterion);
-        Assert.Equal("$response.body", criterion.Context);
+        Assert.NotNull(criterion.Context);
+        Assert.Equal("$response.body", criterion.Context.Expression);
         Assert.NotNull(criterion.Type);
         Assert.Equal(ArazzoCriterionExpressionTypeType.Simple, criterion.Type.Type);
         Assert.Null(criterion.Type.ExpressionType?.Version);
@@ -455,7 +456,8 @@ public class ArazzoCriterionTests
         var criterion = parsingContext.ParseFragment<ArazzoCriterion>(jsonNode, specVersion);
 
         Assert.NotNull(criterion);
-        Assert.Equal("$response.body", criterion.Context);
+        Assert.NotNull(criterion.Context);
+        Assert.Equal("$response.body", criterion.Context.Expression);
         Assert.NotNull(criterion.Type);
         Assert.Equal(ArazzoCriterionExpressionTypeType.Regex, criterion.Type.Type);
         Assert.Null(criterion.Type.ExpressionType?.Version);
@@ -483,7 +485,8 @@ public class ArazzoCriterionTests
         var criterion = parsingContext.ParseFragment<ArazzoCriterion>(jsonNode, specVersion);
 
         Assert.NotNull(criterion);
-        Assert.Equal("$response.body", criterion.Context);
+        Assert.NotNull(criterion.Context);
+        Assert.Equal("$response.body", criterion.Context.Expression);
         Assert.NotNull(criterion.Type);
         Assert.NotNull(criterion.Type.ExpressionType);
         Assert.Equal(ArazzoCriterionExpressionTypeType.JsonPath, criterion.Type.ExpressionType.Type);
@@ -512,7 +515,8 @@ public class ArazzoCriterionTests
         var criterion = parsingContext.ParseFragment<ArazzoCriterion>(jsonNode, specVersion);
 
         Assert.NotNull(criterion);
-        Assert.Equal("$response.body", criterion.Context);
+        Assert.NotNull(criterion.Context);
+        Assert.Equal("$response.body", criterion.Context.Expression);
         Assert.NotNull(criterion.Type);
         Assert.NotNull(criterion.Type.ExpressionType);
         Assert.Equal(ArazzoCriterionExpressionTypeType.XPath, criterion.Type.ExpressionType.Type);
@@ -549,7 +553,7 @@ public class ArazzoCriterionTests
         // Serialize
         var originalCriterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = ArazzoCriterionExpressionTypeType.Simple,
             Condition = "match_pattern"
         };
@@ -586,7 +590,7 @@ public class ArazzoCriterionTests
         // Serialize
         var originalCriterion = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Type = new ArazzoCriterionExpressionType
             {
                 Type = ArazzoCriterionExpressionTypeType.JsonPath,
@@ -621,11 +625,11 @@ public class ArazzoCriterionTests
     }
 
     [Fact]
-    public void SerializeAsV1_WithInvalidContext_ThrowsArazzoSerializationException()
+    public void SerializeAsV1_WithV1_1Context_ThrowsArazzoSerializationException()
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "response",
+            Context = new("$message.payload"),
             Condition = "true"
         };
         using var textWriter = new StringWriter();
@@ -638,19 +642,21 @@ public class ArazzoCriterionTests
 
 
     [Fact]
-    public void SerializeAsV1_1_WithInvalidContext_ThrowsArazzoSerializationException()
+    public void SerializeAsV1_1_WithV1_1Context_WritesExpressionString()
     {
         var criterion = new ArazzoCriterion
         {
-            Context = "response",
+            Context = new("$message.payload"),
             Condition = "true"
         };
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
 
-        var exception = Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1_1(writer));
+        criterion.SerializeAsV1_1(writer);
 
-        Assert.Contains("ArazzoCriterion.Context must be a valid runtime expression", exception.Message, StringComparison.Ordinal);
+        var json = JsonNode.Parse(textWriter.ToString());
+        Assert.NotNull(json);
+        Assert.Equal("$message.payload", json["context"]?.GetValue<string>());
     }
 
     [Fact]
@@ -712,22 +718,40 @@ public class ArazzoCriterionTests
     }
 
     [Theory]
-    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
-    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
-    public void Deserialize_AsV1AndV1_1_WithInvalidContext_AddsDiagnosticError(ArazzoSpecVersion specVersion)
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "response")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "response")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "$message.payload")]
+    public void Deserialize_WithInvalidContext_AddsDiagnosticError(ArazzoSpecVersion specVersion, string expression)
     {
-        var jsonNode = JsonNode.Parse(
-            """
-            {
-                "context": "response",
-                "condition": "true"
-            }
-            """)!;
+        var jsonNode = new JsonObject
+        {
+            ["context"] = expression,
+            ["condition"] = "true"
+        };
         var parsingContext = new ParsingContext(new());
 
-        _ = parsingContext.ParseFragment<ArazzoCriterion>(jsonNode, specVersion);
+        var criterion = parsingContext.ParseFragment<ArazzoCriterion>(jsonNode, specVersion);
 
+        Assert.NotNull(criterion);
+        Assert.Null(criterion.Context);
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("ArazzoCriterion.Context must be a valid runtime expression", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Deserialize_AsV1_1_WithMessageContext_CreatesRuntimeExpression()
+    {
+        var jsonNode = JsonNode.Parse("""{"context":"$message.payload","condition":"true"}""");
+        Assert.NotNull(jsonNode);
+        var parsingContext = new ParsingContext(new());
+
+        var criterion = parsingContext.ParseFragment<ArazzoCriterion>(jsonNode, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.NotNull(criterion);
+        Assert.NotNull(criterion.Context);
+        Assert.Equal("$message.payload", criterion.Context.Expression);
+        Assert.Empty(parsingContext.Diagnostic.Errors);
     }
 
     [Theory]

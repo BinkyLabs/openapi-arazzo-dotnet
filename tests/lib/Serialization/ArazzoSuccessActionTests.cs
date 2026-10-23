@@ -22,7 +22,7 @@ public class ArazzoSuccessActionTests
             {
                 new ArazzoCriterion
                 {
-                    Context = "$statusCode",
+                    Context = new("$statusCode"),
                     Condition = "200"
                 }
             },
@@ -71,7 +71,7 @@ public class ArazzoSuccessActionTests
             {
                 new ArazzoCriterion
                 {
-                    Context = "$statusCode",
+                    Context = new("$statusCode"),
                     Condition = "200"
                 }
             },
@@ -344,7 +344,9 @@ public class ArazzoSuccessActionTests
         Assert.Null(successAction.StepId);
         Assert.NotNull(successAction.Criteria);
         Assert.Single(successAction.Criteria);
-        Assert.Equal("$response.body#/success", successAction.Criteria[0].Context);
+        var context = successAction.Criteria[0].Context;
+        Assert.NotNull(context);
+        Assert.Equal("$response.body#/success", context.Expression);
         Assert.Equal("true", successAction.Criteria[0].Condition);
         Assert.NotNull(successAction.Extensions);
         var extension = Assert.IsType<JsonNodeExtension>(successAction.Extensions!["x-flag"]);

@@ -48,7 +48,7 @@ public class ArazzoParameterValueUnionTests
     [Fact]
     public void Objects_UseVersionSpecificSchema()
     {
-        var selector = new ArazzoSelector { Context = "$response.body", Selector = "/id", Type = ArazzoPayloadRequirementTargetSelectorType.JsonPointer };
+        var selector = new ArazzoSelector { Context = new("$response.body"), Selector = "/id", Type = ArazzoPayloadRequirementTargetSelectorType.JsonPointer };
         ArazzoParameterValueUnion value = selector;
         ArazzoSelector actual = value;
         Assert.Same(selector, actual);

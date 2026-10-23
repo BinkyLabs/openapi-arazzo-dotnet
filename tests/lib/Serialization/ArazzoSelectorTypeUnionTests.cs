@@ -17,7 +17,7 @@ public class ArazzoSelectorTypeUnionTests
         ArazzoSelectorTypeUnion value = language;
         ArazzoPayloadRequirementTargetSelectorType actual = value;
         Assert.Equal(language, actual);
-        var selector = new ArazzoSelector { Context = "$response.body", Selector = "/id", Type = value };
+        var selector = new ArazzoSelector { Context = new("$response.body"), Selector = "/id", Type = value };
         using var text = new StringWriter();
         selector.SerializeAsV1_1(new OpenApiJsonWriter(text));
         var json = JsonNode.Parse(text.ToString());

@@ -140,7 +140,7 @@ public class SerializationErrorPathTests
     {
         var c = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Condition = "x==1",
             Type = new ArazzoCriterionExpressionType
             {
@@ -157,7 +157,7 @@ public class SerializationErrorPathTests
     {
         var c = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Condition = "x==1",
             Type = ArazzoCriterionExpressionTypeType.Simple
         };
@@ -172,7 +172,7 @@ public class SerializationErrorPathTests
     {
         var c = new ArazzoCriterion
         {
-            Context = "$response.body",
+            Context = new("$response.body"),
             Condition = "$.a == 1",
             Type = new ArazzoCriterionExpressionType
             {
@@ -189,7 +189,7 @@ public class SerializationErrorPathTests
     [Fact]
     public void Criterion_SerializeAsV1_WithContext_WritesContext()
     {
-        var c = new ArazzoCriterion { Condition = "true", Context = "$response.body" };
+        var c = new ArazzoCriterion { Condition = "true", Context = new("$response.body") };
         var w = MakeWriter(out var sw);
         c.SerializeAsV1(w);
         var json = JsonNode.Parse(sw.ToString())!.AsObject();

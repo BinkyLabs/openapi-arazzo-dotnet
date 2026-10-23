@@ -24,7 +24,7 @@ public class ArazzoFailureActionTests
             {
                 new ArazzoCriterion
                 {
-                    Context = "$statusCode",
+                    Context = new("$statusCode"),
                     Condition = "500"
                 }
             },
@@ -77,7 +77,7 @@ public class ArazzoFailureActionTests
             {
                 new ArazzoCriterion
                 {
-                    Context = "$statusCode",
+                    Context = new("$statusCode"),
                     Condition = "500"
                 }
             },
@@ -548,7 +548,9 @@ public class ArazzoFailureActionTests
         Assert.Equal(5ul, failureAction.RetryLimit);
         Assert.NotNull(failureAction.Criteria);
         Assert.Single(failureAction.Criteria);
-        Assert.Equal("$response.body#/error", failureAction.Criteria[0].Context);
+        var context = failureAction.Criteria[0].Context;
+        Assert.NotNull(context);
+        Assert.Equal("$response.body#/error", context.Expression);
         Assert.Equal("true", failureAction.Criteria[0].Condition);
         Assert.NotNull(failureAction.Extensions);
         var extension = Assert.IsType<JsonNodeExtension>(failureAction.Extensions!["x-flag"]);

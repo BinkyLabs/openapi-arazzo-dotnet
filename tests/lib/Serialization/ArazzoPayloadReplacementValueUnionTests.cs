@@ -302,11 +302,13 @@ public class ArazzoPayloadReplacementValueUnionTests
         Assert.Throws<ArgumentNullException>(() => value.SerializeAsV1_1(null!));
     }
 
-    [Fact]
-    public void Selector_RoundTripsInlineWithExtensions()
+    [Theory]
+    [InlineData("$response.body")]
+    [InlineData("$message.payload")]
+    public void Selector_RoundTripsInlineWithExtensions(string expression)
     {
-        var input = JsonNode.Parse("""
-            {"target":"/id","value":{"context":"$response.body","selector":"$.id","type":"jsonpath","x-note":"kept"}}
+        var input = JsonNode.Parse($$$"""
+            {"target":"/id","value":{"context":"{{{expression}}}","selector":"$.id","type":"jsonpath","x-note":"kept"}}
             """);
         Assert.NotNull(input);
         var context = new ParsingContext(new());
@@ -319,7 +321,8 @@ public class ArazzoPayloadReplacementValueUnionTests
         Assert.Null(replacement.Value.Expression);
         var selector = replacement.Value.Selector;
         Assert.NotNull(selector);
-        Assert.Equal("$response.body", selector.Context);
+        Assert.NotNull(selector.Context);
+        Assert.Equal(expression, selector.Context.Expression);
         Assert.Equal("$.id", selector.Selector);
         Assert.NotNull(selector.Type);
         Assert.Equal(ArazzoPayloadRequirementTargetSelectorType.JsonPath, selector.Type.Type);
@@ -355,9 +358,9 @@ public class ArazzoPayloadReplacementValueUnionTests
     {
         var selector = CreateSelector();
         ArazzoPayloadReplacementValueUnion value = selector;
-        selector.Context = "$invalid";
-        Assert.Throws<ArazzoSerializationException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_1));
-        selector.Context = "$response.body";
+        selector.Context = null;
+        Assert.Throws<ArgumentNullException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_1));
+        selector.Context = new("$response.body");
         selector.Selector = null;
         Assert.Throws<ArgumentNullException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_1));
         selector.Selector = "$.id";
@@ -411,6 +414,7 @@ public class ArazzoPayloadReplacementValueUnionTests
     [InlineData("""{"context":"$response.body","selector":"$.id"}""", "ArazzoSelector.Type is a REQUIRED field")]
     [InlineData("""{"context":null,"selector":"$.id","type":"jsonpath"}""", "ArazzoSelector.Context is a REQUIRED field")]
     [InlineData("""{"context":"literal","selector":"$.id","type":"jsonpath"}""", "must be a valid runtime expression")]
+    [InlineData("""{"context":"","selector":"$.id","type":"jsonpath"}""", "must be a valid runtime expression")]
     public void Deserialize_ObjectWithContextAlwaysUsesSelectorValidation(string json, string expectedMessage)
     {
         var input = JsonNode.Parse(json);
@@ -499,7 +503,7 @@ public class ArazzoPayloadReplacementValueUnionTests
 
     private static ArazzoSelector CreateSelector() => new()
     {
-        Context = "$response.body",
+        Context = new("$response.body"),
         Selector = "$.id",
         Type = ArazzoPayloadRequirementTargetSelectorType.JsonPath
     };

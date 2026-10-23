@@ -95,12 +95,15 @@ internal static partial class ArazzoRuntimeExpressionValidator
         }
     }
 
-    internal static void ValidateDeserializationExpression(string? expression, ParsingContext context, string elementName)
+    internal static ArazzoRuntimeExpression? ParseDeserializationExpression(string? expression, ParsingContext context, string elementName)
     {
-        if (!string.IsNullOrEmpty(expression) && !IsRuntimeExpression(expression, context.Diagnostic.SpecificationVersion))
+        if (expression is null || !IsRuntimeExpression(expression, context.Diagnostic.SpecificationVersion))
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{elementName} must be a valid runtime expression. Invalid value: '{expression}'."));
+            return null;
         }
+
+        return new ArazzoRuntimeExpression(expression);
     }
 
     internal static void ValidateDeserializationExpressionStrings(JsonNode? node, ParsingContext context, string elementName)

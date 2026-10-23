@@ -13,7 +13,7 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the runtime expression that provides the selector context.
     /// </summary>
-    public string? Context { get; set; }
+    public ArazzoRuntimeExpression? Context { get; set; }
 
     /// <summary>
     /// Gets or sets the selector expression.
@@ -45,13 +45,13 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
         ArgumentNullException.ThrowIfNull(writer);
         if (specVersion is ArazzoSpecVersion.Arazzo1_0)
             throw new ArazzoSerializationException("Selector objects are not supported in Arazzo 1.0.");
-        ArgumentException.ThrowIfNullOrEmpty(Context);
+        ArgumentNullException.ThrowIfNull(Context);
         ArgumentException.ThrowIfNullOrEmpty(Selector);
         ArgumentNullException.ThrowIfNull(Type);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context, $"{nameof(ArazzoSelector)}.{nameof(Context)}", specVersion);
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context.Expression, $"{nameof(ArazzoSelector)}.{nameof(Context)}", specVersion);
 
         writer.WriteStartObject();
-        writer.WriteRequiredProperty(ArazzoConstants.ArazzoSelectorContext, Context);
+        writer.WriteRequiredProperty(ArazzoConstants.ArazzoSelectorContext, Context.Expression);
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoSelectorSelector, Selector);
         writer.WriteOptionalObject(ArazzoConstants.ArazzoSelectorType, Type, static (w, v) => v.SerializeAsV1_1(w));
         writer.WriteArazzoExtensions(Extensions, specVersion);

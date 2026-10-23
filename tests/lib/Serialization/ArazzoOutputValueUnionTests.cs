@@ -37,7 +37,7 @@ public class ArazzoOutputValueUnionTests
     [Fact]
     public void WorkflowSelectors_RoundTripAndRejectV1()
     {
-        var selector = new ArazzoSelector { Context = "$response.body", Selector = "/id", Type = ArazzoPayloadRequirementTargetSelectorType.JsonPointer };
+        var selector = new ArazzoSelector { Context = new("$response.body"), Selector = "/id", Type = ArazzoPayloadRequirementTargetSelectorType.JsonPointer };
         ArazzoOutputValueUnion value = selector;
         ArazzoSelector actual = value;
         Assert.Same(selector, actual);
@@ -104,7 +104,7 @@ public class ArazzoOutputValueUnionTests
         Assert.NotNull(parsed.Outputs);
         Assert.Equal("$inputs.id", parsed.Outputs["id"].Expression?.Expression);
         Assert.Empty(context.Diagnostic.Errors);
-        step.Outputs["id"] = new ArazzoSelector { Context = "$response.body", Selector = "/id", Type = ArazzoPayloadRequirementTargetSelectorType.JsonPointer };
+        step.Outputs["id"] = new ArazzoSelector { Context = new("$response.body"), Selector = "/id", Type = ArazzoPayloadRequirementTargetSelectorType.JsonPointer };
         var json = Serialize(step, ArazzoSpecVersion.Arazzo1_1);
         parsed = context.ParseFragment<ArazzoStep>(json, ArazzoSpecVersion.Arazzo1_1);
         Assert.NotNull(parsed);

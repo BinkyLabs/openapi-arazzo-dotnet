@@ -11,9 +11,9 @@ namespace BinkyLabs.OpenApi.Arazzo;
 public class ArazzoCriterion : IArazzoSerializable, IArazzoExtensible
 {
     /// <summary>
-    /// Gets or sets the context for the criterion.
+    /// Gets or sets the runtime expression that provides the criterion context.
     /// </summary>
-    public string? Context { get; set; }
+    public ArazzoRuntimeExpression? Context { get; set; }
 
     /// <summary>
     /// Gets or sets the criterion expression type.
@@ -52,14 +52,14 @@ public class ArazzoCriterion : IArazzoSerializable, IArazzoExtensible
         ArgumentNullException.ThrowIfNull(writer);
 
         ArazzoCriterionValidator.ValidateSerialization(this);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context, $"{nameof(ArazzoCriterion)}.{nameof(Context)}", specVersion);
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context?.Expression, $"{nameof(ArazzoCriterion)}.{nameof(Context)}", specVersion);
 
         writer.WriteStartObject();
 
         // Write context if provided
-        if (!string.IsNullOrEmpty(Context))
+        if (Context is not null)
         {
-            writer.WriteProperty(ArazzoConstants.ArazzoCriterionContext, Context);
+            writer.WriteProperty(ArazzoConstants.ArazzoCriterionContext, Context.Expression);
         }
 
         writer.WriteOptionalObject(ArazzoConstants.ArazzoCriterionType, Type, callback);

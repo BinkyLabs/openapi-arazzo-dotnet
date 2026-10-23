@@ -1,4 +1,6 @@
 #nullable enable
+*REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoCriterion.Context.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoCriterion.Context.get -> BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression?
 *REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Outputs.get -> System.Collections.Generic.IDictionary<string!, string!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression.Equals(string? expression) -> bool
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Outputs.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion!>?
@@ -71,7 +73,7 @@ BinkyLabs.OpenApi.Arazzo.ArazzoResultAction<T>.Parameters.get -> System.Collecti
 BinkyLabs.OpenApi.Arazzo.ArazzoResultAction<T>.Parameters.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoSelector
 BinkyLabs.OpenApi.Arazzo.ArazzoSelector.ArazzoSelector() -> void
-BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Context.get -> string?
+BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Context.get -> BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression?
 BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Context.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Extensions.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.IArazzoExtension!>?
 BinkyLabs.OpenApi.Arazzo.ArazzoSelector.Extensions.set -> void

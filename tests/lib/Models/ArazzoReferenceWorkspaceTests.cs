@@ -439,7 +439,7 @@ public class ArazzoReferenceWorkspaceTests
             Type = ArazzoSuccessType.Goto,
             WorkflowId = "workflow",
             StepId = "step",
-            Criteria = [new ArazzoCriterion { Context = "$statusCode", Condition = "200" }]
+            Criteria = [new ArazzoCriterion { Context = new("$statusCode"), Condition = "200" }]
         };
         var failureAction = new ArazzoFailureAction
         {
@@ -449,7 +449,7 @@ public class ArazzoReferenceWorkspaceTests
             StepId = "retry",
             RetryAfter = 2.5m,
             RetryLimit = 3,
-            Criteria = [new ArazzoCriterion { Context = "$statusCode", Condition = "500" }]
+            Criteria = [new ArazzoCriterion { Context = new("$statusCode"), Condition = "500" }]
         };
         var document = new ArazzoDocument
         {

@@ -11,7 +11,7 @@ internal static partial class ArazzoV1_1Deserializer
 {
     public static readonly FixedFieldMap<ArazzoSelector> SelectorFixedFields = new()
     {
-        { ArazzoConstants.ArazzoSelectorContext, static (o, v, c) => o.Context = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoSelectorContext, static (o, v, c) => o.Context = ArazzoRuntimeExpressionValidator.ParseDeserializationExpression(v.GetScalarValue(), c, $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Context)}") },
         { ArazzoConstants.ArazzoSelectorSelector, static (o, v, c) => o.Selector = v.GetScalarValue() },
         { ArazzoConstants.ArazzoSelectorType, static (o, v, c) => o.Type = LoadSelectorTypeUnion(v, c) }
     };
@@ -44,14 +44,13 @@ internal static partial class ArazzoV1_1Deserializer
         var selector = new ArazzoSelector();
         mapNode.ParseMap(selector, SelectorFixedFields, SelectorPatternFields, context);
         ValidateSelectorRequiredFields(selector, context);
-        ArazzoRuntimeExpressionValidator.ValidateDeserializationExpression(selector.Context, context, $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Context)}");
 
         return selector;
     }
 
     private static void ValidateSelectorRequiredFields(ArazzoSelector selector, ParsingContext context)
     {
-        if (string.IsNullOrEmpty(selector.Context))
+        if (selector.Context is null)
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Context)} is a REQUIRED field."));
         }
