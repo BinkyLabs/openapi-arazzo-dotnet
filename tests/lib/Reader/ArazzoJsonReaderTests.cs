@@ -5,10 +5,77 @@ using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
 
+using Microsoft.OpenApi;
+
 namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 
 public class ArazzoJsonReaderTests
 {
+    [Theory]
+    [InlineData(null, "https://example.com/cache/arazzo.json")]
+    [InlineData("", "https://example.com/cache/arazzo.json")]
+    [InlineData("https://example.com/canonical/arazzo.json", "https://example.com/canonical/arazzo.json")]
+    [InlineData("../canonical/arazzo.json", "https://example.com/canonical/arazzo.json")]
+    [InlineData("canonical/arazzo.json", "https://example.com/cache/canonical/arazzo.json")]
+    [InlineData("//canonical.example.com/arazzo.json", "https://canonical.example.com/arazzo.json")]
+    [InlineData("?version=2", "https://example.com/cache/arazzo.json?version=2")]
+    [InlineData("arazzo%23canonical.json", "https://example.com/cache/arazzo%23canonical.json")]
+    public void Read_SelfDeterminesComponentAndSourceDescriptionBaseUri(string? self, string expectedBaseUri)
+    {
+        foreach (var version in new[] { "1.0.1", "1.1.0" })
+        {
+            var json = CreateDocumentJson(version);
+            if (self is not null)
+            {
+                json[version == "1.1.0" ? "$self" : "x-$self"] = self;
+            }
+
+            var result = new ArazzoJsonReader().Read(json, new Uri("https://example.com/cache/arazzo.json"), new());
+
+            Assert.NotNull(result.Document);
+            Assert.NotNull(result.Diagnostic);
+            Assert.Empty(result.Diagnostic.Errors);
+            Assert.Equal(self, result.Document.Self);
+            Assert.Equal(new Uri(expectedBaseUri), result.Document.BaseUri);
+            var workspace = result.Document.Workspace;
+            Assert.NotNull(workspace);
+            Assert.True(workspace.TryGetSourceDescription("api", out var sourceDescription));
+            Assert.Equal(new Uri(new Uri(expectedBaseUri), "api.json"), sourceDescription.Uri);
+            Assert.NotNull(result.Document.Workflows);
+            var input = Assert.IsType<ArazzoInputReference>(result.Document.Workflows[0].Inputs);
+            Assert.NotNull(input.Target);
+            Assert.Equal(JsonSchemaType.Integer, input.Target.Type);
+            Assert.Same(input.Target, workspace.ResolveJsonSchemaReference($"{expectedBaseUri}#/components/inputs/count"));
+        }
+    }
+
+    [Theory]
+    [InlineData("\"https://example.com/arazzo.json#fragment\"", "fragment identifier")]
+    [InlineData("\"arazzo.json#\"", "fragment identifier")]
+    [InlineData("\"http://[invalid\"", "valid URI-reference")]
+    [InlineData("42", "URI-reference string")]
+    [InlineData("true", "URI-reference string")]
+    [InlineData("{}", "URI-reference string")]
+    [InlineData("[]", "URI-reference string")]
+    public void Read_InvalidSelf_ReportsLocatedDiagnostic(string value, string expectedMessage)
+    {
+        foreach (var version in new[] { "1.0.1", "1.1.0" })
+        {
+            var json = CreateDocumentJson(version);
+            var fieldName = version == "1.1.0" ? "$self" : "x-$self";
+            json[fieldName] = JsonNode.Parse(value);
+
+            var result = new ArazzoJsonReader().Read(json, new Uri("https://example.com/arazzo.json"), new());
+
+            Assert.NotNull(result.Document);
+            Assert.Null(result.Document.Self);
+            Assert.NotNull(result.Diagnostic);
+            var error = Assert.Single(result.Diagnostic.Errors);
+            Assert.Equal($"#/{fieldName}", error.Pointer);
+            Assert.Contains(expectedMessage, error.Message, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public async Task ReadAsync_InvalidJson_AddsErrorAndReturnsNullDocument()
     {
@@ -157,5 +224,25 @@ public class ArazzoJsonReaderTests
         var node = await reader.GetJsonNodeFromStreamAsync(stream, ct);
         Assert.NotNull(node);
         Assert.Equal(1, node!["a"]!.GetValue<int>());
+    }
+
+    private static JsonNode CreateDocumentJson(string version)
+    {
+        var json = JsonNode.Parse("""
+            {
+              "arazzo": "1.1.0",
+              "info": { "title": "Test", "version": "1" },
+              "sourceDescriptions": [{ "name": "api", "url": "api.json", "type": "openapi" }],
+              "workflows": [{
+                "workflowId": "wf",
+                "inputs": { "$ref": "#/components/inputs/count" },
+                "steps": [{ "stepId": "step", "operationId": "op" }]
+              }],
+              "components": { "inputs": { "count": { "type": "integer" } } }
+            }
+            """);
+        Assert.NotNull(json);
+        json["arazzo"] = version;
+        return json;
     }
 }

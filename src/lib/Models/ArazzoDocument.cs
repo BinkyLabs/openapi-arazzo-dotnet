@@ -10,6 +10,8 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// </summary>
 public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 {
+    private Uri _baseUri;
+
     /// <summary>
     /// Registers document components into the workspace.
     /// </summary>
@@ -57,9 +59,25 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
 
     /// <summary>
-    /// Absolute location of the document or a generated placeholder if location is not given.
+    /// Effective base URI, using the self-assigned URI when present.
     /// </summary>
-    internal Uri BaseUri { get; set; }
+    internal Uri BaseUri
+    {
+        get
+        {
+            ValidateSelf();
+            return Self is null ? _baseUri : new Uri(_baseUri, Self);
+        }
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            if (!value.IsAbsoluteUri)
+            {
+                throw new ArgumentException("Base URI must be absolute.", nameof(value));
+            }
+            _baseUri = value;
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ArazzoDocument"/> class.
@@ -67,7 +85,32 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     public ArazzoDocument()
     {
         Workspace = new ArazzoWorkspace();
-        BaseUri = new Uri(OpenApiConstants.BaseRegistryUri + Guid.NewGuid());
+        _baseUri = new Uri(OpenApiConstants.BaseRegistryUri + Guid.NewGuid());
+    }
+
+    internal static string? GetSelfValidationError(string? self)
+    {
+        if (self is null)
+        {
+            return null;
+        }
+        if (!Uri.TryCreate(self, UriKind.RelativeOrAbsolute, out _))
+        {
+            return "The '$self' property must be a valid URI-reference.";
+        }
+        if (self.Contains('#', StringComparison.Ordinal))
+        {
+            return $"The '$self' property must not contain a fragment identifier ('#'). Found: '{self}'.";
+        }
+        return null;
+    }
+
+    private void ValidateSelf()
+    {
+        if (GetSelfValidationError(Self) is { } error)
+        {
+            throw new ArazzoSerializationException(error);
+        }
     }
 
     /// <summary>
@@ -108,6 +151,7 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
             throw new ArazzoSerializationException("Workflows is required and must contain at least one element for ArazzoDocument serialization.");
         }
 
+        ValidateSelf();
         ValidateUniqueSourceDescriptionNames();
         ValidateUniqueWorkflowIds();
         ArazzoSemanticReferenceValidator.ValidateSerialization(this, specVersion);
@@ -216,8 +260,9 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 
         var relativePath = NormalizeReferencePath(reference);
         var externalResourceUri = useExternal ? Workspace?.GetDocumentId(reference.ExternalResource) : null;
+        var fragmentIndex = relativePath.IndexOf('#', StringComparison.Ordinal);
         var uriLocation = useExternal && externalResourceUri is not null
-            ? externalResourceUri.AbsoluteUri + (relativePath.StartsWith("#", StringComparison.OrdinalIgnoreCase) ? relativePath : $"#{relativePath}")
+            ? externalResourceUri.AbsoluteUri + (fragmentIndex >= 0 ? relativePath[fragmentIndex..] : string.Empty)
             : relativePath.StartsWith("#", StringComparison.OrdinalIgnoreCase)
                 ? new Uri(BaseUri, relativePath).AbsoluteUri
                 : relativePath;

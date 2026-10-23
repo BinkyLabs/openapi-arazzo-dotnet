@@ -150,6 +150,37 @@ public class ArazzoDocumentTests
         Assert.Null(jsonResultObject?["x-$self"]);
     }
 
+    [Theory]
+    [InlineData("http://[invalid")]
+    [InlineData("https://example.com/arazzo.json#fragment")]
+    [InlineData("arazzo.json#")]
+    [InlineData("#/components")]
+    public void Serialize_InvalidSelf_Throws(string self)
+    {
+        foreach (var version in new[] { ArazzoSpecVersion.Arazzo1_0, ArazzoSpecVersion.Arazzo1_1 })
+        {
+            var document = CreateDocument(new ArazzoStep { StepId = "step1", OperationId = "getUser" });
+            document.Self = self;
+            using var text = new StringWriter();
+            var writer = new OpenApiJsonWriter(text);
+
+            var error = Assert.Throws<ArazzoSerializationException>(() =>
+            {
+                if (version is ArazzoSpecVersion.Arazzo1_0)
+                {
+                    document.SerializeAsV1(writer);
+                }
+                else
+                {
+                    document.SerializeAsV1_1(writer);
+                }
+            });
+
+            Assert.Contains("$self", error.Message, StringComparison.Ordinal);
+            Assert.Empty(text.ToString());
+        }
+    }
+
     [Fact]
     public void SerializeAsV1_1_ShouldWriteCorrectJson()
     {

@@ -115,7 +115,7 @@ public static class ArazzoModelFactory
         }
         else
         {
-            location = new Uri(OpenApiConstants.BaseRegistryUri);
+            location = settings.OpenApiSettings.BaseUrl ?? new Uri(OpenApiConstants.BaseRegistryUri);
         }
 
         var readResult = await reader.ReadAsync(input, location, settings, cancellationToken).ConfigureAwait(false);

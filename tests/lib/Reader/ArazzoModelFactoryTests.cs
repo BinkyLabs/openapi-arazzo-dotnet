@@ -1,11 +1,70 @@
 // Licensed under the MIT license.
 
+using System.Text.Json.Nodes;
 using System.Threading;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 
 public sealed partial class ArazzoModelFactoryTests
 {
+    [Theory]
+    [InlineData(null, "https://example.com/context/arazzo.json")]
+    [InlineData("../canonical/arazzo.json", "https://example.com/canonical/arazzo.json")]
+    [InlineData("https://other.example.com/arazzo.json", "https://other.example.com/arazzo.json")]
+    public async Task ParseAsync_ResolvesSelfAgainstConfiguredBaseUrl(string? self, string expectedBaseUri)
+    {
+        var json = JsonNode.Parse(documentJson);
+        Assert.NotNull(json);
+        json["arazzo"] = "1.1.0";
+        if (self is not null)
+        {
+            json["$self"] = self;
+        }
+        var step = json["workflows"]?[0]?["steps"]?[0];
+        Assert.NotNull(step);
+        step["operationId"] = "op";
+        var settings = new ArazzoReaderSettings();
+        settings.OpenApiSettings.BaseUrl = new Uri("https://example.com/context/arazzo.json");
+
+        var result = await ArazzoModelFactory.ParseAsync(json.ToJsonString(), settings: settings, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.Equal(new Uri(expectedBaseUri), result.Document.BaseUri);
+        Assert.Equal(self, result.Document.Self);
+    }
+
+    [Fact]
+    public async Task LoadFromUrlAsync_ResolvesRelativeSelfAgainstRetrievalUriBeforeConfiguredBaseUrl()
+    {
+        var filePath = Path.Join(Path.GetTempPath(), $"{Guid.NewGuid():N}.arazzo.json");
+        try
+        {
+            var json = JsonNode.Parse(documentJson);
+            Assert.NotNull(json);
+            json["arazzo"] = "1.1.0";
+            json["$self"] = "canonical/arazzo.json";
+            var step = json["workflows"]?[0]?["steps"]?[0];
+            Assert.NotNull(step);
+            step["operationId"] = "op";
+            await File.WriteAllTextAsync(filePath, json.ToJsonString(), TestContext.Current.CancellationToken);
+            var settings = new ArazzoReaderSettings();
+            settings.OpenApiSettings.BaseUrl = new Uri("https://example.com/context/arazzo.json");
+
+            var result = await ArazzoModelFactory.LoadFormUrlAsync(filePath, settings, TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result.Document);
+            Assert.NotNull(result.Diagnostic);
+            Assert.Empty(result.Diagnostic.Errors);
+            Assert.Equal(new Uri(new Uri(filePath), "canonical/arazzo.json"), result.Document.BaseUri);
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
     private readonly string documentJson =
         """
         {
