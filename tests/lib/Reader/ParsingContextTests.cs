@@ -736,12 +736,12 @@ public class ParsingContextTests
         var document = ctx.Parse(jsonNode, new Uri("https://example.com/"));
 
         Assert.Empty(ctx.Diagnostic.Errors);
-        Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Parameters![0]);
-        Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Steps![0].Parameters![0]);
-        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].SuccessActions![0]);
-        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].Steps![0].OnSuccess![0]);
-        Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].FailureActions![0]);
-        Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].Steps![0].OnFailure![0]);
+        Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Parameters![0].Reference);
+        Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Steps![0].Parameters![0].Reference);
+        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].SuccessActions![0].Reference);
+        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].Steps![0].OnSuccess![0].Reference);
+        Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].FailureActions![0].Reference);
+        Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].Steps![0].OnFailure![0].Reference);
     }
 
     [Theory]
@@ -925,6 +925,18 @@ public class ParsingContextTests
         var jsonNode = JsonNode.Parse("""{ "title": "T", "version": "1" }""")!;
 
         var info = ctx.ParseFragment<ArazzoInfo>(jsonNode, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.NotNull(info);
+        Assert.Equal("T", info!.Title);
+    }
+
+    [Fact]
+    public void ParseFragment_Arazzo1_1_ReturnsElement()
+    {
+        var ctx = CreateContext();
+        var jsonNode = JsonNode.Parse("""{ "title": "T", "version": "1" }""")!;
+
+        var info = ctx.ParseFragment<ArazzoInfo>(jsonNode, ArazzoSpecVersion.Arazzo1_1);
 
         Assert.NotNull(info);
         Assert.Equal("T", info!.Title);

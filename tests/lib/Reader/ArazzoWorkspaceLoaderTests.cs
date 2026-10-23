@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
 
@@ -9,6 +10,119 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 
 public class ArazzoWorkspaceLoaderTests
 {
+    [Theory]
+    [InlineData("https://example.com/canonical/arazzo.json", true)]
+    [InlineData("https://example.com/canonical/arazzo.json", false)]
+    [InlineData("../canonical/arazzo.json", true)]
+    [InlineData("../canonical/arazzo.json", false)]
+    public async Task LoadAsync_SelfResolvesSourcesAndExternalSchemasBeforeRegistration(string self, bool validate)
+    {
+        var json = JsonNode.Parse("""
+            {
+              "arazzo": "1.1.0",
+              "info": { "title": "Test", "version": "1" },
+              "sourceDescriptions": [{ "name": "api", "url": "api.json", "type": "openapi" }],
+              "workflows": [{
+                "workflowId": "wf",
+                "inputs": {
+                  "type": "object",
+                  "properties": {
+                    "local": { "$ref": "#/components/inputs/count" },
+                    "external": { "$ref": "external-schema.json#/$defs/shared" }
+                  }
+                },
+                "steps": [{ "stepId": "step", "operationId": "op" }]
+              }],
+              "components": { "inputs": { "count": { "type": "integer" } } }
+            }
+            """);
+        Assert.NotNull(json);
+        json["$self"] = self;
+        var settings = new ArazzoReaderSettings();
+        settings.OpenApiSettings.LoadExternalRefs = true;
+        settings.OpenApiSettings.RuleSet = validate ? ValidationRuleSet.GetDefaultRuleSet() : ValidationRuleSet.GetEmptyRuleSet();
+        settings.OpenApiSettings.CustomExternalLoader = new TestStreamLoader(new Dictionary<string, string>
+        {
+            ["https://example.com/canonical/api.json"] = """
+                {
+                  "openapi": "3.1.0",
+                  "info": { "title": "API", "version": "1" },
+                  "paths": { "/items": { "get": { "operationId": "op", "responses": { "200": { "description": "OK" } } } } }
+                }
+                """,
+            ["https://example.com/canonical/external-schema.json"] = """
+                { "$schema": "https://json-schema.org/draft/2020-12/schema", "$defs": { "shared": { "type": "string" } } }
+                """
+        });
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json.ToJsonString()));
+
+        var result = await ArazzoModelFactory.LoadFromStreamAsync(stream, OpenApiConstants.Json, settings,
+            TestContext.Current.CancellationToken, new Uri("https://example.com/cache/arazzo.json"));
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.Equal(self, result.Document.Self);
+        Assert.Equal(new Uri("https://example.com/canonical/arazzo.json"), result.Document.BaseUri);
+        var workspace = result.Document.Workspace;
+        Assert.NotNull(workspace);
+        Assert.True(workspace.TryGetSourceDescription("api", out var source));
+        Assert.Equal(new Uri("https://example.com/canonical/api.json"), source.Uri);
+        Assert.True(workspace.IsOpenApiDocumentLoaded(source.Uri));
+        Assert.NotNull(result.Document.Workflows);
+        var inputs = Assert.IsType<ArazzoInput>(result.Document.Workflows[0].Inputs);
+        Assert.NotNull(inputs.Properties);
+        var local = Assert.IsType<ArazzoInputReference>(inputs.Properties["local"]);
+        Assert.NotNull(local.Target);
+        Assert.Equal(JsonSchemaType.Integer, local.Target.Type);
+        var external = Assert.IsType<ArazzoInputReference>(inputs.Properties["external"]);
+        Assert.NotNull(external.Target);
+        Assert.Equal(JsonSchemaType.String, external.Target.Type);
+    }
+
+    [Fact]
+    public async Task LoadAsync_ExternalArazzoDocumentUsesItsOwnSelfForNestedReferences()
+    {
+        var document = new ArazzoDocument
+        {
+            BaseUri = new Uri("https://example.com/root/arazzo.json"),
+            Workflows =
+            [
+                new ArazzoWorkflow
+                {
+                    WorkflowId = "wf",
+                    Inputs = CreateExternalSchemaReference("shared", "external.arazzo.json", "#/components/inputs/shared")
+                }
+            ]
+        };
+        var reference = Assert.IsType<ArazzoInputReference>(document.Workflows[0].Inputs);
+        reference.Reference.EnsureHostDocumentIsSet(document);
+        var workspace = document.Workspace;
+        Assert.NotNull(workspace);
+        var loader = new ArazzoWorkspaceLoader(workspace, new TestStreamLoader(new Dictionary<string, string>
+        {
+            ["https://example.com/root/external.arazzo.json"] = """
+                {
+                  "arazzo": "1.1.0",
+                  "info": { "title": "External", "version": "1" },
+                  "sourceDescriptions": [{ "name": "api", "url": "https://example.com/api.json", "type": "openapi" }],
+                  "workflows": [{ "workflowId": "wf", "steps": [{ "stepId": "step", "operationId": "op" }] }],
+                  "components": { "inputs": { "shared": { "$ref": "leaf.json#/$defs/leaf" } } },
+                  "$self": "https://other.example.com/canonical/arazzo.json"
+                }
+                """,
+            ["https://other.example.com/canonical/leaf.json"] = """
+                { "$schema": "https://json-schema.org/draft/2020-12/schema", "$defs": { "leaf": { "type": "string" } } }
+                """
+        }), new());
+
+        await loader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, document, TestContext.Current.CancellationToken);
+
+        Assert.Equal(new Uri("https://other.example.com/canonical/arazzo.json"), workspace.GetDocumentId("external.arazzo.json"));
+        Assert.NotNull(reference.Target);
+        Assert.Equal(JsonSchemaType.String, reference.Target.Type);
+    }
+
     [Fact]
     public async Task LoadAsync_LoadsExternalDocumentsAndRegistersTheirComponents()
     {
