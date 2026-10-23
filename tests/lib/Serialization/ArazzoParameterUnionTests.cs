@@ -31,9 +31,95 @@ public class ArazzoParameterUnionTests
         Assert.NotNull(parsed.Parameters);
         Assert.NotNull(parsed.Parameters[0].Parameter);
         Assert.NotNull(parsed.Parameters[1].Reference);
-        Assert.Equal("override", parsed.Parameters[1].Reference?.Value?.GetValue<string>());
+        Assert.Equal("override", parsed.Parameters[1].Reference?.Value?.Any?.GetValue<string>());
         Assert.Empty(context.Diagnostic.Errors);
         Assert.True(JsonNode.DeepEquals(json, Serialize(parsed, version)));
+    }
+
+    [Fact]
+    public void ReferenceOverrides_PreserveLiteralObjectsAndExplicitNull()
+    {
+        foreach (var version in new[] { ArazzoSpecVersion.Arazzo1_0, ArazzoSpecVersion.Arazzo1_1 })
+        {
+            foreach (var json in new[] { """{"id":42}""", "null" })
+            {
+                var input = JsonNode.Parse($$"""{"reference":"$components.parameters.shared","value":{{json}}}""");
+                Assert.NotNull(input);
+                var context = new ParsingContext(new());
+
+                var parameter = context.ParseFragment<ArazzoParameterUnion>(input, version);
+
+                Assert.NotNull(parameter);
+                Assert.NotNull(parameter.Reference);
+                Assert.NotNull(parameter.Value);
+                Assert.Same(parameter.Reference.Value, parameter.Value);
+                Assert.NotNull(parameter.Value.Any);
+                Assert.Null(parameter.Value.Expression);
+                Assert.Null(parameter.Value.Selector);
+                if (json == "null") Assert.True(parameter.Value.Any.IsJsonNullSentinel());
+                Assert.Empty(context.Diagnostic.Errors);
+                Assert.True(JsonNode.DeepEquals(input, Serialize(parameter, version)));
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "$inputs.id")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$message.payload#/id")]
+    public void ReferenceOverrides_PreserveTypedExpressions(ArazzoSpecVersion version, string expression)
+    {
+        var input = JsonNode.Parse($$"""{"reference":"$components.parameters.shared","value":"{{expression}}"}""");
+        Assert.NotNull(input);
+        var context = new ParsingContext(new());
+
+        var parameter = context.ParseFragment<ArazzoParameterUnion>(input, version);
+
+        Assert.NotNull(parameter);
+        Assert.NotNull(parameter.Value);
+        Assert.NotNull(parameter.Value.Expression);
+        Assert.Equal(expression, parameter.Value.Expression.Expression);
+        Assert.Null(parameter.Value.Any);
+        Assert.Empty(context.Diagnostic.Errors);
+        Assert.True(JsonNode.DeepEquals(input, Serialize(parameter, version)));
+        if (version is ArazzoSpecVersion.Arazzo1_1)
+        {
+            Assert.Throws<ArazzoSerializationException>(() => Serialize(parameter, ArazzoSpecVersion.Arazzo1_0));
+        }
+    }
+
+    [Fact]
+    public void ReferenceOverrides_PreserveSelectorsAndRejectUnsupportedVersions()
+    {
+        var input = JsonNode.Parse("""
+            {"reference":"$components.parameters.shared","value":{"context":"$response.body","selector":"$.id","type":"jsonpath"}}
+            """);
+        Assert.NotNull(input);
+        var context = new ParsingContext(new());
+
+        var parameter = context.ParseFragment<ArazzoParameterUnion>(input, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.NotNull(parameter);
+        Assert.NotNull(parameter.Value);
+        Assert.NotNull(parameter.Value.Selector);
+        Assert.Null(parameter.Value.Any);
+        Assert.Null(parameter.Value.Expression);
+        Assert.Empty(context.Diagnostic.Errors);
+        Assert.True(JsonNode.DeepEquals(input, Serialize(parameter, ArazzoSpecVersion.Arazzo1_1)));
+        Assert.Throws<ArazzoSerializationException>(() => Serialize(parameter, ArazzoSpecVersion.Arazzo1_0));
+        var v1Context = new ParsingContext(new());
+        _ = v1Context.ParseFragment<ArazzoParameterUnion>(input, ArazzoSpecVersion.Arazzo1_0);
+        Assert.Contains(v1Context.Diagnostic.Errors, error => error.Message.Contains("not supported in Arazzo 1.0", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ReferenceOverrides_RejectEmptyAndConflictingValues()
+    {
+        var reference = new ArazzoParameterReference("shared") { Value = new ArazzoParameterValueUnion() };
+        Assert.Throws<ArazzoSerializationException>(() => Serialize(reference, ArazzoSpecVersion.Arazzo1_1));
+        reference.Value.Any = JsonValue.Create("literal");
+        reference.Value.Expression = new("$inputs.id");
+        Assert.Throws<ArazzoSerializationException>(() => Serialize(reference, ArazzoSpecVersion.Arazzo1_0));
+        Assert.Throws<ArazzoSerializationException>(() => Serialize(reference, ArazzoSpecVersion.Arazzo1_1));
     }
 
     [Fact]

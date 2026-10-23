@@ -1,6 +1,3 @@
-using System.Text.Json.Nodes;
-
-using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -17,9 +14,9 @@ public class ArazzoRequestBody : IArazzoSerializable, IArazzoExtensible
     public string? ContentType { get; set; }
 
     /// <summary>
-    /// Gets or sets the payload for the request body.
+    /// Gets or sets the payload as a literal JSON value, runtime expression, or selector.
     /// </summary>
-    public JsonNode? Payload { get; set; }
+    public ArazzoRequestBodyPayloadUnion? Payload { get; set; }
 
     /// <summary>
     /// Gets or sets the list of payload replacements to apply.
@@ -50,11 +47,10 @@ public class ArazzoRequestBody : IArazzoSerializable, IArazzoExtensible
     private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressionStrings(Payload, $"{nameof(ArazzoRequestBody)}.{nameof(Payload)}", specVersion);
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoRequestBodyContentType, ContentType);
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoRequestBodyPayload, Payload, static (w, v) => w.WriteAny(v));
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoRequestBodyPayload, Payload, callback);
 
         writer.WriteOptionalCollection(ArazzoConstants.ArazzoRequestBodyReplacements, Replacements, (w, r) =>
         {

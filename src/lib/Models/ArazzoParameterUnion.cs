@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo;
@@ -23,7 +21,7 @@ public class ArazzoParameterUnion : IArazzoParameter
     /// <inheritdoc/>
     public ParameterLocation? In => GetParameter().In;
     /// <inheritdoc/>
-    public JsonNode? Value => GetParameter().Value;
+    public ArazzoParameterValueUnion? Value => GetParameter().Value;
     /// <summary>Converts a parameter to a union.</summary>
     /// <param name="value">The parameter.</param>
     public static implicit operator ArazzoParameterUnion(ArazzoParameter value)

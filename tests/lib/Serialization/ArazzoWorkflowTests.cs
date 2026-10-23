@@ -367,10 +367,10 @@ public class ArazzoWorkflowTests
         Assert.Equal(2, workflow.Parameters!.Count);
         Assert.Equal("workflowLevelParamOne", workflow.Parameters[0].Name);
         Assert.Equal(ParameterLocation.Cookie, workflow.Parameters[0].In);
-        Assert.Equal("someValue", workflow.Parameters[0].Value?.GetValue<string>());
+        Assert.Equal("someValue", workflow.Parameters[0].Value?.Any?.GetValue<string>());
         Assert.Equal("workflowLevelParamTwo", workflow.Parameters[1].Name);
         Assert.Equal(ParameterLocation.Header, workflow.Parameters[1].In);
-        Assert.Equal("anotherValue", workflow.Parameters[1].Value?.GetValue<string>());
+        Assert.Equal("anotherValue", workflow.Parameters[1].Value?.Any?.GetValue<string>());
     }
 
     [Fact]
@@ -907,7 +907,7 @@ public class ArazzoWorkflowTests
         Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!).Reference);
         Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!).Reference);
         var parameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!).Reference);
-        Assert.Equal("7", parameter.Value?.GetValue<string>());
+        Assert.Equal("7", parameter.Value?.Any?.GetValue<string>());
     }
 
 

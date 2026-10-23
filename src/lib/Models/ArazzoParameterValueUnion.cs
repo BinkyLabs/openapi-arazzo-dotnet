@@ -62,15 +62,28 @@ public class ArazzoParameterValueUnion : IArazzoSerializable, IOpenApiElement
         ArgumentNullException.ThrowIfNull(value);
         return value.Selector is { } selector && value.Any is null && value.Expression is null ? selector : throw new InvalidCastException("The selector is not the only populated member.");
     }
-    private ArazzoPayloadReplacementValueUnion AsPayloadValue() => new() { Any = Any, Expression = Expression, Selector = Selector };
-    internal JsonNode? ToJsonNode()
+    internal ArazzoPayloadReplacementValueUnion AsPayloadValue() => new() { Any = Any, Expression = Expression, Selector = Selector };
+    internal ArazzoParameterValueUnion Clone() => new()
     {
-        if (Any is not null && Expression is null && Selector is null) return Any;
-        if (Expression is not null && Any is null && Selector is null) return JsonValue.Create(Expression.Expression);
-        using var text = new StringWriter();
-        AsPayloadValue().SerializeAsV1_1(new OpenApiJsonWriter(text));
-        return JsonNode.Parse(text.ToString());
-    }
+        Any = Any.IsJsonNullSentinel() ? JsonNullSentinel.JsonNull : Any?.DeepClone(),
+        Expression = Expression,
+        Selector = Selector is { } selector ? new ArazzoSelector
+        {
+            Context = selector.Context,
+            Selector = selector.Selector,
+            Type = selector.Type is { } type ? new ArazzoSelectorTypeUnion
+            {
+                Type = type.Type,
+                ExpressionType = type.ExpressionType is { } expressionType ? new ArazzoCriterionExpressionType
+                {
+                    Type = expressionType.Type,
+                    Version = expressionType.Version,
+                    Extensions = ArazzoInput.CloneArazzoExtensions(expressionType.Extensions)
+                } : null
+            } : null,
+            Extensions = ArazzoInput.CloneArazzoExtensions(selector.Extensions)
+        } : null
+    };
     /// <inheritdoc/>
     public void SerializeAsV1(IOpenApiWriter writer) => AsPayloadValue().SerializeAsV1(writer);
     /// <inheritdoc/>

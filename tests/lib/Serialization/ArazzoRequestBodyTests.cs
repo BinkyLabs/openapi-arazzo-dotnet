@@ -132,7 +132,8 @@ public class ArazzoRequestBodyTests
 
         Assert.NotNull(requestBody);
         Assert.Equal("application/json", requestBody.ContentType);
-        Assert.True(JsonNode.DeepEquals(JsonNode.Parse("{\"count\":10}"), requestBody.Payload), "Payload does not match expected value.");
+        Assert.NotNull(requestBody.Payload);
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse("{\"count\":10}"), requestBody.Payload.Any), "Payload does not match expected value.");
         Assert.NotNull(requestBody.Replacements);
         Assert.Single(requestBody.Replacements!);
         Assert.Equal("/count", requestBody.Replacements![0].Target);

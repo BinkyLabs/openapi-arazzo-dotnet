@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
@@ -19,8 +17,6 @@ public class ArazzoParameter : IArazzoParameter, IArazzoExtensible
 
     /// <inheritdoc/>
     public ArazzoParameterValueUnion? Value { get; set; }
-
-    JsonNode? IArazzoParameter.Value => Value?.ToJsonNode();
 
     /// <inheritdoc/>
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }

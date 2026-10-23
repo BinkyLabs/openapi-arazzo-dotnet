@@ -74,12 +74,16 @@ public class ArazzoParameterValueUnionTests
     [Theory]
     [InlineData("$workflows.lookup")]
     [InlineData("$message.payload#/id")]
-    public void InterfaceProjection_PreservesExpressionsWithoutSelectingAnOutputVersion(string expression)
+    public void InterfaceAndUnion_PreserveExpressionIdentityWithoutSelectingAnOutputVersion(string expression)
     {
-        IArazzoParameter parameter = new ArazzoParameter { Name = "id", Value = new ArazzoRuntimeExpression(expression) };
-        Assert.Equal(expression, parameter.Value?.GetValue<string>());
-        ArazzoParameterUnion union = new ArazzoParameter { Name = "id", Value = new ArazzoRuntimeExpression(expression) };
-        Assert.Equal(expression, union.Value?.GetValue<string>());
+        var value = new ArazzoRuntimeExpression(expression);
+        var concrete = new ArazzoParameter { Name = "id", Value = value };
+        IArazzoParameter parameter = concrete;
+        ArazzoParameterUnion union = concrete;
+        Assert.Same(concrete.Value, parameter.Value);
+        Assert.Same(concrete.Value, union.Value);
+        Assert.NotNull(parameter.Value);
+        Assert.Same(value, parameter.Value.Expression);
     }
 
     [Fact]

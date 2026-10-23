@@ -79,8 +79,16 @@ internal static partial class ArazzoV1Deserializer
 
             if (jsonObject.TryGetPropertyValue(ArazzoConstants.ArazzoParameterValue, out var valueNode))
             {
-                reference.Value = valueNode?.DeepClone();
-                ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(reference.Value, context, $"{nameof(ArazzoParameterReference)}.{nameof(ArazzoParameterReference.Value)}");
+                if (valueNode is null)
+                {
+                    reference.Value = new() { Any = JsonNullSentinel.JsonNull };
+                }
+                else
+                {
+                    var value = LoadPayloadReplacementValue(valueNode.DeepClone(), context);
+                    reference.Value = new() { Any = value.Any, Expression = value.Expression, Selector = value.Selector };
+                    ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(reference.Value.Any, context, $"{nameof(ArazzoParameterReference)}.{nameof(ArazzoParameterReference.Value)}");
+                }
             }
 
             return reference;

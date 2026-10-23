@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 using BinkyLabs.OpenApi.Arazzo.Validation;
 
 using Microsoft.OpenApi;
@@ -11,7 +9,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// </summary>
 public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParameter, IArazzoParameter, BaseArazzoReference>, IArazzoParameter
 {
-    private JsonNode? _value;
+    private ArazzoParameterValueUnion? _value;
 
     /// <summary>
     /// Constructor initializing the reference object.
@@ -32,7 +30,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
         : base(reference)
     {
         ArgumentNullException.ThrowIfNull(reference);
-        _value = ArazzoInput.CloneNode(reference._value);
+        _value = reference._value?.Clone();
     }
 
     /// <inheritdoc />
@@ -44,7 +42,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
     /// <summary>
     /// Gets or sets the parameter value override applied to the referenced target.
     /// </summary>
-    public JsonNode? Value
+    public ArazzoParameterValueUnion? Value
     {
         get => _value ?? Target?.Value;
         set => _value = value;
@@ -64,7 +62,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
         {
             Name = parameter.Name,
             In = parameter.In,
-            Value = ArazzoInput.CloneNode(_value),
+            Value = _value.Clone(),
             Extensions = ArazzoInput.CloneArazzoExtensions(parameter.Extensions)
         };
     }
@@ -88,7 +86,8 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoReusableObjectReference, Reference.ReferenceV1);
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, _value, static (w, value) => w.WriteAny(value));
+        // Unlike inline parameters, reusable value overrides allow literal objects in Arazzo 1.1.
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, _value?.AsPayloadValue(), callback);
         writer.WriteEndObject();
     }
 
