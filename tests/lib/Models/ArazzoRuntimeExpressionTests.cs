@@ -81,7 +81,7 @@ public class ArazzoRuntimeExpressionTests
         Assert.False(expression.Equals((object)differentlyCasedExpression));
         Assert.False(expression.Equals((ArazzoRuntimeExpression?)null));
         Assert.False(expression.Equals((object?)null));
-        Assert.False(expression.Equals("$inputs.userId"));
+        Assert.True(expression.Equals("$inputs.userId"));
         var expressions = new HashSet<ArazzoRuntimeExpression> { expression, sameExpression, differentlyCasedExpression };
         Assert.Equal(2, expressions.Count);
     }

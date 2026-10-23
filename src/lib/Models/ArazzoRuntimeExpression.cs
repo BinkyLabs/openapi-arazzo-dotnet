@@ -40,7 +40,15 @@ public sealed class ArazzoRuntimeExpression : IEquatable<ArazzoRuntimeExpression
 
     /// <inheritdoc/>
     public bool Equals(ArazzoRuntimeExpression? other) =>
-        other is not null && StringComparer.Ordinal.Equals(Expression, other.Expression);
+        other is not null && Equals(other.Expression);
+
+    /// <summary>
+    /// Determines whether the specified expression string is equal to the current runtime expression.
+    /// </summary>
+    /// <param name="expression">The expression string to compare with the current runtime expression.</param>
+    /// <returns><c>true</c> if the specified expression string is equal to the current runtime expression; otherwise, <c>false</c>.</returns>
+    public bool Equals(string? expression) =>
+        expression is not null && StringComparer.Ordinal.Equals(Expression, expression);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj is ArazzoRuntimeExpression other && Equals(other);

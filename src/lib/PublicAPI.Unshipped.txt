@@ -1,5 +1,6 @@
 #nullable enable
 *REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Outputs.get -> System.Collections.Generic.IDictionary<string!, string!>?
+BinkyLabs.OpenApi.Arazzo.ArazzoRuntimeExpression.Equals(string? expression) -> bool
 BinkyLabs.OpenApi.Arazzo.ArazzoWorkflow.Outputs.get -> System.Collections.Generic.IDictionary<string!, BinkyLabs.OpenApi.Arazzo.ArazzoOutputValueUnion!>?
 static BinkyLabs.OpenApi.Arazzo.ArazzoParameterValueUnion.implicit operator BinkyLabs.OpenApi.Arazzo.ArazzoParameterValueUnion!(string? value) -> BinkyLabs.OpenApi.Arazzo.ArazzoParameterValueUnion!
 *REMOVED*BinkyLabs.OpenApi.Arazzo.ArazzoParameter.Value.get -> System.Text.Json.Nodes.JsonNode?
