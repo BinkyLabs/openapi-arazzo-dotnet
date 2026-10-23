@@ -52,7 +52,8 @@ public class ArazzoParameterValueUnionTests
         ArazzoParameterValueUnion value = selector;
         ArazzoSelector actual = value;
         Assert.Same(selector, actual);
-        Assert.Throws<ArazzoSerializationException>(() => value.SerializeAsV1(new OpenApiJsonWriter(new StringWriter())));
+        using var v1Text = new StringWriter();
+        Assert.Throws<ArazzoSerializationException>(() => value.SerializeAsV1(new OpenApiJsonWriter(v1Text)));
         using var text = new StringWriter();
         value.SerializeAsV1_1(new OpenApiJsonWriter(text));
         var json = JsonNode.Parse(text.ToString());
@@ -66,7 +67,8 @@ public class ArazzoParameterValueUnionTests
         Assert.Null(v1_1Value.Any);
         Assert.Empty(context.Diagnostic.Errors);
         ArazzoParameterValueUnion literal = new JsonObject { ["id"] = 42 };
-        Assert.Throws<ArazzoSerializationException>(() => literal.SerializeAsV1_1(new OpenApiJsonWriter(new StringWriter())));
+        using var literalText = new StringWriter();
+        Assert.Throws<ArazzoSerializationException>(() => literal.SerializeAsV1_1(new OpenApiJsonWriter(literalText)));
     }
 
     [Theory]
@@ -91,8 +93,10 @@ public class ArazzoParameterValueUnionTests
         Assert.Throws<InvalidCastException>(() => (ArazzoSelector)value);
         value.Any = JsonValue.Create(1);
         Assert.Throws<InvalidCastException>(() => (ArazzoRuntimeExpression)value);
-        Assert.Throws<ArazzoSerializationException>(() => value.SerializeAsV1_1(new OpenApiJsonWriter(new StringWriter())));
-        Assert.Throws<ArazzoSerializationException>(() => new ArazzoParameterValueUnion().SerializeAsV1(new OpenApiJsonWriter(new StringWriter())));
+        using var conflictingText = new StringWriter();
+        Assert.Throws<ArazzoSerializationException>(() => value.SerializeAsV1_1(new OpenApiJsonWriter(conflictingText)));
+        using var emptyText = new StringWriter();
+        Assert.Throws<ArazzoSerializationException>(() => new ArazzoParameterValueUnion().SerializeAsV1(new OpenApiJsonWriter(emptyText)));
         Assert.Throws<ArgumentNullException>(() => (JsonNode)(ArazzoParameterValueUnion)null!);
         Assert.Throws<ArgumentNullException>(() => (ArazzoRuntimeExpression)(ArazzoParameterValueUnion)null!);
         Assert.Throws<ArgumentNullException>(() => (ArazzoSelector)(ArazzoParameterValueUnion)null!);
