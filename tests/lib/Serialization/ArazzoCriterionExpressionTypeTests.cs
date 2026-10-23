@@ -8,6 +8,109 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
 public class ArazzoCriterionExpressionTypeTests
 {
+    public static TheoryData<ArazzoSpecVersion, string, string, bool> TypeVersionPairs
+    {
+        get
+        {
+            var versionsByType = new Dictionary<string, string[]>
+            {
+                ["jsonpath"] = ["draft-goessner-dispatch-jsonpath-00", "rfc9535"],
+                ["xpath"] = ["xpath-10", "xpath-20", "xpath-30", "xpath-31"],
+                ["jsonpointer"] = ["rfc6901"]
+            };
+            string[] newVersions = ["rfc9535", "xpath-31", "rfc6901"];
+            var data = new TheoryData<ArazzoSpecVersion, string, string, bool>();
+            foreach (var specVersion in new[] { ArazzoSpecVersion.Arazzo1_0, ArazzoSpecVersion.Arazzo1_1 })
+            {
+                foreach (var (type, supportedVersions) in versionsByType)
+                {
+                    foreach (var version in versionsByType.Values.SelectMany(versions => versions))
+                    {
+                        var supported = supportedVersions.Contains(version, StringComparer.Ordinal)
+                            && (specVersion is ArazzoSpecVersion.Arazzo1_1 || !newVersions.Contains(version, StringComparer.Ordinal));
+                        data.Add(specVersion, type, version, supported);
+                    }
+                }
+            }
+            return data;
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(TypeVersionPairs))]
+    public void TypeVersionPairs_AreEnforcedByReaderAndSerializer(ArazzoSpecVersion specVersion, string type, string version, bool supported)
+    {
+        var json = JsonNode.Parse($$"""{"type":"{{type}}","version":"{{version}}"}""");
+        Assert.NotNull(json);
+        var context = new ParsingContext(new());
+
+        var expressionType = context.ParseFragment<ArazzoCriterionExpressionType>(json, specVersion);
+
+        Assert.NotNull(expressionType);
+        Assert.Equal(type, expressionType.Type?.GetDisplayName());
+        Assert.Equal(version, expressionType.Version?.GetDisplayName());
+        if (supported)
+        {
+            Assert.Empty(context.Diagnostic.Errors);
+            Assert.True(JsonNode.DeepEquals(json, JsonNode.Parse(Serialize(expressionType, specVersion))));
+        }
+        else
+        {
+            Assert.NotEmpty(context.Diagnostic.Errors);
+            Assert.Throws<ArazzoSerializationException>(() => Serialize(expressionType, specVersion));
+        }
+    }
+
+    [Theory]
+    [InlineData("type", "\"unknown\"")]
+    [InlineData("type", "42")]
+    [InlineData("type", "null")]
+    [InlineData("version", "\"unknown\"")]
+    [InlineData("version", "\"\"")]
+    [InlineData("version", "42")]
+    [InlineData("version", "null")]
+    public void Deserialize_InvalidEnumFields_ReportErrorsWithoutDefaulting(string property, string value)
+    {
+        foreach (var specVersion in new[] { ArazzoSpecVersion.Arazzo1_0, ArazzoSpecVersion.Arazzo1_1 })
+        {
+            var json = JsonNode.Parse("""{"type":"jsonpath","version":"draft-goessner-dispatch-jsonpath-00"}""");
+            Assert.NotNull(json);
+            json[property] = JsonNode.Parse(value);
+            var context = new ParsingContext(new());
+
+            var expressionType = context.ParseFragment<ArazzoCriterionExpressionType>(json, specVersion);
+
+            Assert.NotNull(expressionType);
+            Assert.NotEmpty(context.Diagnostic.Errors);
+            if (property == "type")
+            {
+                Assert.Null(expressionType.Type);
+            }
+            else
+            {
+                Assert.Null(expressionType.Version);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, true)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, true)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, false)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, false)]
+    public void Serialize_UndefinedEnumValues_Throw(ArazzoSpecVersion specVersion, bool invalidType)
+    {
+        var expressionType = new ArazzoCriterionExpressionType
+        {
+            Type = invalidType ? (ArazzoCriterionExpressionTypeType)999 : ArazzoCriterionExpressionTypeType.JsonPath,
+            Version = invalidType ? null : (ArazzoCriterionExpressionVersion)999
+        };
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() => Serialize(expressionType, specVersion));
+
+        Assert.Contains(invalidType ? "Invalid expression type" : "not valid for type", exception.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void SerializeAsV1_WithJsonPathType_ShouldWriteCorrectJson()
     {
@@ -267,12 +370,15 @@ public class ArazzoCriterionExpressionTypeTests
     }
 
 
-    [Fact]
-    public void SerializeAsV1_1_WithoutVersionWritesDefaultVersion()
+    [Theory]
+    [InlineData(ArazzoCriterionExpressionTypeType.JsonPath, "rfc9535")]
+    [InlineData(ArazzoCriterionExpressionTypeType.XPath, "xpath-31")]
+    [InlineData(ArazzoCriterionExpressionTypeType.JsonPointer, "rfc6901")]
+    public void SerializeAsV1_1_WithoutVersionWritesDefaultVersion(ArazzoCriterionExpressionTypeType type, string expectedVersion)
     {
         var expressionType = new ArazzoCriterionExpressionType
         {
-            Type = ArazzoCriterionExpressionTypeType.JsonPath
+            Type = type
         };
         using var textWriter = new StringWriter();
         var writer = new OpenApiJsonWriter(textWriter);
@@ -280,7 +386,7 @@ public class ArazzoCriterionExpressionTypeTests
         expressionType.SerializeAsV1_1(writer);
 
         var jsonResultObject = JsonNode.Parse(textWriter.ToString());
-        Assert.Equal("rfc9535", jsonResultObject?["version"]?.GetValue<string>());
+        Assert.Equal(expectedVersion, jsonResultObject?["version"]?.GetValue<string>());
     }
 
     [Fact]
@@ -395,5 +501,20 @@ public class ArazzoCriterionExpressionTypeTests
         // Verify that an error was logged to diagnostics
         Assert.Single(diagnostic.Errors);
         Assert.Contains("Deserializing criterion expression type 'regex' as an object is NOT supported by the specification", diagnostic.Errors[0].Message);
+    }
+
+    private static string Serialize(IArazzoSerializable value, ArazzoSpecVersion version)
+    {
+        using var text = new StringWriter();
+        var writer = new OpenApiJsonWriter(text);
+        if (version is ArazzoSpecVersion.Arazzo1_0)
+        {
+            value.SerializeAsV1(writer);
+        }
+        else
+        {
+            value.SerializeAsV1_1(writer);
+        }
+        return text.ToString();
     }
 }

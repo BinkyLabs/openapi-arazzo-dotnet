@@ -52,6 +52,26 @@ public class ArazzoSelectorTypeUnionTests
         Assert.Throws<ArgumentNullException>(() => (ArazzoSelectorTypeUnion)(ArazzoCriterionExpressionType)null!);
     }
 
+    [Fact]
+    public void Selector_RejectsMismatchedExpressionTypeVersion()
+    {
+        var json = JsonNode.Parse("""{"context":"$response.body","selector":"$.id","type":{"type":"jsonpath","version":"xpath-20"}}""");
+        Assert.NotNull(json);
+        var context = new ParsingContext(new());
+
+        var selector = context.ParseFragment<ArazzoSelector>(json, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.NotNull(selector);
+        Assert.NotNull(selector.Type);
+        Assert.NotNull(selector.Type.ExpressionType);
+        Assert.Null(selector.Type.Type);
+        var error = Assert.Single(context.Diagnostic.Errors);
+        Assert.Equal("#/type", error.Pointer);
+        Assert.Contains("version 'xpath-20' is not valid for type 'jsonpath'", error.Message, StringComparison.Ordinal);
+        using var text = new StringWriter();
+        Assert.Throws<ArazzoSerializationException>(() => selector.SerializeAsV1_1(new OpenApiJsonWriter(text)));
+    }
+
     [Theory]
     [InlineData("{}")]
     [InlineData("[]")]

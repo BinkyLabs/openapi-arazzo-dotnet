@@ -49,6 +49,27 @@ public class ArazzoCriterionTypeUnionTests
     }
 
     [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Criterion_RejectsMismatchedExpressionTypeVersion(ArazzoSpecVersion version)
+    {
+        var json = JsonNode.Parse("""{"context":"$response.body","condition":"$.id","type":{"type":"jsonpath","version":"xpath-20"}}""");
+        Assert.NotNull(json);
+        var context = new ParsingContext(new());
+
+        var criterion = context.ParseFragment<ArazzoCriterion>(json, version);
+
+        Assert.NotNull(criterion);
+        Assert.NotNull(criterion.Type);
+        Assert.NotNull(criterion.Type.ExpressionType);
+        Assert.Null(criterion.Type.Type);
+        var error = Assert.Single(context.Diagnostic.Errors);
+        Assert.Equal("#/type", error.Pointer);
+        Assert.Contains("version 'xpath-20' is not valid for type 'jsonpath'", error.Message, StringComparison.Ordinal);
+        Assert.Throws<ArazzoSerializationException>(() => Serialize(criterion, version));
+    }
+
+    [Theory]
     [InlineData("0")]
     [InlineData("[]")]
     [InlineData("{}")]

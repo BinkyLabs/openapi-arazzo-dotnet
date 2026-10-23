@@ -5,12 +5,12 @@ using Microsoft.OpenApi;
 namespace BinkyLabs.OpenApi.Arazzo;
 
 /// <summary>
-/// Represents a criterion expression type definition.
+/// Represents the type and version of a criterion or selector expression.
 /// </summary>
 public class ArazzoCriterionExpressionType : IArazzoSerializable, IArazzoExtensible
 {
     /// <summary>
-    /// Gets or sets the type of the criterion expression (jsonpath or xpath).
+    /// Gets or sets the expression type (jsonpath, xpath, or jsonpointer).
     /// </summary>
     public ArazzoCriterionExpressionTypeType? Type { get; set; }
 
@@ -49,6 +49,11 @@ public class ArazzoCriterionExpressionType : IArazzoSerializable, IArazzoExtensi
             throw new ArgumentNullException(nameof(Type));
         }
 
+        if (!Enum.IsDefined(Type.Value))
+        {
+            throw new ArazzoSerializationException($"Invalid expression type: '{Type.Value}'.");
+        }
+
         var version = Version;
         if (!version.HasValue)
         {
@@ -78,11 +83,34 @@ public class ArazzoCriterionExpressionType : IArazzoSerializable, IArazzoExtensi
             ArazzoVersionCompatibility.ThrowIfUnsupportedInV1(specVersion, ArazzoConstants.ArazzoCriterionExpressionTypeVersion, version.Value);
         }
 
+        if (GetVersionValidationError(Type.Value, version.Value) is { } error)
+        {
+            throw new ArazzoSerializationException(error);
+        }
+
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoCriterionExpressionTypeType, Type.Value.GetDisplayName());
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoCriterionExpressionTypeVersion, version.Value.GetDisplayName());
         writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
+    }
+
+    internal static string? GetVersionValidationError(ArazzoCriterionExpressionTypeType type, ArazzoCriterionExpressionVersion version)
+    {
+        var valid = type switch
+        {
+            ArazzoCriterionExpressionTypeType.JsonPath => version is ArazzoCriterionExpressionVersion.Rfc9535 or ArazzoCriterionExpressionVersion.DraftGoessnerDispatchJsonPath00,
+            ArazzoCriterionExpressionTypeType.XPath => version is ArazzoCriterionExpressionVersion.XPath10 or ArazzoCriterionExpressionVersion.XPath20 or ArazzoCriterionExpressionVersion.XPath30 or ArazzoCriterionExpressionVersion.XPath31,
+            ArazzoCriterionExpressionTypeType.JsonPointer => version is ArazzoCriterionExpressionVersion.Rfc6901,
+            _ => false
+        };
+        if (valid)
+        {
+            return null;
+        }
+
+        var versionName = Enum.IsDefined(version) ? version.GetDisplayName() : version.ToString();
+        return $"{nameof(ArazzoCriterionExpressionType)} version '{versionName}' is not valid for type '{type.GetDisplayName()}'.";
     }
 
     internal static ArazzoCriterionExpressionVersion GetDefaultVersion(ArazzoCriterionExpressionTypeType type) =>

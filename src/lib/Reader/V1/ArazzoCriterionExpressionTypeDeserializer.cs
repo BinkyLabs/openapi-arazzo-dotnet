@@ -52,7 +52,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("CriterionExpressionType", context);
         var expressionType = new ArazzoCriterionExpressionType();
         mapNode.ParseMap(expressionType, criterionExpressionTypeFixedFields, criterionExpressionTypePatternFields, context);
-        ApplyDefaultVersion(expressionType, context);
+        ApplyDefaultVersion(expressionType, context, mapNode.ContainsKey(ArazzoConstants.ArazzoCriterionExpressionTypeVersion));
         ValidateCriterionExpressionTypeRequiredFields(expressionType, context);
 
         // Validate that Simple and Regex types are not deserialized as they are not supported by the specification
@@ -61,15 +61,20 @@ internal static partial class ArazzoV1Deserializer
             context.Diagnostic.Errors.Add(new Microsoft.OpenApi.OpenApiError(context.GetLocation(),
                 $"Deserializing criterion expression type '{expressionType.Type?.GetDisplayName()}' as an object is NOT supported by the specification."));
         }
+        else if (expressionType.Type is { } type && expressionType.Version is { } version &&
+            ArazzoCriterionExpressionType.GetVersionValidationError(type, version) is { } error)
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
+        }
 
         return expressionType;
     }
 
-    private static void ApplyDefaultVersion(ArazzoCriterionExpressionType expressionType, ParsingContext context)
+    private static void ApplyDefaultVersion(ArazzoCriterionExpressionType expressionType, ParsingContext context, bool versionProvided)
     {
         if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_1
             && (expressionType.Type is ArazzoCriterionExpressionTypeType.JsonPath or ArazzoCriterionExpressionTypeType.XPath or ArazzoCriterionExpressionTypeType.JsonPointer)
-            && !expressionType.Version.HasValue)
+            && !versionProvided)
         {
             expressionType.Version = ArazzoCriterionExpressionType.GetDefaultVersion(expressionType.Type.Value);
         }

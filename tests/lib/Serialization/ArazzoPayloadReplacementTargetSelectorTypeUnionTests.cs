@@ -384,6 +384,28 @@ public class ArazzoPayloadReplacementTargetSelectorTypeUnionTests
         Assert.DoesNotContain("ExpressionType:", yaml, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void PayloadReplacement_RejectsMismatchedExpressionTypeVersion(ArazzoSpecVersion version)
+    {
+        var propertyName = GetPropertyName(version);
+        var json = JsonNode.Parse($$$"""{"target":"/id","value":"replacement","{{{propertyName}}}":{"type":"jsonpath","version":"xpath-20"}}""");
+        Assert.NotNull(json);
+        var context = new ParsingContext(new());
+
+        var replacement = context.ParseFragment<ArazzoPayloadReplacement>(json, version);
+
+        Assert.NotNull(replacement);
+        Assert.NotNull(replacement.TargetSelectorType);
+        Assert.NotNull(replacement.TargetSelectorType.ExpressionType);
+        Assert.Null(replacement.TargetSelectorType.Type);
+        var error = Assert.Single(context.Diagnostic.Errors);
+        Assert.Equal($"#/{propertyName}", error.Pointer);
+        Assert.Contains("version 'xpath-20' is not valid for type 'jsonpath'", error.Message, StringComparison.Ordinal);
+        Assert.Throws<ArazzoSerializationException>(() => Serialize(replacement, version));
+    }
+
     private static string GetPropertyName(ArazzoSpecVersion version) =>
         version is ArazzoSpecVersion.Arazzo1_0
             ? ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoPayloadReplacementTargetSelectorType)
