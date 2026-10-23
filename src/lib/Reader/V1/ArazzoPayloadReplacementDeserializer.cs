@@ -30,7 +30,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("PayloadReplacement", context);
         var replacement = new ArazzoPayloadReplacement();
         mapNode.ParseMap(replacement, payloadReplacementFixedFields, payloadReplacementPatternFields, context);
-        if (mapNode.ContainsKey(ArazzoConstants.ArazzoPayloadReplacementValue) && mapNode[ArazzoConstants.ArazzoPayloadReplacementValue] is null)
+        if (mapNode.TryGetPropertyValue(ArazzoConstants.ArazzoPayloadReplacementValue, out var valueNode) && valueNode is null)
         {
             replacement.Value = new() { Any = JsonNullSentinel.JsonNull };
         }

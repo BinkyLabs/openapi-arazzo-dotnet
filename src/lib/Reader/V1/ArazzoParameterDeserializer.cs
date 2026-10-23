@@ -107,7 +107,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("Parameter", context);
         var parameter = new ArazzoParameter();
         mapNode.ParseMap(parameter, parameterFixedFields, parameterPatternFields, context);
-        if (mapNode.ContainsKey(ArazzoConstants.ArazzoParameterValue) && mapNode[ArazzoConstants.ArazzoParameterValue] is null)
+        if (mapNode.TryGetPropertyValue(ArazzoConstants.ArazzoParameterValue, out var valueNode) && valueNode is null)
             parameter.Value = new() { Any = JsonNullSentinel.JsonNull };
         ArazzoParameterValidator.ValidateDeserializationRequiredFields(parameter, context);
 

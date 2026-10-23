@@ -45,7 +45,7 @@ internal static partial class ArazzoV1Deserializer
         var mapNode = node.CheckMapNode("RequestBody", context);
         var requestBody = new ArazzoRequestBody();
         mapNode.ParseMap(requestBody, requestBodyFixedFields, requestBodyPatternFields, context);
-        if (mapNode.ContainsKey(ArazzoConstants.ArazzoRequestBodyPayload) && mapNode[ArazzoConstants.ArazzoRequestBodyPayload] is null)
+        if (mapNode.TryGetPropertyValue(ArazzoConstants.ArazzoRequestBodyPayload, out var payloadNode) && payloadNode is null)
         {
             requestBody.Payload = new() { Any = JsonNullSentinel.JsonNull };
         }
