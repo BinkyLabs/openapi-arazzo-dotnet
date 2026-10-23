@@ -30,7 +30,8 @@ public class ArazzoSelectorTypeUnionTests
         Assert.Equal(language, parsed.Type.Type);
         Assert.Null(parsed.Type.ExpressionType);
         Assert.Empty(context.Diagnostic.Errors);
-        Assert.Throws<ArazzoSerializationException>(() => selector.SerializeAsV1(new OpenApiJsonWriter(new StringWriter())));
+        using var v1Text = new StringWriter();
+        Assert.Throws<ArazzoSerializationException>(() => selector.SerializeAsV1(new OpenApiJsonWriter(v1Text)));
         Assert.Throws<ArazzoReaderException>(() => new ParsingContext(new()).ParseFragment<ArazzoSelector>(json, ArazzoSpecVersion.Arazzo1_0));
     }
 
@@ -45,8 +46,10 @@ public class ArazzoSelectorTypeUnionTests
         value.Type = ArazzoPayloadRequirementTargetSelectorType.JsonPath;
         Assert.Throws<InvalidCastException>(() => (ArazzoCriterionExpressionType)value);
         Assert.Throws<InvalidCastException>(() => (ArazzoPayloadRequirementTargetSelectorType)value);
-        Assert.Throws<ArazzoSerializationException>(() => value.SerializeAsV1_1(new OpenApiJsonWriter(new StringWriter())));
-        Assert.Throws<ArazzoSerializationException>(() => new ArazzoSelectorTypeUnion().SerializeAsV1_1(new OpenApiJsonWriter(new StringWriter())));
+        using var conflictingText = new StringWriter();
+        Assert.Throws<ArazzoSerializationException>(() => value.SerializeAsV1_1(new OpenApiJsonWriter(conflictingText)));
+        using var emptyText = new StringWriter();
+        Assert.Throws<ArazzoSerializationException>(() => new ArazzoSelectorTypeUnion().SerializeAsV1_1(new OpenApiJsonWriter(emptyText)));
         Assert.Throws<ArgumentNullException>(() => (ArazzoCriterionExpressionType)(ArazzoSelectorTypeUnion)null!);
         Assert.Throws<ArgumentNullException>(() => (ArazzoPayloadRequirementTargetSelectorType)(ArazzoSelectorTypeUnion)null!);
         Assert.Throws<ArgumentNullException>(() => (ArazzoSelectorTypeUnion)(ArazzoCriterionExpressionType)null!);
