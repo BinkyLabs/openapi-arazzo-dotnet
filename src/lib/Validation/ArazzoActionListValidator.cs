@@ -42,7 +42,7 @@ internal static class ArazzoActionListValidator
     }
 
     private static string? GetActionKey<T>(T action) where T : IArazzoResultAction =>
-        action is IArazzoReferenceHolder<BaseArazzoReference> referenceHolder
+        ArazzoUnionHelper.Unwrap(action) is IArazzoReferenceHolder<BaseArazzoReference> referenceHolder
             ? referenceHolder.Reference.ReferenceV1
             : action.Name;
 }

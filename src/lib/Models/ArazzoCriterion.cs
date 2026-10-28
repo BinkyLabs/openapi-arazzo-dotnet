@@ -11,15 +11,15 @@ namespace BinkyLabs.OpenApi.Arazzo;
 public class ArazzoCriterion : IArazzoSerializable, IArazzoExtensible
 {
     /// <summary>
-    /// Gets or sets the context for the criterion.
+    /// Gets or sets the runtime expression that provides the criterion context.
     /// </summary>
-    public string? Context { get; set; }
+    public ArazzoRuntimeExpression? Context { get; set; }
 
     /// <summary>
     /// Gets or sets the criterion expression type.
-    /// Can be serialized as a string (for Simple or Regex types) or as an object (for JsonPath or XPath types).
+    /// Can be a type name or an Expression Type Object.
     /// </summary>
-    public ArazzoCriterionExpressionType? Type { get; set; }
+    public ArazzoCriterionTypeUnion? Type { get; set; }
 
     /// <summary>
     /// Gets or sets the condition expression.
@@ -35,41 +35,37 @@ public class ArazzoCriterion : IArazzoSerializable, IArazzoExtensible
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
+    }
+
+    /// <summary>
+    /// Serializes the criterion as an OpenAPI Arazzo v1.1.0 JSON object.
+    /// </summary>
+    /// <param name="writer">The OpenAPI writer to use for serialization.</param>
+    public void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
+    {
         ArgumentNullException.ThrowIfNull(writer);
 
         ArazzoCriterionValidator.ValidateSerialization(this);
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context, $"{nameof(ArazzoCriterion)}.{nameof(Context)}");
+        ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context?.Expression, $"{nameof(ArazzoCriterion)}.{nameof(Context)}", specVersion);
 
         writer.WriteStartObject();
 
         // Write context if provided
-        if (!string.IsNullOrEmpty(Context))
+        if (Context is not null)
         {
-            writer.WriteProperty(ArazzoConstants.ArazzoCriterionContext, Context);
+            writer.WriteProperty(ArazzoConstants.ArazzoCriterionContext, Context.Expression);
         }
 
-        // Handle type field - can be string or object depending on the type's sub-type
-        if (Type != null)
-        {
-            if (Type.Type == ArazzoCriterionExpressionTypeType.Simple || Type.Type == ArazzoCriterionExpressionTypeType.Regex)
-            {
-                // For Simple and Regex types, serialize as a string
-                if (Type.Version.HasValue)
-                {
-                    throw new ArazzoException($"Criterion expression type of '{Type.Type?.GetDisplayName()}' cannot have a version property.");
-                }
-
-                writer.WriteProperty(ArazzoConstants.ArazzoCriterionType, Type.Type.Value.GetDisplayName());
-            }
-            else
-            {
-                // For other types (JsonPath, XPath), serialize as an object
-                writer.WriteOptionalObject(ArazzoConstants.ArazzoCriterionType, Type, static (w, o) => o.SerializeAsV1(w));
-            }
-        }
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoCriterionType, Type, callback);
 
         writer.WriteProperty(ArazzoConstants.ArazzoCriterionCondition, Condition);
-        writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
+        writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }
 }

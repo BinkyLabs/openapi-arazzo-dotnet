@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 using BinkyLabs.OpenApi.Arazzo.Validation;
 
 using Microsoft.OpenApi;
@@ -11,7 +9,7 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// </summary>
 public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParameter, IArazzoParameter, BaseArazzoReference>, IArazzoParameter
 {
-    private JsonNode? _value;
+    private ArazzoParameterValueUnion? _value;
 
     /// <summary>
     /// Constructor initializing the reference object.
@@ -32,7 +30,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
         : base(reference)
     {
         ArgumentNullException.ThrowIfNull(reference);
-        _value = ArazzoInput.CloneNode(reference._value);
+        _value = reference._value?.Clone();
     }
 
     /// <inheritdoc />
@@ -44,7 +42,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
     /// <summary>
     /// Gets or sets the parameter value override applied to the referenced target.
     /// </summary>
-    public JsonNode? Value
+    public ArazzoParameterValueUnion? Value
     {
         get => _value ?? Target?.Value;
         set => _value = value;
@@ -64,7 +62,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
         {
             Name = parameter.Name,
             In = parameter.In,
-            Value = ArazzoInput.CloneNode(_value),
+            Value = _value.Clone(),
             Extensions = ArazzoInput.CloneArazzoExtensions(parameter.Extensions)
         };
     }
@@ -72,12 +70,24 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
     /// <inheritdoc />
     public override void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
+    }
+
+    /// <inheritdoc />
+    public override void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
+    {
         ArgumentNullException.ThrowIfNull(writer);
-        ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference.ReferenceV1, ReferenceType.Parameter, nameof(ArazzoParameterReference));
+        ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference.ReferenceV1, ReferenceType.Parameter, nameof(ArazzoParameterReference), specVersion);
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoReusableObjectReference, Reference.ReferenceV1);
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, _value, static (w, value) => w.WriteAny(value));
+        // Unlike inline parameters, reusable value overrides allow literal objects in Arazzo 1.1.
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, _value?.AsPayloadValue(), callback);
         writer.WriteEndObject();
     }
 

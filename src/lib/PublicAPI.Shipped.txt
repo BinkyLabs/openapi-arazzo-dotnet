@@ -351,7 +351,6 @@ BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Extensions.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.SerializeAsV1(Microsoft.OpenApi.IOpenApiWriter! writer) -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Target.get -> string?
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Target.set -> void
-BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Value.get -> System.Text.Json.Nodes.JsonNode?
 BinkyLabs.OpenApi.Arazzo.ArazzoPayloadReplacement.Value.set -> void
 BinkyLabs.OpenApi.Arazzo.ArazzoReaderException
 BinkyLabs.OpenApi.Arazzo.ArazzoReaderException.ArazzoReaderException() -> void
