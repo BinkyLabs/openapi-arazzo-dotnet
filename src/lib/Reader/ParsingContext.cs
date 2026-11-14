@@ -423,11 +423,16 @@ public class ParsingContext
 
         foreach (var workflow in doc.Workflows)
         {
-            ValidateParameterList(workflow.Parameters, $"Workflow '{workflow.WorkflowId}'", workflow.Steps?.Any(IsOperationTargetedStep) == true);
+            ValidateParameterList(workflow.Parameters, $"Workflow '{workflow.WorkflowId}'", workflow.Steps?.Any(static step => step.IsOperationTargeted()) == true);
 
             foreach (var step in workflow.Steps ?? [])
             {
-                ValidateParameterList(step.Parameters, $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'", IsOperationTargetedStep(step));
+                var elementName = $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'";
+                ValidateParameterList(step.Parameters, elementName, step.IsOperationTargeted());
+                if (ArazzoParameterValidator.GetInheritedQueryLocationError(workflow.Parameters, step.Parameters, elementName) is string error)
+                {
+                    Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));
+                }
             }
         }
     }
@@ -438,8 +443,14 @@ public class ParsingContext
         {
             Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));
         }
-    }
 
-    private static bool IsOperationTargetedStep(ArazzoStep step) =>
-        !string.IsNullOrEmpty(step.OperationId) || !string.IsNullOrEmpty(step.OperationPath) || !string.IsNullOrEmpty(step.ChannelPath);
+        foreach (var parameter in parameters ?? [])
+        {
+            if (ArazzoUnionHelper.Unwrap(parameter) is ArazzoParameterReference &&
+                ArazzoParameterValidator.GetQueryStringValueError(parameter) is string error)
+            {
+                Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));
+            }
+        }
+    }
 }

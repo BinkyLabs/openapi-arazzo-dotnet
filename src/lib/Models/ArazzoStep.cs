@@ -254,7 +254,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
             "when the step targets an operation");
     }
 
-    private bool IsOperationTargeted() =>
+    internal bool IsOperationTargeted() =>
         !string.IsNullOrEmpty(OperationId) || !string.IsNullOrEmpty(OperationPath) || !string.IsNullOrEmpty(ChannelPath);
 
     internal int CountTargetFields()

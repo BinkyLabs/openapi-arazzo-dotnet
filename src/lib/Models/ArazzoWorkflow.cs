@@ -145,8 +145,16 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         ArazzoParameterValidator.ValidateSerializationParameters(
             Parameters,
             $"{nameof(ArazzoWorkflow)} '{WorkflowId}'",
-            Steps?.Any(static step => !string.IsNullOrEmpty(step.OperationId) || !string.IsNullOrEmpty(step.OperationPath)) == true,
+            Steps?.Any(static step => step.IsOperationTargeted()) == true,
             "when applied to an operation step");
+
+        foreach (var step in Steps ?? [])
+        {
+            if (ArazzoParameterValidator.GetInheritedQueryLocationError(Parameters, step.Parameters, $"{nameof(ArazzoWorkflow)} '{WorkflowId}' step '{step.StepId}'") is string error)
+            {
+                throw new ArazzoSerializationException(error);
+            }
+        }
     }
 
     private void ValidateActions()

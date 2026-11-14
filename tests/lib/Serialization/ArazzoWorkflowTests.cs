@@ -22,6 +22,77 @@ public class ArazzoWorkflowTests
         return workflow;
     }
 
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Serialize_WithChannelStepAndInheritedParameterWithoutIn_Throws(ArazzoSpecVersion version)
+    {
+        var workflow = new ArazzoWorkflow
+        {
+            WorkflowId = "wf",
+            Steps = [new ArazzoStep { StepId = "send", ChannelPath = "$sourceDescriptions.api.orders" }],
+            Parameters = [new ArazzoParameter { Name = "id", Value = "one" }]
+        };
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+
+        var exception = Assert.Throws<ArazzoSerializationException>(() =>
+        {
+            if (version is ArazzoSpecVersion.Arazzo1_0)
+                workflow.SerializeAsV1(writer);
+            else
+                workflow.SerializeAsV1_1(writer);
+        });
+
+        Assert.Contains("parameter 'id' must specify 'in'", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Serialize_WithInheritedParameterOverrideAndSeparateQueryLocations_IsAccepted()
+    {
+        var workflow = new ArazzoWorkflow
+        {
+            WorkflowId = "wf",
+            Parameters = [new ArazzoParameter { Name = "X-Api-Key", In = ParameterLocation.Header, Value = "original" }],
+            Steps =
+            [
+                new ArazzoStep
+                {
+                    StepId = "query",
+                    OperationId = "getUser",
+                    Parameters =
+                    [
+                        new ArazzoParameter { Name = "x-api-key", In = ParameterLocation.Header, Value = "override" },
+                        new ArazzoParameter { Name = "filter", In = ParameterLocation.Query, Value = "active" }
+                    ]
+                },
+                new ArazzoStep
+                {
+                    StepId = "queryString",
+                    OperationId = "search",
+                    Parameters = [new ArazzoParameter { Name = "fullQuery", In = ParameterLocation.QueryString, Value = "sort=desc" }]
+                }
+            ]
+        };
+        using var textWriter = new StringWriter();
+        workflow.SerializeAsV1_1(new OpenApiJsonWriter(textWriter));
+        var jsonNode = JsonNode.Parse(textWriter.ToString());
+        Assert.NotNull(jsonNode);
+        var documentNode = JsonNode.Parse("""
+        {
+            "arazzo": "1.1.0",
+            "info": {"title": "T", "version": "1"},
+            "sourceDescriptions": [{"name": "api", "url": "https://example.com/api", "type": "openapi"}]
+        }
+        """);
+        Assert.NotNull(documentNode);
+        documentNode["workflows"] = new JsonArray(jsonNode);
+        var context = new ParsingContext(new());
+        context.Parse(documentNode, new Uri("https://example.com/"));
+
+        Assert.Empty(context.Diagnostic.Errors);
+    }
+
     [Fact]
     public void SerializeAsV1_ShouldWriteCorrectJson()
     {

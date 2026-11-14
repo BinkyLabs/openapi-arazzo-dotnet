@@ -83,6 +83,10 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArazzoReusableObjectReferenceValidator.ValidateSerializationReference(Reference.ReferenceV1, ReferenceType.Parameter, nameof(ArazzoParameterReference), specVersion);
+        if (ArazzoParameterValidator.GetQueryStringValueError(this) is string error)
+        {
+            throw new ArazzoSerializationException(error);
+        }
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoReusableObjectReference, Reference.ReferenceV1);

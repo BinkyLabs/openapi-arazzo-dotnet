@@ -10,6 +10,82 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
 public class ArazzoParameterTests
 {
+    [Theory]
+    [InlineData("42")]
+    [InlineData("true")]
+    [InlineData("null")]
+    [InlineData("[]")]
+    public void QueryStringParameter_WithNonStringLiteral_ReportsError(string value)
+    {
+        var jsonNode = JsonNode.Parse($$"""{"name": "fullQuery", "in": "querystring", "value": {{value}}}""");
+        Assert.NotNull(jsonNode);
+        var context = new ParsingContext(new());
+
+        var parameter = LoadParameterObject(jsonNode, context, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains("querystring parameter 'fullQuery' value must resolve to a string", StringComparison.Ordinal));
+        using var textWriter = new StringWriter();
+        var exception = Assert.Throws<ArazzoSerializationException>(() => parameter.SerializeAsV1_1(new OpenApiJsonWriter(textWriter)));
+        Assert.Contains("querystring parameter 'fullQuery' value must resolve to a string", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("\"filter=active\"")]
+    [InlineData("\"$inputs.query\"")]
+    [InlineData("\"filter={$inputs.filter}\"")]
+    [InlineData("""{"context": "$response.body", "selector": "$.query", "type": "jsonpath"}""")]
+    public void QueryStringParameter_WithStringOrDynamicValue_IsAccepted(string value)
+    {
+        var jsonNode = JsonNode.Parse($$"""{"name": "fullQuery", "in": "querystring", "value": {{value}}}""");
+        Assert.NotNull(jsonNode);
+        var context = new ParsingContext(new());
+
+        var parameter = LoadParameterObject(jsonNode, context, ArazzoSpecVersion.Arazzo1_1);
+        using var textWriter = new StringWriter();
+        parameter.SerializeAsV1_1(new OpenApiJsonWriter(textWriter));
+
+        Assert.Empty(context.Diagnostic.Errors);
+        Assert.True(JsonNode.DeepEquals(jsonNode, JsonNode.Parse(textWriter.ToString())));
+    }
+
+    [Theory]
+    [InlineData("42", false)]
+    [InlineData("null", false)]
+    [InlineData("{}", false)]
+    [InlineData("42", true)]
+    [InlineData("null", true)]
+    [InlineData("{}", true)]
+    public void QueryStringReference_WithNonStringOverride_ReportsError(string value, bool inherited)
+    {
+        var parameters = $$"""[{"reference": "$components.parameters.query", "value": {{value}}}]""";
+        var jsonNode = JsonNode.Parse($$"""
+        {
+            "arazzo": "1.1.0",
+            "info": {"title": "T", "version": "1"},
+            "sourceDescriptions": [{"name": "api", "url": "https://example.com/api", "type": "openapi"}],
+            "workflows": [{
+                "workflowId": "wf",
+                "parameters": {{(inherited ? parameters : "[]")}},
+                "steps": [{"stepId": "step", "operationId": "getUser", "parameters": {{(inherited ? "[]" : parameters)}}}]
+            }],
+            "components": {
+                "parameters": {
+                    "query": {"name": "fullQuery", "in": "querystring", "value": "filter=active"}
+                }
+            }
+        }
+        """);
+        Assert.NotNull(jsonNode);
+        var context = new ParsingContext(new());
+
+        var document = context.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains("querystring parameter 'fullQuery' value must resolve to a string", StringComparison.Ordinal));
+        using var textWriter = new StringWriter();
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1_1(new OpenApiJsonWriter(textWriter)));
+        Assert.Contains("querystring parameter 'fullQuery' value must resolve to a string", exception.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void SerializeAsV1_ShouldWriteCorrectJson()
     {

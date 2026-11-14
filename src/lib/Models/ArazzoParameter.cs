@@ -46,15 +46,20 @@ public class ArazzoParameter : IArazzoParameter, IArazzoExtensible
         ArgumentException.ThrowIfNullOrEmpty(Name);
         ArgumentNullException.ThrowIfNull(Value);
 
+        if (specVersion is ArazzoSpecVersion.Arazzo1_0 && In is ParameterLocation.QueryString)
+        {
+            ArazzoVersionCompatibility.ThrowIfUnsupportedInV1(specVersion, ArazzoConstants.ArazzoParameterIn, In.GetDisplayName());
+        }
+        if (ArazzoParameterValidator.GetQueryStringValueError(this) is string error)
+        {
+            throw new ArazzoSerializationException(error);
+        }
+
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterName, Name);
         var locationName = In?.GetDisplayName();
         if (!string.IsNullOrEmpty(locationName))
         {
-            if (specVersion is ArazzoSpecVersion.Arazzo1_0 && "querystring".Equals(locationName, StringComparison.OrdinalIgnoreCase))
-            {
-                ArazzoVersionCompatibility.ThrowIfUnsupportedInV1(specVersion, ArazzoConstants.ArazzoParameterIn, locationName);
-            }
             writer.WriteRequiredProperty(ArazzoConstants.ArazzoParameterIn, locationName);
         }
         writer.WriteOptionalObject(ArazzoConstants.ArazzoParameterValue, Value, callback);

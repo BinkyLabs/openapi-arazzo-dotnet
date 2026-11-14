@@ -237,6 +237,15 @@ internal static partial class ArazzoSemanticReferenceValidator
 
         foreach (var action in actions ?? [])
         {
+            if (ArazzoUnionHelper.Unwrap(action) is IArazzoReferenceHolder<BaseArazzoReference> ||
+                action.Parameters?.Any(static parameter => ArazzoUnionHelper.Unwrap(parameter) is ArazzoParameterReference) == true)
+            {
+                foreach (var error in ArazzoParameterValidator.ValidateActionParameters(action.Parameters, $"{elementName} '{action.Name}'"))
+                {
+                    yield return error;
+                }
+            }
+
             foreach (var error in ValidateWorkflowReference(action.WorkflowId, workflowIds, sourceDescriptionNames, sourceDescriptionTypes, $"{elementName} '{action.Name}'"))
             {
                 yield return error;

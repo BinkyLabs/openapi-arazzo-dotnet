@@ -14,6 +14,155 @@ public class ParsingContextTests
 {
     private static ParsingContext CreateContext() => new(new ArazzoDiagnostic());
 
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(1, false)]
+    [InlineData(2, false)]
+    [InlineData(3, false)]
+    [InlineData(0, true)]
+    [InlineData(1, true)]
+    [InlineData(2, true)]
+    [InlineData(3, true)]
+    public void ParseAndSerialize_ConflictingQueryParameters_ReportsError(int placement, bool useReferences)
+    {
+        var query = useReferences
+            ? """{"reference": "$components.parameters.query"}"""
+            : """{"name": "filter", "in": "query", "value": "active"}""";
+        var queryString = useReferences
+            ? """{"reference": "$components.parameters.queryString"}"""
+            : """{"name": "fullQuery", "in": "querystring", "value": "sort=desc"}""";
+        var workflowParameters = placement switch
+        {
+            0 => $"[{query}, {queryString}]",
+            2 => $"[{query}]",
+            3 => $"[{queryString}]",
+            _ => "[]"
+        };
+        var stepParameters = placement switch
+        {
+            1 => $"[{query}, {queryString}]",
+            2 => $"[{queryString}]",
+            3 => $"[{query}]",
+            _ => "[]"
+        };
+        var jsonNode = JsonNode.Parse($$"""
+        {
+            "arazzo": "1.1.0",
+            "info": {"title": "T", "version": "1"},
+            "sourceDescriptions": [{"name": "api", "url": "https://example.com/api", "type": "openapi"}],
+            "workflows": [{
+                "workflowId": "wf",
+                "parameters": {{workflowParameters}},
+                "steps": [{"stepId": "step", "operationId": "getUser", "parameters": {{stepParameters}}}]
+            }],
+            "components": {
+                "parameters": {
+                    "query": {"name": "filter", "in": "query", "value": "active"},
+                    "queryString": {"name": "fullQuery", "in": "querystring", "value": "sort=desc"}
+                }
+            }
+        }
+        """);
+        Assert.NotNull(jsonNode);
+        var context = CreateContext();
+
+        var document = context.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains("'query' and 'querystring' parameters cannot coexist", StringComparison.Ordinal));
+        Assert.NotNull(document.Workflows);
+        var workflow = Assert.Single(document.Workflows);
+        using var textWriter = new StringWriter();
+        var exception = Assert.Throws<ArazzoSerializationException>(() => workflow.SerializeAsV1_1(new OpenApiJsonWriter(textWriter)));
+        Assert.Contains("'query' and 'querystring' parameters cannot coexist", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, false, false)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, false, false)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, true, false)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, true, false)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, false, true)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, false, true)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, true, true)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, true, true)]
+    public void ParseAndSerialize_InvalidActionParameters_ReportsError(ArazzoSpecVersion version, bool failure, bool duplicate)
+    {
+        var parameters = duplicate
+            ? """[{"name": "input", "value": "one"}, {"name": "input", "value": "two"}]"""
+            : """[{"name": "input", "in": "query", "value": "one"}]""";
+        var fieldName = version is ArazzoSpecVersion.Arazzo1_0 ? "x-parameters" : "parameters";
+        var jsonNode = JsonNode.Parse($$"""
+        {"name": "goto", "type": "goto", "workflowId": "child", "{{fieldName}}": {{parameters}}}
+        """);
+        Assert.NotNull(jsonNode);
+        var context = CreateContext();
+        IArazzoResultAction? action = failure
+            ? context.ParseFragment<ArazzoFailureAction>(jsonNode, version)
+            : context.ParseFragment<ArazzoSuccessAction>(jsonNode, version);
+        Assert.NotNull(action);
+        var expectedMessage = duplicate ? "duplicate parameter 'input'" : "parameter 'input' must not specify 'in'";
+
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+        var exception = Assert.Throws<ArazzoSerializationException>(() =>
+        {
+            if (version is ArazzoSpecVersion.Arazzo1_0)
+                action.SerializeAsV1(writer);
+            else
+                action.SerializeAsV1_1(writer);
+        });
+        Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, false, true)]
+    [InlineData(true, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    public void ParseAndSerialize_ResolvedActionParameters_ReportsError(bool failure, bool duplicate, bool reusableAction)
+    {
+        var parameters = duplicate
+            ? """[{"reference": "$components.parameters.shared"}, {"name": "input", "value": "two"}]"""
+            : """[{"reference": "$components.parameters.shared"}]""";
+        var action = $$"""{"name": "goto", "type": "goto", "workflowId": "wf", "parameters": {{parameters}}}""";
+        var actionKind = failure ? "failureActions" : "successActions";
+        var actionList = reusableAction ? $$"""{"reference": "$components.{{actionKind}}.shared"}""" : action;
+        var parameter = duplicate
+            ? """{"name": "input", "value": "one"}"""
+            : """{"name": "input", "in": "header", "value": "one"}""";
+        var jsonNode = JsonNode.Parse($$"""
+        {
+            "arazzo": "1.1.0",
+            "info": {"title": "T", "version": "1"},
+            "sourceDescriptions": [{"name": "api", "url": "https://example.com/api", "type": "openapi"}],
+            "workflows": [{
+                "workflowId": "wf",
+                "steps": [{"stepId": "step", "operationId": "getUser"}],
+                "{{actionKind}}": [{{actionList}}]
+            }],
+            "components": {
+                "parameters": {"shared": {{parameter}}},
+                "{{actionKind}}": {"shared": {{action}}}
+            }
+        }
+        """);
+        Assert.NotNull(jsonNode);
+        var context = CreateContext();
+
+        var document = context.Parse(jsonNode, new Uri("https://example.com/"));
+
+        var expectedMessage = duplicate ? "duplicate parameter 'input'" : "parameter 'input' must not specify 'in'";
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
+        using var textWriter = new StringWriter();
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1_1(new OpenApiJsonWriter(textWriter)));
+        Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void GetFromTempStorage_NoScope_ReturnsDefaultWhenMissing()
     {

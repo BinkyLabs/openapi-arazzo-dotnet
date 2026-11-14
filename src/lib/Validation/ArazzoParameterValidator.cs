@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 using BinkyLabs.OpenApi.Arazzo.Reader;
 
 using Microsoft.OpenApi;
@@ -48,12 +50,66 @@ internal static class ArazzoParameterValidator
                 yield return $"{elementName} parameter '{parameterName}' must specify 'in' {locationRequirementReason}.";
             }
         }
+
+        if (GetQueryLocationError(parameters, elementName) is string error)
+        {
+            yield return error;
+        }
+    }
+
+    internal static string? GetInheritedQueryLocationError(
+        IEnumerable<IArazzoParameter>? inheritedParameters,
+        IEnumerable<IArazzoParameter>? parameters,
+        string elementName)
+    {
+        if (inheritedParameters is null || parameters is null ||
+            GetQueryLocationError(inheritedParameters, elementName) is not null ||
+            GetQueryLocationError(parameters, elementName) is not null)
+        {
+            return null;
+        }
+
+        return GetQueryLocationError(inheritedParameters.Concat(parameters), elementName);
+    }
+
+    private static string? GetQueryLocationError(IEnumerable<IArazzoParameter> parameters, string elementName) =>
+        parameters.Any(static parameter => parameter.In is ParameterLocation.Query) &&
+        parameters.Any(static parameter => parameter.In is ParameterLocation.QueryString)
+            ? $"{elementName} 'query' and 'querystring' parameters cannot coexist."
+            : null;
+
+    internal static string? GetQueryStringValueError(IArazzoParameter parameter) =>
+        parameter.In is ParameterLocation.QueryString &&
+        parameter.Value?.Any is JsonNode literal &&
+        (literal.IsJsonNullSentinel() || literal is not JsonValue value || !value.TryGetValue<string>(out _))
+            ? $"querystring parameter '{parameter.Name}' value must resolve to a string."
+            : null;
+
+    internal static IEnumerable<string> ValidateActionParameters(IEnumerable<IArazzoParameter>? parameters, string elementName)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var parameter in parameters ?? [])
+        {
+            if (parameter.In.HasValue)
+            {
+                yield return $"{elementName} parameter '{parameter.Name}' must not specify 'in'.";
+            }
+
+            if (!string.IsNullOrEmpty(parameter.Name) && !names.Add(parameter.Name))
+            {
+                yield return $"{elementName} contains duplicate parameter '{parameter.Name}'.";
+            }
+        }
     }
 
     internal static void ValidateDeserializationRequiredFields(ArazzoParameter parameter, ParsingContext context)
     {
         AddRequiredFieldErrorIfMissing(parameter.Name, nameof(ArazzoParameter), nameof(ArazzoParameter.Name), context);
         AddRequiredFieldErrorIfMissing(parameter.Value, nameof(ArazzoParameter), nameof(ArazzoParameter.Value), context);
+        if (GetQueryStringValueError(parameter) is string error)
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError($"{context.GetLocation()}/{ArazzoConstants.ArazzoParameterValue}", error));
+        }
     }
 
     private static void AddRequiredFieldErrorIfMissing(object? value, string elementName, string fieldName, ParsingContext context)
