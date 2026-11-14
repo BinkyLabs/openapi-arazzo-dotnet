@@ -12,6 +12,8 @@ updates:
           - "Microsoft.NET.Test.Sdk"
           - "Microsoft.Testing.*"
           - "xunit.*"
+    cooldown:
+      default-days: 7
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
