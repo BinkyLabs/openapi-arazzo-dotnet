@@ -648,7 +648,6 @@ public class ParsingContextTests
 
     [Theory]
     [InlineData("""{ "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
-    [InlineData("""{ "target": "", "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
     [InlineData("""{ "target": "/name" }""", "ArazzoPayloadReplacement.Value is a REQUIRED field")]
     public void Parse_PayloadReplacementMissingRequiredFields_AddsSingleDiagnosticError(string replacementJson, string expectedMessage)
     {

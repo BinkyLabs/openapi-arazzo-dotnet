@@ -5,7 +5,10 @@ namespace BinkyLabs.OpenApi.Arazzo.Validation;
 
 internal static partial class ArazzoStepDependencyValidator
 {
-    private readonly record struct DependencyNode(string WorkflowId, string? StepId);
+    private readonly record struct DependencyNode(ArazzoDocument Document, string WorkflowId, string? StepId);
+
+    [GeneratedRegex(@"^\$sourceDescriptions\.(?<source>[^.\s]+)\.(?<workflow>[^.\s]+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex WorkflowDependencyRegex();
 
     [GeneratedRegex(@"^\$(?:workflows\.(?<workflow>[^.\s]+)\.steps\.(?<step>[^.\s]+)|sourceDescriptions\.(?<source>[^.\s]+)\.(?<workflow>[^.\s]+)\.steps\.(?<step>[^.\s]+))$", RegexOptions.CultureInvariant)]
     private static partial Regex ExplicitDependencyRegex();
@@ -17,35 +20,39 @@ internal static partial class ArazzoStepDependencyValidator
     {
         var graph = new Dictionary<DependencyNode, HashSet<DependencyNode>>();
         var steps = new Dictionary<DependencyNode, (ArazzoWorkflow Workflow, ArazzoStep Step, int Index, bool Sequential)>();
-        var sources = new Dictionary<string, ArazzoDescriptionType?>(StringComparer.Ordinal);
-        foreach (var source in document.SourceDescriptions ?? [])
+        var documents = (document.Workspace?.GetArazzoDocuments() ?? []).Prepend(document).Distinct().ToArray();
+        var sources = new Dictionary<ArazzoDocument, Dictionary<string, ArazzoDescriptionType?>>();
+        foreach (var currentDocument in documents)
         {
-            if (!string.IsNullOrEmpty(source.Name))
-                sources.TryAdd(source.Name, source.Type);
-        }
+            var currentSources = new Dictionary<string, ArazzoDescriptionType?>(StringComparer.Ordinal);
+            foreach (var source in currentDocument.SourceDescriptions ?? [])
+                if (!string.IsNullOrEmpty(source.Name))
+                    currentSources.TryAdd(source.Name, source.Type);
+            sources.Add(currentDocument, currentSources);
 
-        foreach (var workflow in document.Workflows ?? [])
-        {
-            if (string.IsNullOrEmpty(workflow.WorkflowId))
-                continue;
-            var completion = new DependencyNode(workflow.WorkflowId, null);
-            if (!graph.TryAdd(completion, []))
-                continue;
-            var sequential = workflow.Steps?.Any(static step => step.DependsOn is { Count: > 0 }) != true;
-            DependencyNode? previous = null;
-            for (var index = 0; index < (workflow.Steps?.Count ?? 0); index++)
+            foreach (var workflow in currentDocument.Workflows ?? [])
             {
-                var step = workflow.Steps![index];
-                if (string.IsNullOrEmpty(step.StepId))
+                if (string.IsNullOrEmpty(workflow.WorkflowId))
                     continue;
-                var node = new DependencyNode(workflow.WorkflowId, step.StepId);
-                if (!graph.TryAdd(node, []))
+                var completion = new DependencyNode(currentDocument, workflow.WorkflowId, null);
+                if (!graph.TryAdd(completion, []))
                     continue;
-                steps.Add(node, (workflow, step, index, sequential));
-                graph[completion].Add(node);
-                if (sequential && previous is DependencyNode predecessor)
-                    graph[node].Add(predecessor);
-                previous = node;
+                var sequential = workflow.Steps?.Any(static step => step.DependsOn is { Count: > 0 }) != true;
+                DependencyNode? previous = null;
+                for (var index = 0; index < (workflow.Steps?.Count ?? 0); index++)
+                {
+                    var step = workflow.Steps![index];
+                    if (string.IsNullOrEmpty(step.StepId))
+                        continue;
+                    var node = new DependencyNode(currentDocument, workflow.WorkflowId, step.StepId);
+                    if (!graph.TryAdd(node, []))
+                        continue;
+                    steps.Add(node, (workflow, step, index, sequential));
+                    graph[completion].Add(node);
+                    if (sequential && previous is DependencyNode predecessor)
+                        graph[node].Add(predecessor);
+                    previous = node;
+                }
             }
         }
 
@@ -54,9 +61,22 @@ internal static partial class ArazzoStepDependencyValidator
             var elementName = Describe(node);
             foreach (var dependency in details.Workflow.DependsOn ?? Enumerable.Empty<string>())
             {
-                var prerequisite = new DependencyNode(dependency, null);
-                if (graph.ContainsKey(prerequisite))
-                    graph[node].Add(prerequisite);
+                if (dependency.StartsWith("$", StringComparison.Ordinal))
+                {
+                    var match = WorkflowDependencyRegex().Match(dependency);
+                    if (match.Success)
+                    {
+                        var (target, _) = ResolveReference(match, node, graph, sources[node.Document]);
+                        if (target is { } prerequisite)
+                            graph[node].Add(prerequisite);
+                    }
+                }
+                else
+                {
+                    var prerequisite = new DependencyNode(node.Document, dependency, null);
+                    if (graph.ContainsKey(prerequisite))
+                        graph[node].Add(prerequisite);
+                }
             }
 
             foreach (var dependency in details.Step.DependsOn ?? Enumerable.Empty<string>())
@@ -71,11 +91,11 @@ internal static partial class ArazzoStepDependencyValidator
                         yield return $"{elementName} dependsOn value '{dependency}' must reference a stepId, '$workflows.<workflowId>.steps.<stepId>', or '$sourceDescriptions.<name>.<workflowId>.steps.<stepId>'.";
                         continue;
                     }
-                    (target, error) = ResolveReference(match, node, graph, sources);
+                    (target, error) = ResolveReference(match, node, graph, sources[node.Document]);
                 }
                 else
                 {
-                    target = new DependencyNode(node.WorkflowId, dependency);
+                    target = new DependencyNode(node.Document, node.WorkflowId, dependency);
                     error = graph.ContainsKey(target.Value) ? null : $"references unknown stepId '{dependency}' in workflow '{node.WorkflowId}'.";
                 }
 
@@ -91,7 +111,7 @@ internal static partial class ArazzoStepDependencyValidator
             {
                 foreach (Match match in OutputReferenceRegex().Matches(expression).Where(x => x.Groups["reference"].Success))
                 {
-                    var (target, error) = ResolveReference(match, node, graph, sources);
+                    var (target, error) = ResolveReference(match, node, graph, sources[node.Document]);
                     var reference = match.Groups["reference"].Value;
                     if (error is not null)
                     {
@@ -104,7 +124,7 @@ internal static partial class ArazzoStepDependencyValidator
                     }
                     else if (target is DependencyNode prerequisite)
                     {
-                        if (details.Sequential && prerequisite.WorkflowId == node.WorkflowId &&
+                        if (details.Sequential && prerequisite.Document == node.Document && prerequisite.WorkflowId == node.WorkflowId &&
                             steps.TryGetValue(prerequisite, out var targetDetails) && targetDetails.Index > details.Index)
                         {
                             yield return $"{elementName} has an unsatisfiable forward reference to step '{prerequisite.StepId}' outputs in a sequential workflow without step dependsOn.";
@@ -125,21 +145,25 @@ internal static partial class ArazzoStepDependencyValidator
         IReadOnlyDictionary<DependencyNode, HashSet<DependencyNode>> graph,
         IReadOnlyDictionary<string, ArazzoDescriptionType?> sources)
     {
+        var targetDocument = owner.Document;
         if (match.Groups["source"].Success)
         {
             var sourceName = match.Groups["source"].Value;
             if (!sources.TryGetValue(sourceName, out var type))
                 return (null, $"references unknown sourceDescription '{sourceName}'.");
-            return type is ArazzoDescriptionType.Arazzo
-                ? (null, null)
-                : (null, $"references sourceDescription '{sourceName}' whose type must be 'arazzo'.");
+            if (type is not ArazzoDescriptionType.Arazzo)
+                return (null, $"references sourceDescription '{sourceName}' whose type must be 'arazzo'.");
+            if (owner.Document.Workspace?.TryGetSourceDescription(owner.Document, sourceName, out var source) != true ||
+                !owner.Document.Workspace.TryGetArazzoDocument(source.Uri, out var externalDocument))
+                return (null, null);
+            targetDocument = externalDocument;
         }
 
         var workflowId = match.Groups["workflow"].Success ? match.Groups["workflow"].Value : owner.WorkflowId;
-        if (!graph.ContainsKey(new DependencyNode(workflowId, null)))
+        if (!graph.ContainsKey(new DependencyNode(targetDocument, workflowId, null)))
             return (null, $"references unknown workflowId '{workflowId}'.");
         var stepId = match.Groups["step"].Success ? match.Groups["step"].Value : null;
-        var target = new DependencyNode(workflowId, stepId);
+        var target = new DependencyNode(targetDocument, workflowId, stepId);
         return graph.ContainsKey(target)
             ? (target, null)
             : (null, $"references unknown stepId '{stepId}' in workflow '{workflowId}'.");
@@ -203,9 +227,14 @@ internal static partial class ArazzoStepDependencyValidator
         {
             if (criterion.Context is not null)
                 yield return criterion.Context.Expression;
-            if (criterion.Condition is not null &&
-                (criterion.Type?.Type ?? criterion.Type?.ExpressionType?.Type) is null or ArazzoCriterionExpressionTypeType.Simple)
-                yield return criterion.Condition;
+            if (criterion.Condition is not null)
+            {
+                if ((criterion.Type?.Type ?? criterion.Type?.ExpressionType?.Type) is null or ArazzoCriterionExpressionTypeType.Simple)
+                    yield return criterion.Condition;
+                else
+                    foreach (var expression in ArazzoRuntimeExpressionValidator.GetRuntimeExpressions(criterion.Condition))
+                        yield return expression;
+            }
         }
     }
 
@@ -271,7 +300,9 @@ internal static partial class ArazzoStepDependencyValidator
             path.Add(current);
             current = graph[current].First(prerequisite => counts[prerequisite] > 0);
         }
-        return string.Join(" -> ", path.Skip(positions[current]).Append(current).Select(Describe));
+        var cycle = path.Skip(positions[current]).Append(current).ToArray();
+        var externalCycle = cycle.Select(static node => node.Document).Distinct().Skip(1).Any();
+        return string.Join(" -> ", cycle.Select(node => externalCycle ? $"{Describe(node)} ({node.Document.BaseUri})" : Describe(node)));
     }
 
     private static string Describe(DependencyNode node) =>

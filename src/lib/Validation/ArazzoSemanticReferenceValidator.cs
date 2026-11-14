@@ -537,6 +537,39 @@ internal static partial class ArazzoSemanticReferenceValidator
                 yield return error;
             }
         }
+        foreach (var error in ValidateQueryStringContent(step, document, elementName))
+            yield return error;
+    }
+
+    private static IEnumerable<string> ValidateQueryStringContent(ArazzoStep step, ArazzoDocument document, string elementName)
+    {
+        if (document.Workspace is null)
+            yield break;
+        IReadOnlyList<IOpenApiParameter>? targetParameters = null;
+        var path = step.OperationPath is null ? null : OperationPathRegex().Match(step.OperationPath);
+        var id = step.OperationId is null ? null : SourceDescriptionOperationIdRegex().Match(step.OperationId);
+        if (path?.Success == true || id?.Success == true)
+        {
+            var match = path?.Success == true ? path : id;
+            if (match is not null && document.Workspace.TryGetSourceDescription(document, match.Groups[1].Value, out var source))
+                targetParameters = document.Workspace.GetOpenApiOperationParameters(source.Uri, match.Groups[2].Value, path?.Success == true);
+        }
+        else if (step.OperationId is not null)
+        {
+            var sources = document.Workspace.GetSourceDescriptions(document)
+                .Where(static source => source.Type is not ArazzoDescriptionType.Arazzo and not ArazzoDescriptionType.AsyncAPI).Take(2).ToArray();
+            if (sources.Length == 1)
+                targetParameters = document.Workspace.GetOpenApiOperationParameters(sources[0].Uri, step.OperationId, false);
+        }
+        if (targetParameters is null)
+            yield break;
+        var workflow = document.Workflows?.FirstOrDefault(workflow => workflow.Steps?.Contains(step) == true);
+        var allParameters = (workflow?.Parameters ?? []).Concat(step.Parameters ?? []).ToArray();
+        foreach (var reference in allParameters.OfType<IArazzoReferenceHolder<BaseArazzoReference>>())
+            reference.Reference.EnsureHostDocumentIsSet(document);
+        var parameters = allParameters.GroupBy(static parameter => (parameter.Name, parameter.In)).Select(static group => group.Last());
+        foreach (var error in ArazzoParameterValidator.ValidateQueryStringContent(parameters, targetParameters, elementName))
+            yield return error;
     }
 
     private static IEnumerable<string> ValidateOperationPathResolution(string operationPath, ArazzoDocument document, string elementName)

@@ -1,3 +1,4 @@
+using BinkyLabs.OpenApi.Arazzo.Validation;
 using BinkyLabs.OpenApi.Arazzo.Writers;
 
 using Microsoft.OpenApi;
@@ -47,6 +48,8 @@ public class ArazzoRequestBody : IArazzoSerializable, IArazzoExtensible
     private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
+        if (ArazzoSelectorSyntaxValidator.ValidateReplacements(this, specVersion).FirstOrDefault() is { } error)
+            throw new ArazzoSerializationException(error);
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoRequestBodyContentType, ContentType);

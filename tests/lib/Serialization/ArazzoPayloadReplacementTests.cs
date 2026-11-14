@@ -154,10 +154,8 @@ public class ArazzoPayloadReplacementTests
 
     [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
-    [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "target": "", "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
     [InlineData(ArazzoSpecVersion.Arazzo1_0, """{ "target": "/name" }""", "ArazzoPayloadReplacement.Value is a REQUIRED field")]
     [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
-    [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "target": "", "value": "updated" }""", "ArazzoPayloadReplacement.Target is a REQUIRED field")]
     [InlineData(ArazzoSpecVersion.Arazzo1_1, """{ "target": "/name" }""", "ArazzoPayloadReplacement.Value is a REQUIRED field")]
     public void ParseFragment_AsV1AndV1_1_MissingRequiredFields_AddsDiagnosticError(ArazzoSpecVersion specVersion, string json, string expectedMessage)
     {
@@ -167,5 +165,27 @@ public class ArazzoPayloadReplacementTests
         parsingContext.ParseFragment<ArazzoPayloadReplacement>(jsonNode, specVersion);
 
         Assert.Single(parsingContext.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void RootJsonPointerReplacement_IsValidDuringReadingAndWriting(ArazzoSpecVersion version)
+    {
+        var json = JsonNode.Parse("""{"target":"","value":1,"targetSelectorType":"jsonpointer"}""");
+        Assert.NotNull(json);
+        if (version is ArazzoSpecVersion.Arazzo1_0)
+            json.AsObject().Remove("targetSelectorType");
+        var context = new ParsingContext(new());
+        var replacement = context.ParseFragment<ArazzoPayloadReplacement>(json, version);
+        Assert.NotNull(replacement);
+        Assert.Empty(context.Diagnostic.Errors);
+        using var text = new StringWriter();
+        var writer = new OpenApiJsonWriter(text);
+        if (version is ArazzoSpecVersion.Arazzo1_0)
+            replacement.SerializeAsV1(writer);
+        else
+            replacement.SerializeAsV1_1(writer);
+        Assert.Equal("", JsonNode.Parse(text.ToString())?["target"]?.GetValue<string>());
     }
 }

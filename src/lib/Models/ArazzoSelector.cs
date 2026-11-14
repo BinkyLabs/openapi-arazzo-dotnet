@@ -47,8 +47,13 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
         if (specVersion is ArazzoSpecVersion.Arazzo1_0)
             throw new ArazzoSerializationException("Selector objects are not supported in Arazzo 1.0.");
         ArgumentNullException.ThrowIfNull(Context);
-        ArgumentException.ThrowIfNullOrEmpty(Selector);
+        ArgumentNullException.ThrowIfNull(Selector);
         ArgumentNullException.ThrowIfNull(Type);
+        var isPointer = ArazzoSelectorSyntaxValidator.IsJsonPointer(Type.Type, Type.ExpressionType);
+        if (!isPointer)
+            ArgumentException.ThrowIfNullOrEmpty(Selector);
+        if (ArazzoSelectorSyntaxValidator.GetError(Selector, isPointer, $"{nameof(ArazzoSelector)}.{nameof(Selector)}") is { } error)
+            throw new ArazzoSerializationException(error);
         ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context.Expression, $"{nameof(ArazzoSelector)}.{nameof(Context)}", specVersion);
 
         writer.WriteStartObject();

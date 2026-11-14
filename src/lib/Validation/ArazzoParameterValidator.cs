@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader;
@@ -84,6 +85,52 @@ internal static class ArazzoParameterValidator
         (literal.IsJsonNullSentinel() || literal is not JsonValue value || !value.TryGetValue<string>(out _))
             ? $"querystring parameter '{parameter.Name}' value must resolve to a string."
             : null;
+
+    internal static IEnumerable<string> ValidateQueryStringContent(
+        IEnumerable<IArazzoParameter> parameters, IReadOnlyList<IOpenApiParameter> operationParameters, string elementName)
+    {
+        foreach (var parameter in parameters.Where(static parameter => parameter.In is ParameterLocation.QueryString))
+        {
+            if (parameter.Value?.Any is not JsonValue literal || !literal.TryGetValue<string>(out var value) ||
+                ArazzoRuntimeExpressionValidator.GetRuntimeExpressions(value).Any())
+                continue;
+            var definition = operationParameters.FirstOrDefault(candidate =>
+                candidate.In is ParameterLocation.QueryString && candidate.Name == parameter.Name);
+            foreach (var mediaType in definition?.Content?.Keys ?? [])
+            {
+                var format = mediaType.Split(';', 2)[0].Trim();
+                if (format.Equals("application/json", StringComparison.OrdinalIgnoreCase) ||
+                    format.EndsWith("+json", StringComparison.OrdinalIgnoreCase))
+                {
+                    string? error = null;
+                    try
+                    {
+                        using var json = JsonDocument.Parse(value);
+                    }
+                    catch (JsonException ex)
+                    {
+                        error = ex.Message;
+                    }
+                    if (error is not null)
+                        yield return $"{elementName} querystring parameter '{parameter.Name}' must contain valid '{mediaType}' content: {error}";
+                }
+                else if (format.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase))
+                {
+                    for (var index = 0; index < value.Length; index++)
+                    {
+                        if (char.IsControl(value[index]) || value[index] == ' ' ||
+                            value[index] == '%' && (index + 2 >= value.Length || !Uri.IsHexDigit(value[index + 1]) || !Uri.IsHexDigit(value[index + 2])))
+                        {
+                            yield return $"{elementName} querystring parameter '{parameter.Name}' must contain valid '{mediaType}' content with percent-encoded values.";
+                            break;
+                        }
+                        if (value[index] == '%')
+                            index += 2;
+                    }
+                }
+            }
+        }
+    }
 
     internal static IEnumerable<string> ValidateActionParameters(IEnumerable<IArazzoParameter>? parameters, string elementName)
     {

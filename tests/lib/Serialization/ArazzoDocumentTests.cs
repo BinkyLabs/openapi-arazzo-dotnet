@@ -631,8 +631,8 @@ public class ArazzoDocumentTests
         ];
         yield return
         [
-            CreateDocument(new ArazzoStep { StepId = "step1" }, dependsOn: new HashSet<string> { "$steps.step1" }),
-            "dependsOn value '$steps.step1' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'"
+            CreateDocument(new ArazzoStep { StepId = "step1" }, dependsOn: new HashSet<string> { "$steps.step1.outputs.id" }),
+            "dependsOn value '$steps.step1.outputs.id' must reference an external workflow using '$sourceDescriptions.<name>.<workflowId>'"
         ];
         yield return
         [

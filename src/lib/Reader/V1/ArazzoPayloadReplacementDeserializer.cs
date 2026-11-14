@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Validation;
+
 using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
@@ -41,7 +43,7 @@ internal static partial class ArazzoV1Deserializer
 
     private static void ValidatePayloadReplacementRequiredFields(ArazzoPayloadReplacement replacement, ParsingContext context)
     {
-        if (string.IsNullOrEmpty(replacement.Target))
+        if (replacement.Target is null)
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Target)} is a REQUIRED field."));
         }
@@ -50,5 +52,9 @@ internal static partial class ArazzoV1Deserializer
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Value)} is a REQUIRED field."));
         }
+        if (ArazzoSelectorSyntaxValidator.GetError(replacement.Target,
+            ArazzoSelectorSyntaxValidator.IsJsonPointer(replacement.TargetSelectorType?.Type, replacement.TargetSelectorType?.ExpressionType),
+            $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Target)}") is { } error)
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
     }
 }

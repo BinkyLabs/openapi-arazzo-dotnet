@@ -143,6 +143,8 @@ public static class ArazzoModelFactory
                     readResult.Diagnostic?.Errors.Add(new OpenApiError(string.Empty, error));
                 }
             }
+            foreach (var error in ArazzoStepDependencyValidator.Validate(readResult.Document))
+                readResult.Diagnostic?.Errors.Add(new OpenApiError(string.Empty, error));
         }
 
         return readResult;

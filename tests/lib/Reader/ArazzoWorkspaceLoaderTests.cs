@@ -10,6 +10,180 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 
 public class ArazzoWorkspaceLoaderTests
 {
+    private const string ReviewApiUrl = "https://api.example.test/spec.json";
+    private const string ReviewOpenApiJson = """
+        {"openapi":"3.2.0","info":{"title":"Test API","version":"1"},
+         "paths":{"/op":{"get":{"operationId":"op","responses":{"200":{"description":"OK"}}}}}}
+        """;
+
+    private static JsonNode CreateOpenApiWorkflowDocument()
+    {
+        var json = JsonNode.Parse("""
+            {"arazzo":"1.1.0","info":{"title":"Test","version":"1"},
+             "sourceDescriptions":[{"name":"api","url":"https://api.example.test/spec.json","type":"openapi"}],
+             "workflows":[{"workflowId":"wf","steps":[{"stepId":"operation","operationId":"op"}]}]}
+            """);
+        Assert.NotNull(json);
+        return json;
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task LoadAsync_OpenApiHttpSourcesRespectExternalLoadingOption(bool enabled)
+    {
+        var loader = new TestStreamLoader(new Dictionary<string, string> { [ReviewApiUrl] = ReviewOpenApiJson });
+        var result = await LoadExternalWorkflowDocumentAsync(CreateOpenApiWorkflowDocument(), loader, enabled);
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.Equal(enabled ? 1 : 0, loader.LoadCount);
+    }
+
+    [Theory]
+    [InlineData(null, "could not be loaded")]
+    [InlineData("{", "OpenAPI sourceDescription")]
+    public async Task LoadAsync_ReportsOpenApiSourceFailures(string? content, string message)
+    {
+        var documents = new Dictionary<string, string>();
+        if (content is not null)
+            documents[ReviewApiUrl] = content;
+        var result = await LoadExternalWorkflowDocumentAsync(CreateOpenApiWorkflowDocument(), new TestStreamLoader(documents));
+        Assert.NotNull(result.Diagnostic);
+        Assert.Contains(result.Diagnostic.Errors, error => error.Message.Contains(message, StringComparison.Ordinal) && error.Message.Contains(ReviewApiUrl, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task LoadAsync_DoesNotPassDeferredAsyncApiSourcesToOpenApiReader()
+    {
+        var json = CreateOpenApiWorkflowDocument();
+        FirstObject(json, "sourceDescriptions")["type"] = "asyncapi";
+        FirstObject(FirstObject(json, "workflows"), "steps")["action"] = "receive";
+        var loader = new TestStreamLoader(new Dictionary<string, string>());
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.Equal(0, loader.LoadCount);
+    }
+
+    [Fact]
+    public async Task LoadAsync_OpenApiSourceCancellationPropagates()
+    {
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            LoadExternalWorkflowDocumentAsync(CreateOpenApiWorkflowDocument(), new CancelingStreamLoader()));
+    }
+
+    [Theory]
+    [InlineData("application/json", "{\"id\":1}", true, true)]
+    [InlineData("application/json", "{bad}", false, true)]
+    [InlineData("application/json", "{\"id\":1}", true, false)]
+    [InlineData("application/json", "{bad}", false, false)]
+    [InlineData("application/x-www-form-urlencoded", "id=a%20b", true, true)]
+    [InlineData("application/x-www-form-urlencoded", "id=%ZZ", false, true)]
+    public async Task LoadAsync_ValidatesInheritedQueryStringContent(string mediaType, string value, bool valid, bool useOperationPath)
+    {
+        var api = JsonNode.Parse(ReviewOpenApiJson);
+        Assert.NotNull(api);
+        var path = Assert.IsType<JsonObject>(api["paths"]?["/op"]);
+        path["parameters"] = new JsonArray(new JsonObject
+        {
+            ["name"] = "query",
+            ["in"] = "querystring",
+            ["content"] = new JsonObject { [mediaType] = new JsonObject { ["schema"] = new JsonObject { ["type"] = "object" } } }
+        });
+        var json = CreateOpenApiWorkflowDocument();
+        var workflow = FirstObject(json, "workflows");
+        workflow["parameters"] = new JsonArray(new JsonObject { ["name"] = "query", ["in"] = "querystring", ["value"] = value });
+        var step = FirstObject(workflow, "steps");
+        if (useOperationPath)
+        {
+            step.Remove("operationId");
+            step["operationPath"] = "{$sourceDescriptions.api.url}#/paths/~1op/get";
+        }
+        else
+            step["operationId"] = "$sourceDescriptions.api.op";
+        var loader = new TestStreamLoader(new Dictionary<string, string> { [ReviewApiUrl] = api.ToJsonString() });
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        if (valid)
+        {
+            Assert.Empty(result.Diagnostic.Errors);
+            using var text = new StringWriter();
+            result.Document.SerializeAsV1_1(new OpenApiJsonWriter(text));
+        }
+        else
+        {
+            Assert.Contains(result.Diagnostic.Errors, error => error.Message.Contains("querystring parameter 'query' must contain valid", StringComparison.Ordinal));
+            using var text = new StringWriter();
+            Assert.Throws<ArazzoSerializationException>(() => result.Document.SerializeAsV1_1(new OpenApiJsonWriter(text)));
+        }
+    }
+
+    [Fact]
+    public async Task LoadAsync_QueryStringOverridesAndRuntimeValuesRemainValid()
+    {
+        var api = JsonNode.Parse(ReviewOpenApiJson);
+        Assert.NotNull(api);
+        var operation = Assert.IsType<JsonObject>(api["paths"]?["/op"]?["get"]);
+        operation["parameters"] = JsonNode.Parse("""
+            [{"name":"query","in":"querystring","content":{"application/json":{"schema":{"type":"object"}}}}]
+            """);
+        var json = CreateOpenApiWorkflowDocument();
+        json["components"] = JsonNode.Parse("""
+            {"parameters":{"inherited":{"name":"query","in":"querystring","value":"{bad}"}}}
+            """);
+        var workflow = FirstObject(json, "workflows");
+        workflow["parameters"] = JsonNode.Parse("""[{"reference":"$components.parameters.inherited","value":"{bad}"}]""");
+        FirstObject(workflow, "steps")["parameters"] = JsonNode.Parse("""
+            [{"name":"query","in":"querystring","value":"{$inputs.query}"}]
+            """);
+        var result = await LoadExternalWorkflowDocumentAsync(json,
+            new TestStreamLoader(new Dictionary<string, string> { [ReviewApiUrl] = api.ToJsonString() }));
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        using var text = new StringWriter();
+        result.Document.SerializeAsV1_1(new OpenApiJsonWriter(text));
+    }
+
+    [Theory]
+    [InlineData("target", "missing", "unknown stepId")]
+    [InlineData("missing", "operation", "unknown workflowId")]
+    public async Task LoadAsync_RejectsMissingExternalDependencyTargets(string workflowId, string stepId, string message)
+    {
+        var json = CreateExternalWorkflowDocument("external.json");
+        FirstObject(FirstObject(json, "workflows"), "steps")["dependsOn"] =
+            new JsonArray($"$sourceDescriptions.external.{workflowId}.steps.{stepId}");
+        var loader = new TestStreamLoader(new Dictionary<string, string> { ["https://example.com/root/external.json"] = ExternalWorkflowJson });
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Contains(result.Diagnostic.Errors, error => error.Message.Contains(message, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task LoadAsync_DetectsCrossDocumentStepDependencyCycles()
+    {
+        var json = CreateExternalWorkflowDocument("external.json");
+        FirstObject(FirstObject(json, "workflows"), "steps")["dependsOn"] =
+            new JsonArray("$sourceDescriptions.external.target.steps.operation");
+        var external = JsonNode.Parse(ExternalWorkflowJson);
+        Assert.NotNull(external);
+        Assert.IsType<JsonArray>(external["sourceDescriptions"]).Add(new JsonObject
+        {
+            ["name"] = "parent",
+            ["url"] = "https://example.com/root/arazzo.json",
+            ["type"] = "arazzo"
+        });
+        FirstObject(FirstObject(external, "workflows"), "steps")["dependsOn"] =
+            new JsonArray("$sourceDescriptions.parent.root.steps.call");
+        var loader = new TestStreamLoader(new Dictionary<string, string> { ["https://example.com/root/external.json"] = external.ToJsonString() });
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Contains(result.Diagnostic.Errors, error => error.Message.Contains("Step dependency cycle detected", StringComparison.Ordinal) &&
+            error.Message.Contains("external.json", StringComparison.Ordinal) && error.Message.Contains("arazzo.json", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData("#shared")]
     [InlineData("#%73hared")]
@@ -49,7 +223,7 @@ public class ArazzoWorkspaceLoaderTests
         Assert.Same(input.Definitions["shared"], anchor.Target);
         Assert.Same(pointer.Target, anchor.Target);
         Assert.Same(input, recursive.Target);
-        Assert.Equal(0, loader.LoadCount);
+        Assert.Equal(1, loader.LoadCount);
 
         using var output = new StringWriter();
         result.Document.SerializeAsV1_1(new OpenApiJsonWriter(output));
@@ -143,7 +317,7 @@ public class ArazzoWorkspaceLoaderTests
         Assert.Same(input.Definitions["shared"], Assert.IsType<ArazzoInputReference>(nested.Properties["parent"]).Target);
         Assert.Same(input, Assert.IsType<ArazzoInputReference>(input.Properties["root"]).Target);
         Assert.Null(Assert.IsType<ArazzoInputReference>(input.Properties["unknown"]).Target);
-        Assert.Equal(0, loader.LoadCount);
+        Assert.Equal(1, loader.LoadCount);
     }
 
     [Theory]
@@ -208,7 +382,7 @@ public class ArazzoWorkspaceLoaderTests
             "https://example.com/root/schema.json#/$defs/nested/properties/pointer"));
         Assert.NotNull(pointer.Target);
         Assert.Equal(JsonSchemaType.Integer, pointer.Target.Type);
-        Assert.Equal(1, loader.LoadCount);
+        Assert.Equal(2, loader.LoadCount);
     }
 
     [Theory]
@@ -236,7 +410,7 @@ public class ArazzoWorkspaceLoaderTests
         var input = Assert.IsType<ArazzoInputReference>(result.Document.Workflows[0].Inputs);
         Assert.NotNull(input.Target);
         Assert.Equal(JsonSchemaType.String, input.Target.Type);
-        Assert.Equal(0, loader.LoadCount);
+        Assert.Equal(1, loader.LoadCount);
     }
 
     [Theory]
@@ -272,7 +446,7 @@ public class ArazzoWorkspaceLoaderTests
         var canonical = Assert.IsType<ArazzoInputReference>(input.AllOf[1]);
         Assert.NotNull(retrieval.Target);
         Assert.Same(retrieval.Target, canonical.Target);
-        Assert.Equal(1, loader.LoadCount);
+        Assert.Equal(2, loader.LoadCount);
     }
 
     [Theory]
@@ -325,7 +499,7 @@ public class ArazzoWorkspaceLoaderTests
         Assert.NotNull(result.Diagnostic);
         Assert.Single(result.Diagnostic.Errors, error =>
             error.Message.Contains("does not resolve to workflowId 'missing'", StringComparison.Ordinal));
-        Assert.Equal(1, loader.LoadCount);
+        Assert.Equal(2, loader.LoadCount);
         using var output = new StringWriter();
         var exception = Assert.Throws<ArazzoSerializationException>(() =>
             result.Document.SerializeAsV1_1(new OpenApiJsonWriter(output)));
@@ -363,7 +537,7 @@ public class ArazzoWorkspaceLoaderTests
         Assert.NotNull(result.Document);
         Assert.NotNull(result.Diagnostic);
         Assert.Empty(result.Diagnostic.Errors);
-        Assert.Equal(1, loader.LoadCount);
+        Assert.Equal(2, loader.LoadCount);
         var workspace = result.Document.Workspace;
         Assert.NotNull(workspace);
         var copy = new ArazzoWorkspace(workspace);
@@ -388,6 +562,16 @@ public class ArazzoWorkspaceLoaderTests
         }
         var leaf = CreateExternalWorkflowDocument("https://example.com/root/arazzo.json");
         FirstObject(leaf, "workflows")["workflowId"] = "target";
+        FirstObject(leaf, "workflows").Remove("dependsOn");
+        var leafStep = FirstObject(FirstObject(leaf, "workflows"), "steps");
+        leafStep.Remove("workflowId");
+        leafStep["operationId"] = "op";
+        Assert.IsType<JsonArray>(leaf["sourceDescriptions"]).Add(new JsonObject
+        {
+            ["name"] = "api",
+            ["url"] = "https://example.com/api.json",
+            ["type"] = "openapi"
+        });
         var loader = new TestStreamLoader(new Dictionary<string, string>
         {
             ["https://example.com/root/external.json"] = external.ToJsonString(),
@@ -409,7 +593,7 @@ public class ArazzoWorkspaceLoaderTests
         {
             Assert.Empty(result.Diagnostic.Errors);
         }
-        Assert.Equal(2, loader.LoadCount);
+        Assert.Equal(3, loader.LoadCount);
     }
 
     [Fact]
@@ -447,7 +631,7 @@ public class ArazzoWorkspaceLoaderTests
         var input = Assert.IsType<ArazzoInputReference>(result.Document.Workflows[0].Inputs);
         Assert.NotNull(input.Target);
         Assert.Equal(JsonSchemaType.String, input.Target.Type);
-        Assert.Equal(1, loader.LoadCount);
+        Assert.Equal(2, loader.LoadCount);
     }
 
     [Fact]
@@ -1051,15 +1235,24 @@ components:
         return reference;
     }
 
-    private sealed class TestStreamLoader(IDictionary<string, string> documents) : IStreamLoader
+    private sealed class TestStreamLoader : IStreamLoader
     {
+        private readonly Dictionary<string, string> _documents;
+
+        public TestStreamLoader(IDictionary<string, string> documents)
+        {
+            _documents = new() { ["https://example.com/api.json"] = ReviewOpenApiJson };
+            foreach (var (uri, document) in documents)
+                _documents[uri] = document;
+        }
+
         public int LoadCount { get; private set; }
 
         public Task<Stream> LoadAsync(Uri baseUrl, Uri uri, CancellationToken cancellationToken = default)
         {
             LoadCount++;
             var resolvedUri = new Uri(baseUrl, uri).AbsoluteUri;
-            return Task.FromResult(CreateStream(documents.TryGetValue(resolvedUri, out var document)
+            return Task.FromResult(CreateStream(_documents.TryGetValue(resolvedUri, out var document)
                 ? document
                 : throw new FileNotFoundException($"Document '{resolvedUri}' is not available.")));
         }

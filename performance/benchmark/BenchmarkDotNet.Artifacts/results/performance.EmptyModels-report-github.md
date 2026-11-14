@@ -12,21 +12,21 @@ WarmupCount=3
 ```
 | Method                       | Mean       | Error      | StdDev    | Gen0   | Allocated |
 |----------------------------- |-----------:|-----------:|----------:|-------:|----------:|
-| EmptyComponent               |   2.384 ns |  0.5933 ns | 0.0325 ns | 0.0134 |      56 B |
-| EmptyCriterion               |   2.212 ns |  0.7727 ns | 0.0424 ns | 0.0115 |      48 B |
-| EmptyCriterionExpressionType |   2.010 ns |  0.6928 ns | 0.0380 ns | 0.0096 |      40 B |
-| EmptyDocument                | 222.950 ns | 13.7344 ns | 0.7528 ns | 0.3059 |    1280 B |
-| EmptyFailureAction           |   3.747 ns |  0.6507 ns | 0.0357 ns | 0.0268 |     112 B |
-| EmptyFailureActionReference  |  15.006 ns |  2.6917 ns | 0.1475 ns | 0.0325 |     136 B |
-| EmptyInfo                    |   2.260 ns |  1.0237 ns | 0.0561 ns | 0.0134 |      56 B |
-| EmptyInput                   |  11.039 ns |  3.0097 ns | 0.1650 ns | 0.1090 |     456 B |
-| EmptyInputReference          |  16.423 ns |  1.0073 ns | 0.0552 ns | 0.0440 |     184 B |
-| EmptyParameter               |   2.221 ns |  0.8551 ns | 0.0469 ns | 0.0115 |      48 B |
-| EmptyParameterReference      |  15.251 ns |  1.2792 ns | 0.0701 ns | 0.0344 |     144 B |
-| EmptyPayloadReplacement      |   2.192 ns |  0.0921 ns | 0.0050 ns | 0.0115 |      48 B |
-| EmptyRequestBody             |   2.190 ns |  0.7266 ns | 0.0398 ns | 0.0115 |      48 B |
-| EmptySourceDescription       |   2.145 ns |  1.3323 ns | 0.0730 ns | 0.0115 |      48 B |
-| EmptyStep                    |   4.262 ns |  1.4951 ns | 0.0820 ns | 0.0363 |     152 B |
-| EmptySuccessAction           |   2.519 ns |  0.3913 ns | 0.0215 ns | 0.0172 |      72 B |
-| EmptySuccessActionReference  |  14.283 ns |  2.8599 ns | 0.1568 ns | 0.0325 |     136 B |
-| EmptyWorkflow                |   3.158 ns |  1.4575 ns | 0.0799 ns | 0.0249 |     104 B |
+| EmptyComponent               |   2.226 ns |  0.1962 ns | 0.0108 ns | 0.0134 |      56 B |
+| EmptyCriterion               |   2.047 ns |  0.3040 ns | 0.0167 ns | 0.0115 |      48 B |
+| EmptyCriterionExpressionType |   1.909 ns |  0.3863 ns | 0.0212 ns | 0.0096 |      40 B |
+| EmptyDocument                | 228.241 ns | 25.4138 ns | 1.3930 ns | 0.3328 |    1392 B |
+| EmptyFailureAction           |   3.483 ns |  0.3358 ns | 0.0184 ns | 0.0268 |     112 B |
+| EmptyFailureActionReference  |  14.512 ns |  1.8705 ns | 0.1025 ns | 0.0325 |     136 B |
+| EmptyInfo                    |   2.223 ns |  0.6720 ns | 0.0368 ns | 0.0134 |      56 B |
+| EmptyInput                   |  10.907 ns |  2.6934 ns | 0.1476 ns | 0.1090 |     456 B |
+| EmptyInputReference          |  15.732 ns |  0.7248 ns | 0.0397 ns | 0.0440 |     184 B |
+| EmptyParameter               |   2.041 ns |  0.5608 ns | 0.0307 ns | 0.0115 |      48 B |
+| EmptyParameterReference      |  14.644 ns |  2.7363 ns | 0.1500 ns | 0.0344 |     144 B |
+| EmptyPayloadReplacement      |   2.069 ns |  1.2000 ns | 0.0658 ns | 0.0115 |      48 B |
+| EmptyRequestBody             |   2.057 ns |  0.6098 ns | 0.0334 ns | 0.0115 |      48 B |
+| EmptySourceDescription       |   2.079 ns |  0.4744 ns | 0.0260 ns | 0.0115 |      48 B |
+| EmptyStep                    |   4.332 ns |  0.1735 ns | 0.0095 ns | 0.0363 |     152 B |
+| EmptySuccessAction           |   2.632 ns |  0.9814 ns | 0.0538 ns | 0.0172 |      72 B |
+| EmptySuccessActionReference  |  14.514 ns |  2.1367 ns | 0.1171 ns | 0.0325 |     136 B |
+| EmptyWorkflow                |   2.977 ns |  1.8428 ns | 0.1010 ns | 0.0249 |     104 B |

@@ -10,6 +10,22 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests.Validation;
 public class ArazzoStepDependencyValidatorTests
 {
     [Theory]
+    [InlineData(ArazzoCriterionExpressionTypeType.Regex, "^{$steps.second.outputs.id}$")]
+    [InlineData(ArazzoCriterionExpressionTypeType.JsonPath, "$[?(@.id == '{$steps.second.outputs.id}')]")]
+    [InlineData(ArazzoCriterionExpressionTypeType.XPath, "/items/item[@id='{$steps.second.outputs.id}']")]
+    public void EmbeddedConditionReferences_CreateImplicitDependencies(ArazzoCriterionExpressionTypeType type, string condition)
+    {
+        var document = CreateDocument();
+        Assert.NotNull(document.Workflows);
+        var steps = document.Workflows[0].Steps;
+        Assert.NotNull(steps);
+        steps[0].SuccessCriteria =
+            [new ArazzoCriterion { Context = new("$response.body"), Type = type, Condition = condition }];
+
+        AssertRejected(document, "unsatisfiable forward reference");
+    }
+
+    [Theory]
     [InlineData("missing", "unknown stepId 'missing'")]
     [InlineData("First", "unknown stepId 'First'")]
     [InlineData("$workflows.missing.steps.first", "unknown workflowId 'missing'")]

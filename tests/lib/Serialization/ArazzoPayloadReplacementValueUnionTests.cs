@@ -80,7 +80,7 @@ public class ArazzoPayloadReplacementValueUnionTests
     [InlineData(ArazzoSpecVersion.Arazzo1_0, "$steps.lookup.outputs.id")]
     [InlineData(ArazzoSpecVersion.Arazzo1_1, "$workflows.lookup.outputs.id")]
     [InlineData(ArazzoSpecVersion.Arazzo1_1, "$message.payload#/id")]
-    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$request.payload.id")]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$request.payload#/id")]
     [InlineData(ArazzoSpecVersion.Arazzo1_1, "$self")]
     public void Expression_DeserializesExclusivelyAndRoundTrips(ArazzoSpecVersion version, string expression)
     {
@@ -111,7 +111,7 @@ public class ArazzoPayloadReplacementValueUnionTests
     [Theory]
     [InlineData("$self")]
     [InlineData("$message.payload#/id")]
-    [InlineData("$request.payload.id")]
+    [InlineData("$request.payload#/id")]
     public void Expression_ClassificationAndSerializationUseVersionGrammar(string expression)
     {
         var input = JsonValue.Create(expression);

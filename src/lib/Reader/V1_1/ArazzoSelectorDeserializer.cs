@@ -55,7 +55,8 @@ internal static partial class ArazzoV1_1Deserializer
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Context)} is a REQUIRED field."));
         }
 
-        if (string.IsNullOrEmpty(selector.Selector))
+        if (selector.Selector is null || selector.Selector.Length == 0 &&
+            !ArazzoSelectorSyntaxValidator.IsJsonPointer(selector.Type?.Type, selector.Type?.ExpressionType))
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Selector)} is a REQUIRED field."));
         }
@@ -64,5 +65,9 @@ internal static partial class ArazzoV1_1Deserializer
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Type)} is a REQUIRED field."));
         }
+        if (ArazzoSelectorSyntaxValidator.GetError(selector.Selector,
+            ArazzoSelectorSyntaxValidator.IsJsonPointer(selector.Type?.Type, selector.Type?.ExpressionType),
+            $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Selector)}") is { } error)
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
     }
 }

@@ -49,6 +49,8 @@ internal static partial class ArazzoV1Deserializer
         {
             requestBody.Payload = new() { Any = JsonNullSentinel.JsonNull };
         }
+        foreach (var error in ArazzoSelectorSyntaxValidator.ValidateReplacements(requestBody, context.Diagnostic.SpecificationVersion))
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
 
         return requestBody;
     }

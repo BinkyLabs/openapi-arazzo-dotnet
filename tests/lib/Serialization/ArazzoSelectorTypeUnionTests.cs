@@ -9,6 +9,54 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 public class ArazzoSelectorTypeUnionTests
 {
     [Theory]
+    [InlineData("", true)]
+    [InlineData("/", true)]
+    [InlineData("/a~1b/~0", true)]
+    [InlineData("not-a-pointer", false)]
+    [InlineData("#/id", false)]
+    [InlineData("/bad~2", false)]
+    public void JsonPointerSelectors_ValidateSyntaxDuringReadingAndWriting(string pointer, bool valid)
+    {
+        var json = new JsonObject { ["context"] = "$response.body", ["selector"] = pointer, ["type"] = "jsonpointer" };
+        var context = new ParsingContext(new());
+        var selector = context.ParseFragment<ArazzoSelector>(json, ArazzoSpecVersion.Arazzo1_1);
+        Assert.NotNull(selector);
+        using var text = new StringWriter();
+        if (valid)
+        {
+            Assert.Empty(context.Diagnostic.Errors);
+            selector.SerializeAsV1_1(new OpenApiJsonWriter(text));
+        }
+        else
+        {
+            Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains("RFC 6901", StringComparison.Ordinal));
+            Assert.Throws<ArazzoSerializationException>(() => selector.SerializeAsV1_1(new OpenApiJsonWriter(text)));
+        }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void InvalidReplacementPointers_AreRejectedWithExplicitAndDefaultTypes(bool explicitType)
+    {
+        var replacement = new JsonObject { ["target"] = "not-a-pointer", ["value"] = 1 };
+        if (explicitType)
+            replacement["targetSelectorType"] = "jsonpointer";
+        var json = new JsonObject
+        {
+            ["contentType"] = "application/json",
+            ["payload"] = new JsonObject { ["id"] = 0 },
+            ["replacements"] = new JsonArray(replacement)
+        };
+        var context = new ParsingContext(new());
+        var body = context.ParseFragment<ArazzoRequestBody>(json, ArazzoSpecVersion.Arazzo1_1);
+        Assert.NotNull(body);
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains("RFC 6901", StringComparison.Ordinal));
+        using var text = new StringWriter();
+        Assert.Throws<ArazzoSerializationException>(() => body.SerializeAsV1_1(new OpenApiJsonWriter(text)));
+    }
+
+    [Theory]
     [InlineData("jsonpath", ArazzoPayloadRequirementTargetSelectorType.JsonPath)]
     [InlineData("xpath", ArazzoPayloadRequirementTargetSelectorType.XPath)]
     [InlineData("jsonpointer", ArazzoPayloadRequirementTargetSelectorType.JsonPointer)]

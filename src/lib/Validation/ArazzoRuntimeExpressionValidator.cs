@@ -19,12 +19,18 @@ internal static partial class ArazzoRuntimeExpressionValidator
         @"^\$(?:url|method|statusCode|request\." + V1SourcePattern + @"|response\." + V1SourcePattern + @"|inputs\." + NamePattern +
         @"|outputs\." + NamePattern + @"|steps\." + NamePattern + @"|workflows\." + NamePattern + @"|sourceDescriptions\." + NamePattern +
         @"|components\.parameters\." + NamePattern + @"|components\." + NamePattern + @")$";
-    private const string V1_1PayloadReferencePattern = @"payload(?:#" + JsonPointerPattern + @")?(?:\." + NamePattern + @")?";
-    private const string V1_1SourcePattern = @"(?:" + HeaderReferencePattern + @"|query\." + NamePattern + @"|path\." + NamePattern + @"|" + BodyReferencePattern + @"|" + V1_1PayloadReferencePattern + ")";
+    private const string IdentifierPattern = @"[A-Za-z0-9._-]+";
+    private const string StrictIdentifierPattern = @"[A-Za-z0-9_-]+";
+    private const string V1_1PointerPattern = @"(?:/(?:[^~/{}]|~[01])*)*";
+    private const string V1_1FragmentPattern = @"(?:#" + V1_1PointerPattern + @")?";
+    private const string V1_1CharacterPattern = @"[^{}\x00-\x1F]";
+    private const string V1_1SourcePattern = @"(?:header\." + TokenPattern + @"|(?:query|path)\." + V1_1CharacterPattern + @"*|(?:body|payload)" + V1_1FragmentPattern + ")";
     private const string V1_1RuntimeExpressionPattern =
-        @"^\$(?:url|method|statusCode|request\." + V1_1SourcePattern + @"|response\." + V1_1SourcePattern + @"|inputs\." + NamePattern +
-        @"|outputs\." + NamePattern + @"|steps\." + NamePattern + @"|workflows\." + NamePattern + @"\.(?:inputs|outputs)\." + NamePattern +
-        @"|sourceDescriptions\." + NamePattern + @"|components\.parameters\." + NamePattern + @"|components\." + NamePattern + @"|message\." + V1_1SourcePattern + @"|self)$";
+        @"\A\$(?:url|method|statusCode|(?:request|response|message)\." + V1_1SourcePattern +
+        @"|(?:inputs|outputs)\." + IdentifierPattern + V1_1FragmentPattern +
+        @"|steps\." + StrictIdentifierPattern + @"\.outputs\." + IdentifierPattern + V1_1FragmentPattern +
+        @"|workflows\." + StrictIdentifierPattern + @"\.(?:inputs|outputs)\." + IdentifierPattern + V1_1FragmentPattern +
+        @"|sourceDescriptions\." + StrictIdentifierPattern + @"\." + V1_1CharacterPattern + @"+|components\.(?:parameters|successActions|failureActions)\." + IdentifierPattern + @"|self)\z";
 
     [GeneratedRegex(V1RuntimeExpressionPattern, RegexOptions.CultureInvariant)]
     private static partial Regex V1RuntimeExpressionRegex();

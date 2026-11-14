@@ -21,11 +21,11 @@ public class ArazzoRuntimeExpressionTests
     [InlineData("$sourceDescriptions.api.url")]
     [InlineData("$components.parameters.page")]
     [InlineData("$components.successActions.notify")]
-    [InlineData("$message.payload.orderId")]
+    [InlineData("$message.payload#/orderId")]
     [InlineData("$message.payload#/id")]
     [InlineData("$message.header.correlationId")]
     [InlineData("$request.payload#/orderId")]
-    [InlineData("$response.payload.orderId")]
+    [InlineData("$response.payload#/orderId")]
     [InlineData("$self")]
     public void Constructor_AcceptsExpressionsFromBothArazzoVersions(string expression)
     {
