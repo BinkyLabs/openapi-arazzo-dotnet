@@ -444,13 +444,15 @@ public class ParsingContext
             Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));
         }
 
-        foreach (var parameter in parameters ?? [])
+        foreach (var error in parameters?
+                                .OfType<ArazzoParameterReference>()
+                                .Select(ArazzoParameterValidator.GetQueryStringValueError)
+                                .Where(x => x is not null)
+                                .Cast<string>()
+                                .Select(x => new OpenApiError(string.Empty, x))
+                                ?? [])
         {
-            if (parameter is ArazzoParameterReference &&
-                ArazzoParameterValidator.GetQueryStringValueError(parameter) is string error)
-            {
-                Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));
-            }
+            Diagnostic.Errors.Add(error);
         }
     }
 }
