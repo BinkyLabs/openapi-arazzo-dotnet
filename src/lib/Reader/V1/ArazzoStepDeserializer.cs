@@ -41,7 +41,14 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepDependsOn), static (o, v, c) => o.DependsOn = v.CreateSimpleList(static n => n.GetScalarValue()!, c).ToHashSet(StringComparer.Ordinal) },
         { ArazzoConstants.ArazzoStepParameters, static (o, v, c) => o.Parameters = v.CreateUnionList(LoadParameterUnion, c) },
         { ArazzoConstants.ArazzoStepRequestBody, static (o, v, c) => o.RequestBody = LoadRequestBody(v, c) },
-        { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v, c) => o.SuccessCriteria = v.CreateList(LoadCriterion, c) },
+        { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v, c) =>
+        {
+            o.SuccessCriteria = v.CreateList(LoadCriterion, c);
+            if (o.SuccessCriteria.Count == 0)
+            {
+                c.Diagnostic.Errors.Add(new OpenApiError(c.GetLocation(), $"{nameof(ArazzoStep)} successCriteria MUST contain at least one entry when specified."));
+            }
+        } },
         { ArazzoConstants.ArazzoStepOnSuccess, static (o, v, c) =>
         {
             o.OnSuccess = v.CreateUnionList(LoadSuccessActionUnion, c);

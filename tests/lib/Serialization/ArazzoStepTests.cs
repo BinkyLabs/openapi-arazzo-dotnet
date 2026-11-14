@@ -611,6 +611,63 @@ public class ArazzoStepTests
     [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0)]
     [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void Deserialize_V1AndV1_1_WithEmptySuccessCriteria_AddsDiagnosticError(ArazzoSpecVersion specVersion)
+    {
+        var jsonNode = JsonNode.Parse("""
+        {
+            "stepId": "getUser",
+            "operationId": "getUser",
+            "successCriteria": []
+        }
+        """);
+        Assert.NotNull(jsonNode);
+        var parsingContext = new ParsingContext(new());
+
+        var step = LoadStep(jsonNode, parsingContext, specVersion);
+
+        Assert.NotNull(step.SuccessCriteria);
+        Assert.Empty(step.SuccessCriteria);
+        var error = Assert.Single(parsingContext.Diagnostic.Errors);
+        Assert.Equal("#/successCriteria", error.Pointer);
+        Assert.Equal("ArazzoStep successCriteria MUST contain at least one entry when specified.", error.Message);
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, false)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, false)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, true)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, true)]
+    public void Deserialize_V1AndV1_1_WithValidSuccessCriteria_ShouldNotAddDiagnosticError(ArazzoSpecVersion specVersion, bool includeSuccessCriteria)
+    {
+        var jsonNode = new JsonObject
+        {
+            ["stepId"] = "getUser",
+            ["operationId"] = "getUser"
+        };
+        if (includeSuccessCriteria)
+        {
+            jsonNode["successCriteria"] = JsonNode.Parse("""[{"condition": "$statusCode == 200"}]""");
+        }
+        var parsingContext = new ParsingContext(new());
+
+        var step = LoadStep(jsonNode, parsingContext, specVersion);
+
+        Assert.Empty(parsingContext.Diagnostic.Errors);
+        if (includeSuccessCriteria)
+        {
+            Assert.NotNull(step.SuccessCriteria);
+            var criterion = Assert.Single(step.SuccessCriteria);
+            Assert.Equal("$statusCode == 200", criterion.Condition);
+        }
+        else
+        {
+            Assert.Null(step.SuccessCriteria);
+        }
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
     public void Deserialize_V1AndV1_1_WithPlainOperationPath_AddsDiagnosticError(ArazzoSpecVersion specVersion)
     {
         var json = """
