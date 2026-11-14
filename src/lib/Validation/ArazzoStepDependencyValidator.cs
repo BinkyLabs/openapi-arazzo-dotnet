@@ -89,10 +89,8 @@ internal static partial class ArazzoStepDependencyValidator
 
             foreach (var (expression, afterStep) in GetExpressions(details.Workflow, details.Step))
             {
-                foreach (Match match in OutputReferenceRegex().Matches(expression))
+                foreach (Match match in OutputReferenceRegex().Matches(expression).Where(x => x.Groups["reference"].Success))
                 {
-                    if (!match.Groups["reference"].Success)
-                        continue;
                     var (target, error) = ResolveReference(match, node, graph, sources);
                     var reference = match.Groups["reference"].Value;
                     if (error is not null)
