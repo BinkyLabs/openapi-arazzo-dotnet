@@ -446,7 +446,7 @@ public class ParsingContext
 
         foreach (var parameter in parameters ?? [])
         {
-            if (ArazzoUnionHelper.Unwrap(parameter) is ArazzoParameterReference &&
+            if (parameter is ArazzoParameterReference &&
                 ArazzoParameterValidator.GetQueryStringValueError(parameter) is string error)
             {
                 Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));

@@ -15,6 +15,34 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// </remarks>
 public class ArazzoParameterValueUnion : IArazzoSerializable, IOpenApiElement
 {
+    /// <summary>Initializes an empty parameter value union.</summary>
+    public ArazzoParameterValueUnion()
+    {
+    }
+
+    internal ArazzoParameterValueUnion(ArazzoParameterValueUnion source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        Any = source.Any.IsJsonNullSentinel() ? JsonNullSentinel.JsonNull : source.Any?.DeepClone();
+        Expression = source.Expression;
+        Selector = source.Selector is { } selector ? new ArazzoSelector
+        {
+            Context = selector.Context,
+            Selector = selector.Selector,
+            Type = selector.Type is { } type ? new ArazzoSelectorTypeUnion
+            {
+                Type = type.Type,
+                ExpressionType = type.ExpressionType is { } expressionType ? new ArazzoCriterionExpressionType
+                {
+                    Type = expressionType.Type,
+                    Version = expressionType.Version,
+                    Extensions = ArazzoInput.CloneArazzoExtensions(expressionType.Extensions)
+                } : null
+            } : null,
+            Extensions = ArazzoInput.CloneArazzoExtensions(selector.Extensions)
+        } : null;
+    }
+
     /// <summary>Gets or sets the literal value. Use JsonNullSentinel.JsonNull for an explicit null.</summary>
     public JsonNode? Any { get; set; }
     /// <summary>Gets or sets the runtime expression.</summary>
@@ -63,27 +91,6 @@ public class ArazzoParameterValueUnion : IArazzoSerializable, IOpenApiElement
         return value.Selector is { } selector && value.Any is null && value.Expression is null ? selector : throw new InvalidCastException("The selector is not the only populated member.");
     }
     internal ArazzoPayloadReplacementValueUnion AsPayloadValue() => new() { Any = Any, Expression = Expression, Selector = Selector };
-    internal ArazzoParameterValueUnion Clone() => new()
-    {
-        Any = Any.IsJsonNullSentinel() ? JsonNullSentinel.JsonNull : Any?.DeepClone(),
-        Expression = Expression,
-        Selector = Selector is { } selector ? new ArazzoSelector
-        {
-            Context = selector.Context,
-            Selector = selector.Selector,
-            Type = selector.Type is { } type ? new ArazzoSelectorTypeUnion
-            {
-                Type = type.Type,
-                ExpressionType = type.ExpressionType is { } expressionType ? new ArazzoCriterionExpressionType
-                {
-                    Type = expressionType.Type,
-                    Version = expressionType.Version,
-                    Extensions = ArazzoInput.CloneArazzoExtensions(expressionType.Extensions)
-                } : null
-            } : null,
-            Extensions = ArazzoInput.CloneArazzoExtensions(selector.Extensions)
-        } : null
-    };
     /// <inheritdoc/>
     public void SerializeAsV1(IOpenApiWriter writer) => AsPayloadValue().SerializeAsV1(writer);
     /// <inheritdoc/>

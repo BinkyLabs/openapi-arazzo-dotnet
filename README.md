@@ -81,7 +81,7 @@ var arazzoDocument = new ArazzoDocument
                 {
                     StepId = "fetchPet",
                     OperationId = "getPetById",
-                    Parameters = new List<ArazzoParameterUnion>
+                    Parameters = new List<IArazzoParameter>
                     {
                         new ArazzoParameter
                         {

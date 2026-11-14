@@ -9,20 +9,14 @@ namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
 {
-    public static ArazzoFailureActionUnion LoadFailureActionUnion(JsonNode node, ParsingContext context)
+    public static IArazzoFailureAction LoadFailureActionByVersion(JsonNode node, ParsingContext context)
     {
         if (node is JsonObject map && map.ContainsKey(ArazzoConstants.ArazzoReusableObjectReference) &&
             (map.ContainsKey(ArazzoConstants.ArazzoResultActionName) || map.ContainsKey(ArazzoConstants.ArazzoResultActionType)))
             throw new ArazzoReaderException("A failure action must be either a Failure Action Object or a Reusable Object, not both.", context);
-        var action = context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_1
+        return context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_1
             ? V1_1.ArazzoV1_1Deserializer.LoadFailureAction(node, context)
             : LoadFailureAction(node, context);
-        return action switch
-        {
-            ArazzoFailureAction inline => inline,
-            ArazzoFailureActionReference reference => reference,
-            _ => throw new ArazzoReaderException("Unsupported failure action union member.", context)
-        };
     }
 
     public static readonly FixedFieldMap<ArazzoFailureAction> FailureActionFixedFields = new()

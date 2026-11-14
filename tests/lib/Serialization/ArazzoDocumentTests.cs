@@ -19,6 +19,62 @@ public class ArazzoDocumentTests
             _ => throw new ArgumentOutOfRangeException(nameof(specVersion), specVersion, null)
         };
 
+    [Theory]
+    [InlineData(false, "valid")]
+    [InlineData(true, "valid")]
+    [InlineData(false, "in")]
+    [InlineData(true, "in")]
+    [InlineData(false, "duplicate")]
+    [InlineData(true, "duplicate")]
+    public void SerializeAsV1_1_BindsProgrammaticActionParameterReferences(bool failure, string scenario)
+    {
+        var reference = new ArazzoParameterReference("shared");
+        IList<IArazzoParameter> parameters = [reference];
+        if (scenario == "duplicate")
+            parameters.Add(new ArazzoParameter { Name = "input", Value = "two" });
+        var workflow = new ArazzoWorkflow
+        {
+            WorkflowId = "wf",
+            Steps = [new ArazzoStep { StepId = "step", OperationId = "getUser" }]
+        };
+        if (failure)
+            workflow.FailureActions = [new ArazzoFailureAction { Name = "goto", Type = ArazzoFailureType.Goto, WorkflowId = "wf", Parameters = parameters }];
+        else
+            workflow.SuccessActions = [new ArazzoSuccessAction { Name = "goto", Type = ArazzoSuccessType.Goto, WorkflowId = "wf", Parameters = parameters }];
+        var document = new ArazzoDocument
+        {
+            Info = new ArazzoInfo { Title = "T", Version = "1" },
+            SourceDescriptions = [new ArazzoSourceDescription { Name = "api", Url = new Uri("https://example.com/api"), Type = ArazzoDescriptionType.OpenAPI }],
+            Workflows = [workflow],
+            Components = new ArazzoComponent
+            {
+                Parameters = new Dictionary<string, ArazzoParameter>
+                {
+                    ["shared"] = new() { Name = "input", Value = "one", In = scenario == "in" ? ParameterLocation.Header : null }
+                }
+            }
+        };
+        using var text = new StringWriter();
+        var writer = new OpenApiJsonWriter(text);
+
+        if (scenario == "valid")
+        {
+            document.SerializeAsV1_1(writer);
+            Assert.Equal("input", reference.Name);
+            var json = JsonNode.Parse(text.ToString());
+            Assert.NotNull(json);
+            var context = new ParsingContext(new());
+            context.Parse(json, new Uri("https://example.com/"));
+            Assert.Empty(context.Diagnostic.Errors);
+        }
+        else
+        {
+            var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1_1(writer));
+            var message = scenario == "in" ? "parameter 'input' must not specify 'in'" : "duplicate parameter 'input'";
+            Assert.Contains(message, exception.Message, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void SerializeAsV1_ShouldWriteCorrectJson()
     {
@@ -793,8 +849,8 @@ public class ArazzoDocumentTests
 
     private static ArazzoDocument CreateDocument(
         ArazzoStep step,
-        IList<ArazzoSuccessActionUnion>? successActions = null,
-        IList<ArazzoFailureActionUnion>? failureActions = null,
+        IList<IArazzoSuccessAction>? successActions = null,
+        IList<IArazzoFailureAction>? failureActions = null,
         IDictionary<string, ArazzoParameter>? parameters = null,
         ISet<string>? dependsOn = null,
         IList<ArazzoSourceDescription>? sourceDescriptions = null)

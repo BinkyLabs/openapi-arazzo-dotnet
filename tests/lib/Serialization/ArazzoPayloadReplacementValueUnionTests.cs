@@ -24,6 +24,10 @@ public class ArazzoPayloadReplacementValueUnionTests
         { ArazzoSpecVersion.Arazzo1_1, """{"selector":"$.id","type":"jsonpath","nested":{"context":"literal"}}""" },
         { ArazzoSpecVersion.Arazzo1_0, """{"Any":1,"Expression":"$inputs.id","Selector":{}}""" },
         { ArazzoSpecVersion.Arazzo1_1, "{}" },
+        { ArazzoSpecVersion.Arazzo1_0, """{"context":"customer"}""" },
+        { ArazzoSpecVersion.Arazzo1_1, """{"context":"customer"}""" },
+        { ArazzoSpecVersion.Arazzo1_0, """{"context":"production","type":"object"}""" },
+        { ArazzoSpecVersion.Arazzo1_1, """{"context":"production","type":"object"}""" },
         { ArazzoSpecVersion.Arazzo1_0, "[]" },
         { ArazzoSpecVersion.Arazzo1_1, "null" },
         { ArazzoSpecVersion.Arazzo1_0, "null" },
@@ -410,12 +414,11 @@ public class ArazzoPayloadReplacementValueUnionTests
     }
 
     [Theory]
-    [InlineData("""{"context":"$response.body"}""", "ArazzoSelector.Selector is a REQUIRED field")]
     [InlineData("""{"context":"$response.body","selector":"$.id"}""", "ArazzoSelector.Type is a REQUIRED field")]
     [InlineData("""{"context":null,"selector":"$.id","type":"jsonpath"}""", "ArazzoSelector.Context is a REQUIRED field")]
     [InlineData("""{"context":"literal","selector":"$.id","type":"jsonpath"}""", "must be a valid runtime expression")]
     [InlineData("""{"context":"","selector":"$.id","type":"jsonpath"}""", "must be a valid runtime expression")]
-    public void Deserialize_ObjectWithContextAlwaysUsesSelectorValidation(string json, string expectedMessage)
+    public void Deserialize_SelectorShapedObjectUsesSelectorValidation(string json, string expectedMessage)
     {
         var input = JsonNode.Parse(json);
         Assert.NotNull(input);

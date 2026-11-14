@@ -111,7 +111,7 @@ public class ArazzoWorkflowTests
                     OperationPath = "{$sourceDescriptions.source1.url}#/paths/~1users~1{id}/get"
                 }
             },
-            SuccessActions = new List<ArazzoSuccessActionUnion>
+            SuccessActions = new List<IArazzoSuccessAction>
             {
                 new ArazzoSuccessAction
                 {
@@ -119,7 +119,7 @@ public class ArazzoWorkflowTests
                     Type = ArazzoSuccessType.End
                 }
             },
-            FailureActions = new List<ArazzoFailureActionUnion>
+            FailureActions = new List<IArazzoFailureAction>
             {
                 new ArazzoFailureAction
                 {
@@ -131,7 +131,7 @@ public class ArazzoWorkflowTests
             {
                 ["user"] = "$response.body#/user"
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter
                 {
@@ -218,7 +218,7 @@ public class ArazzoWorkflowTests
                     OperationPath = "{$sourceDescriptions.source1.url}#/paths/~1users~1{id}/get"
                 }
             },
-            SuccessActions = new List<ArazzoSuccessActionUnion>
+            SuccessActions = new List<IArazzoSuccessAction>
             {
                 new ArazzoSuccessAction
                 {
@@ -226,7 +226,7 @@ public class ArazzoWorkflowTests
                     Type = ArazzoSuccessType.End
                 }
             },
-            FailureActions = new List<ArazzoFailureActionUnion>
+            FailureActions = new List<IArazzoFailureAction>
             {
                 new ArazzoFailureAction
                 {
@@ -238,7 +238,7 @@ public class ArazzoWorkflowTests
             {
                 ["user"] = "$response.body#/user"
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter
                 {
@@ -718,7 +718,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", WorkflowId = "childWorkflow" }
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "input", Value = "1" },
                 new ArazzoParameter { Name = "input", Value = "2" }
@@ -742,7 +742,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", WorkflowId = "childWorkflow" }
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "input", Value = "1" },
                 new ArazzoParameter { Name = "input", Value = "2" }
@@ -766,7 +766,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "1" },
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Header, Value = "2" }
@@ -791,7 +791,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "1" },
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Header, Value = "2" }
@@ -816,7 +816,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", Value = "1" }
             }
@@ -839,7 +839,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", OperationId = "getUser" }
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", Value = "1" }
             }
@@ -862,7 +862,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", WorkflowId = "childWorkflow" }
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "input", Value = "1" }
             }
@@ -886,7 +886,7 @@ public class ArazzoWorkflowTests
             {
                 new ArazzoStep { StepId = "step1", WorkflowId = "childWorkflow" }
             },
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "input", Value = "1" }
             }
@@ -975,9 +975,12 @@ public class ArazzoWorkflowTests
 
         var workflow = LoadWorkflow(jsonNode, parsingContext, specVersion);
 
-        Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!).Reference);
-        Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!).Reference);
-        var parameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!).Reference);
+        Assert.NotNull(workflow.SuccessActions);
+        Assert.NotNull(workflow.FailureActions);
+        Assert.NotNull(workflow.Parameters);
+        Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions));
+        Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions));
+        var parameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters));
         Assert.Equal("7", parameter.Value?.Any?.GetValue<string>());
     }
 

@@ -165,12 +165,12 @@ internal static partial class ArazzoV1_1Deserializer
             [ArazzoConstants.ArazzoStepRequestBody] = static (o, v, c) => o.RequestBody = LoadRequestBody(v, c),
             [ArazzoConstants.ArazzoStepOnSuccess] = static (o, v, c) =>
             {
-                o.OnSuccess = v.CreateUnionList(ArazzoV1Deserializer.LoadSuccessActionUnion, c);
+                o.OnSuccess = v.CreateObjectList(ArazzoV1Deserializer.LoadSuccessActionByVersion, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.OnSuccess, c, $"{nameof(ArazzoStep)} onSuccess");
             },
             [ArazzoConstants.ArazzoStepOnFailure] = static (o, v, c) =>
             {
-                o.OnFailure = v.CreateUnionList(ArazzoV1Deserializer.LoadFailureActionUnion, c);
+                o.OnFailure = v.CreateObjectList(ArazzoV1Deserializer.LoadFailureActionByVersion, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.OnFailure, c, $"{nameof(ArazzoStep)} onFailure");
             },
         };
@@ -221,12 +221,12 @@ internal static partial class ArazzoV1_1Deserializer
             [ArazzoConstants.ArazzoWorkflowSteps] = static (o, v, c) => o.Steps = v.CreateList(LoadStep, c),
             [ArazzoConstants.ArazzoWorkflowSuccessActions] = static (o, v, c) =>
             {
-                o.SuccessActions = v.CreateUnionList(ArazzoV1Deserializer.LoadSuccessActionUnion, c);
+                o.SuccessActions = v.CreateObjectList(ArazzoV1Deserializer.LoadSuccessActionByVersion, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.SuccessActions, c, $"{nameof(ArazzoWorkflow)} successActions");
             },
             [ArazzoConstants.ArazzoWorkflowFailureActions] = static (o, v, c) =>
             {
-                o.FailureActions = v.CreateUnionList(ArazzoV1Deserializer.LoadFailureActionUnion, c);
+                o.FailureActions = v.CreateObjectList(ArazzoV1Deserializer.LoadFailureActionByVersion, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.FailureActions, c, $"{nameof(ArazzoWorkflow)} failureActions");
             }
         };

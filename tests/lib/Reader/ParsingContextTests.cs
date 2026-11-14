@@ -233,6 +233,45 @@ public class ParsingContextTests
         Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void ParseAndSerialize_MissingActionParameterReference_ReportsError(bool failure, bool reusableAction)
+    {
+        var action = """{"name":"goto","type":"goto","workflowId":"wf","parameters":[{"reference":"$components.parameters.missing"}]}""";
+        var actionKind = failure ? "failureActions" : "successActions";
+        var actionList = reusableAction ? $$"""{"reference":"$components.{{actionKind}}.shared"}""" : action;
+        var input = JsonNode.Parse($$"""
+        {
+            "arazzo":"1.1.0",
+            "info":{"title":"T","version":"1"},
+            "sourceDescriptions":[{"name":"api","url":"https://example.com/api","type":"openapi"}],
+            "workflows":[{
+                "workflowId":"wf",
+                "steps":[{"stepId":"step","operationId":"getUser"}],
+                "{{actionKind}}":[{{actionList}}]
+            }],
+            "components":{
+                "{{actionKind}}":{
+                    "shared":{{action}}
+                }
+            }
+        }
+        """);
+        Assert.NotNull(input);
+        var context = CreateContext();
+
+        var document = context.Parse(input, new Uri("https://example.com/"));
+
+        const string message = "parameter reference '$components.parameters.missing' does not resolve";
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains(message, StringComparison.Ordinal));
+        using var text = new StringWriter();
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1_1(new OpenApiJsonWriter(text)));
+        Assert.Contains(message, exception.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void GetFromTempStorage_NoScope_ReturnsDefaultWhenMissing()
     {
@@ -955,12 +994,22 @@ public class ParsingContextTests
         var document = ctx.Parse(jsonNode, new Uri("https://example.com/"));
 
         Assert.Empty(ctx.Diagnostic.Errors);
-        Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Parameters![0].Reference);
-        Assert.IsType<ArazzoParameterReference>(document.Workflows![0].Steps![0].Parameters![0].Reference);
-        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].SuccessActions![0].Reference);
-        Assert.IsType<ArazzoSuccessActionReference>(document.Workflows![0].Steps![0].OnSuccess![0].Reference);
-        Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].FailureActions![0].Reference);
-        Assert.IsType<ArazzoFailureActionReference>(document.Workflows![0].Steps![0].OnFailure![0].Reference);
+        Assert.NotNull(document.Workflows);
+        var workflow = Assert.Single(document.Workflows);
+        Assert.NotNull(workflow.Steps);
+        var step = Assert.Single(workflow.Steps);
+        Assert.NotNull(workflow.Parameters);
+        Assert.NotNull(step.Parameters);
+        Assert.NotNull(workflow.SuccessActions);
+        Assert.NotNull(step.OnSuccess);
+        Assert.NotNull(workflow.FailureActions);
+        Assert.NotNull(step.OnFailure);
+        Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters));
+        Assert.IsType<ArazzoParameterReference>(Assert.Single(step.Parameters));
+        Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions));
+        Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(step.OnSuccess));
+        Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions));
+        Assert.IsType<ArazzoFailureActionReference>(Assert.Single(step.OnFailure));
     }
 
     [Theory]

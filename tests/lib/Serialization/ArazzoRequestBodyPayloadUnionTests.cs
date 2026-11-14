@@ -78,6 +78,9 @@ public class ArazzoRequestBodyPayloadUnionTests
     [InlineData("\"\"")]
     [InlineData("\"literal\"")]
     [InlineData("\"prefix {$inputs.id}\"")]
+    [InlineData("""{"context":"customer"}""")]
+    [InlineData("""{"context":"production","id":42}""")]
+    [InlineData("""{"context":"production","type":"object"}""")]
     [InlineData("""{"Any":1,"Expression":"$inputs.id","Selector":{}}""")]
     [InlineData("""[1,null,{"id":"$inputs.id"}]""")]
     public void Literals_RoundTripBothVersionsWithoutWrapper(string json)
@@ -169,7 +172,6 @@ public class ArazzoRequestBodyPayloadUnionTests
 
     [Theory]
     [InlineData("""{"context":"literal","selector":"$.id","type":"jsonpath"}""", "must be a valid runtime expression")]
-    [InlineData("""{"context":"$response.body","type":"jsonpath"}""", "ArazzoSelector.Selector is a REQUIRED field")]
     [InlineData("""{"context":"$response.body","selector":"$.id"}""", "ArazzoSelector.Type is a REQUIRED field")]
     public void Selector_UsesExistingValidationWithoutFallingBackToLiteral(string json, string message)
     {

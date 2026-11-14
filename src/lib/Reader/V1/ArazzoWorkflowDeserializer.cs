@@ -27,12 +27,12 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoWorkflowSteps, static (o, v, c) => o.Steps = v.CreateList(LoadStep, c) },
         { ArazzoConstants.ArazzoWorkflowSuccessActions, static (o, v, c) =>
         {
-            o.SuccessActions = v.CreateUnionList(LoadSuccessActionUnion, c);
+            o.SuccessActions = v.CreateObjectList(LoadSuccessActionByVersion, c);
             ArazzoActionListValidator.ValidateDeserialization(o.SuccessActions, c, $"{nameof(ArazzoWorkflow)} successActions");
         } },
         { ArazzoConstants.ArazzoWorkflowFailureActions, static (o, v, c) =>
         {
-            o.FailureActions = v.CreateUnionList(LoadFailureActionUnion, c);
+            o.FailureActions = v.CreateObjectList(LoadFailureActionByVersion, c);
             ArazzoActionListValidator.ValidateDeserialization(o.FailureActions, c, $"{nameof(ArazzoWorkflow)} failureActions");
         } },
         { ArazzoConstants.ArazzoWorkflowOutputs, static (o, v, c) =>
@@ -40,7 +40,7 @@ internal static partial class ArazzoV1Deserializer
             ArazzoKeyValidator.ValidateDeserializationKeys(v, c, $"{nameof(ArazzoWorkflow)}.{nameof(ArazzoWorkflow.Outputs)}");
             o.Outputs = LoadOutputMap(v, c);
         } },
-        { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateUnionList(LoadParameterUnion, c) },
+        { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateObjectList(LoadParameter, c) },
     };
 
     public static PatternFieldMap<ArazzoWorkflow> GetWorkflowPatternFields() =>

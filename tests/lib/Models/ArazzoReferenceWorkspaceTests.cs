@@ -453,11 +453,8 @@ public class ArazzoReferenceWorkspaceTests
             document.RegisterComponents();
             var reference = new ArazzoParameterReference("shared", document);
             IArazzoParameter asInterface = reference;
-            ArazzoParameterUnion asUnion = reference;
-
             Assert.Same(value, reference.Value);
             Assert.Same(value, asInterface.Value);
-            Assert.Same(value, asUnion.Value);
         }
     }
 
@@ -711,14 +708,23 @@ public class ArazzoReferenceWorkspaceTests
         Assert.NotNull(result.Diagnostic);
         Assert.Empty(result.Diagnostic.Errors);
 
-        var workflow = Assert.Single(result.Document!.Workflows!);
-        var workflowParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!).Reference);
-        var workflowSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!).Reference);
-        var workflowFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!).Reference);
-        var step = Assert.Single(workflow.Steps!);
-        var stepParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(step.Parameters!).Reference);
-        var stepSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(step.OnSuccess!).Reference);
-        var stepFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(step.OnFailure!).Reference);
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Document.Workflows);
+        var workflow = Assert.Single(result.Document.Workflows);
+        Assert.NotNull(workflow.Parameters);
+        Assert.NotNull(workflow.SuccessActions);
+        Assert.NotNull(workflow.FailureActions);
+        Assert.NotNull(workflow.Steps);
+        var workflowParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters));
+        var workflowSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions));
+        var workflowFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions));
+        var step = Assert.Single(workflow.Steps);
+        Assert.NotNull(step.Parameters);
+        Assert.NotNull(step.OnSuccess);
+        Assert.NotNull(step.OnFailure);
+        var stepParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(step.Parameters));
+        var stepSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(step.OnSuccess));
+        var stepFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(step.OnFailure));
 
         Assert.Equal("userId", stepParameter.Name);
         Assert.Equal(ParameterLocation.Path, stepParameter.In);

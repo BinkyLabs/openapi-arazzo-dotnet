@@ -6,7 +6,7 @@ using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
-public class ArazzoParameterUnionTests
+public class ArazzoParameterInterfaceTests
 {
     [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0)]
@@ -29,9 +29,9 @@ public class ArazzoParameterUnionTests
         var parsed = context.ParseFragment<ArazzoWorkflow>(json, version);
         Assert.NotNull(parsed);
         Assert.NotNull(parsed.Parameters);
-        Assert.NotNull(parsed.Parameters[0].Parameter);
-        Assert.NotNull(parsed.Parameters[1].Reference);
-        Assert.Equal("override", parsed.Parameters[1].Reference?.Value?.Any?.GetValue<string>());
+        Assert.IsType<ArazzoParameter>(parsed.Parameters[0]);
+        var parsedReference = Assert.IsType<ArazzoParameterReference>(parsed.Parameters[1]);
+        Assert.Equal("override", parsedReference.Value?.Any?.GetValue<string>());
         Assert.Empty(context.Diagnostic.Errors);
         Assert.True(JsonNode.DeepEquals(json, Serialize(parsed, version)));
     }
@@ -47,12 +47,12 @@ public class ArazzoParameterUnionTests
                 Assert.NotNull(input);
                 var context = new ParsingContext(new());
 
-                var parameter = context.ParseFragment<ArazzoParameterUnion>(input, version);
+                var parameter = context.ParseFragment<IArazzoParameter>(input, version);
 
                 Assert.NotNull(parameter);
-                Assert.NotNull(parameter.Reference);
+                var reference = Assert.IsType<ArazzoParameterReference>(parameter);
                 Assert.NotNull(parameter.Value);
-                Assert.Same(parameter.Reference.Value, parameter.Value);
+                Assert.Same(reference.Value, parameter.Value);
                 Assert.NotNull(parameter.Value.Any);
                 Assert.Null(parameter.Value.Expression);
                 Assert.Null(parameter.Value.Selector);
@@ -72,7 +72,7 @@ public class ArazzoParameterUnionTests
         Assert.NotNull(input);
         var context = new ParsingContext(new());
 
-        var parameter = context.ParseFragment<ArazzoParameterUnion>(input, version);
+        var parameter = context.ParseFragment<IArazzoParameter>(input, version);
 
         Assert.NotNull(parameter);
         Assert.NotNull(parameter.Value);
@@ -96,7 +96,7 @@ public class ArazzoParameterUnionTests
         Assert.NotNull(input);
         var context = new ParsingContext(new());
 
-        var parameter = context.ParseFragment<ArazzoParameterUnion>(input, ArazzoSpecVersion.Arazzo1_1);
+        var parameter = context.ParseFragment<IArazzoParameter>(input, ArazzoSpecVersion.Arazzo1_1);
 
         Assert.NotNull(parameter);
         Assert.NotNull(parameter.Value);
@@ -107,7 +107,7 @@ public class ArazzoParameterUnionTests
         Assert.True(JsonNode.DeepEquals(input, Serialize(parameter, ArazzoSpecVersion.Arazzo1_1)));
         Assert.Throws<ArazzoSerializationException>(() => Serialize(parameter, ArazzoSpecVersion.Arazzo1_0));
         var v1Context = new ParsingContext(new());
-        _ = v1Context.ParseFragment<ArazzoParameterUnion>(input, ArazzoSpecVersion.Arazzo1_0);
+        _ = v1Context.ParseFragment<IArazzoParameter>(input, ArazzoSpecVersion.Arazzo1_0);
         Assert.Contains(v1Context.Diagnostic.Errors, error => error.Message.Contains("not supported in Arazzo 1.0", StringComparison.Ordinal));
     }
 
@@ -122,33 +122,6 @@ public class ArazzoParameterUnionTests
         Assert.Throws<ArazzoSerializationException>(() => Serialize(reference, ArazzoSpecVersion.Arazzo1_1));
     }
 
-    [Fact]
-    public void Conversions_PreserveIdentityAndRejectInvalidStates()
-    {
-        var parameter = new ArazzoParameter { Name = "id", Value = "value" };
-        var reference = new ArazzoParameterReference("shared");
-        ArazzoParameterUnion value = parameter;
-        ArazzoParameter actual = value;
-        Assert.Same(parameter, actual);
-        Assert.Throws<InvalidCastException>(() => (ArazzoParameterReference)value);
-        value = reference;
-        ArazzoParameterReference actualReference = value;
-        Assert.Same(reference, actualReference);
-        Assert.Throws<InvalidCastException>(() => (ArazzoParameter)value);
-        value.Parameter = parameter;
-        Assert.Throws<InvalidCastException>(() => (ArazzoParameter)value);
-        Assert.Throws<InvalidCastException>(() => (ArazzoParameterReference)value);
-        Assert.Throws<ArazzoSerializationException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_1));
-        value = new();
-        Assert.Throws<InvalidCastException>(() => (ArazzoParameter)value);
-        Assert.Throws<InvalidCastException>(() => (ArazzoParameterReference)value);
-        Assert.Throws<ArazzoSerializationException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_0));
-        Assert.Throws<ArgumentNullException>(() => (ArazzoParameterUnion)(ArazzoParameter)null!);
-        Assert.Throws<ArgumentNullException>(() => (ArazzoParameterUnion)(ArazzoParameterReference)null!);
-        Assert.Throws<ArgumentNullException>(() => (ArazzoParameter)(ArazzoParameterUnion)null!);
-        Assert.Throws<ArgumentNullException>(() => (ArazzoParameterReference)(ArazzoParameterUnion)null!);
-    }
-
     [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0)]
     [InlineData(ArazzoSpecVersion.Arazzo1_1)]
@@ -156,7 +129,7 @@ public class ArazzoParameterUnionTests
     {
         var json = JsonNode.Parse("""{"reference":"$components.parameters.shared","name":"id","value":"override"}""");
         Assert.NotNull(json);
-        Assert.Throws<ArazzoReaderException>(() => new ParsingContext(new()).ParseFragment<ArazzoParameterUnion>(json, version));
+        Assert.Throws<ArazzoReaderException>(() => new ParsingContext(new()).ParseFragment<IArazzoParameter>(json, version));
     }
 
     [Theory]
@@ -176,8 +149,8 @@ public class ArazzoParameterUnionTests
         var parsed = context.ParseFragment<ArazzoStep>(json, version);
         Assert.NotNull(parsed);
         Assert.NotNull(parsed.Parameters);
-        Assert.NotNull(parsed.Parameters[0].Parameter);
-        Assert.NotNull(parsed.Parameters[1].Reference);
+        Assert.IsType<ArazzoParameter>(parsed.Parameters[0]);
+        Assert.IsType<ArazzoParameterReference>(parsed.Parameters[1]);
         Assert.Empty(context.Diagnostic.Errors);
         Assert.True(JsonNode.DeepEquals(json, Serialize(parsed, version)));
         parameter.In = null;

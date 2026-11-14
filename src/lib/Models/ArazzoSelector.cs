@@ -31,18 +31,19 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
     /// <inheritdoc/>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, v) => v.SerializeAsV1(w));
     }
 
     /// <inheritdoc/>
     public void SerializeAsV1_1(IOpenApiWriter writer)
     {
-        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1);
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, v) => v.SerializeAsV1_1(w));
     }
 
-    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion)
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(callback);
         if (specVersion is ArazzoSpecVersion.Arazzo1_0)
             throw new ArazzoSerializationException("Selector objects are not supported in Arazzo 1.0.");
         ArgumentNullException.ThrowIfNull(Context);
@@ -53,7 +54,8 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
         writer.WriteStartObject();
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoSelectorContext, Context.Expression);
         writer.WriteRequiredProperty(ArazzoConstants.ArazzoSelectorSelector, Selector);
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoSelectorType, Type, static (w, v) => v.SerializeAsV1_1(w));
+        if (specVersion is not ArazzoSpecVersion.Arazzo1_0)
+            writer.WriteOptionalObject(ArazzoConstants.ArazzoSelectorType, Type, callback);
         writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }

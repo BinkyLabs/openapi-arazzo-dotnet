@@ -329,8 +329,13 @@ internal static partial class ArazzoSemanticReferenceValidator
 
         foreach (var action in actions ?? [])
         {
-            if (ArazzoUnionHelper.Unwrap(action) is IArazzoReferenceHolder<BaseArazzoReference> ||
-                action.Parameters?.Any(static parameter => ArazzoUnionHelper.Unwrap(parameter) is ArazzoParameterReference) == true)
+            foreach (var error in ValidateReusableReferences(action.Parameters, $"{elementName} '{action.Name}' parameter", document))
+            {
+                yield return error;
+            }
+
+            if (action is IArazzoReferenceHolder<BaseArazzoReference> ||
+                action.Parameters?.Any(static parameter => parameter is ArazzoParameterReference) == true)
             {
                 foreach (var error in ArazzoParameterValidator.ValidateActionParameters(action.Parameters, $"{elementName} '{action.Name}'"))
                 {
@@ -630,7 +635,6 @@ internal static partial class ArazzoSemanticReferenceValidator
     private static IEnumerable<string> ValidateReusableReferences<T>(IEnumerable<T>? items, string elementName, ArazzoDocument document)
     {
         foreach (var referenceHolder in (items ?? [])
-            .Select(static item => ArazzoUnionHelper.Unwrap(item))
             .OfType<IArazzoReferenceHolder<BaseArazzoReference>>())
         {
             referenceHolder.Reference.EnsureHostDocumentIsSet(document);

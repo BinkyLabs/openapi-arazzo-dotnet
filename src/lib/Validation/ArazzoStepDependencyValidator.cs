@@ -232,8 +232,8 @@ internal static partial class ArazzoStepDependencyValidator
         }
         else if (literal is JsonObject jsonObject)
         {
-            var values = jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorContext) && jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorSelector)
-                ? new[] { jsonObject[ArazzoConstants.ArazzoSelectorContext] }
+            var values = ArazzoRuntimeExpressionValidator.TryGetSelectorContext(jsonObject, out var selectorContext)
+                ? new[] { selectorContext }
                 : jsonObject.Select(static property => property.Value);
             foreach (var item in values)
             {
@@ -268,9 +268,8 @@ internal static partial class ArazzoStepDependencyValidator
         var positions = new Dictionary<DependencyNode, int>();
         var path = new List<DependencyNode>();
         var current = unresolved[0];
-        while (!positions.ContainsKey(current))
+        while (positions.TryAdd(current, path.Count))
         {
-            positions.Add(current, path.Count);
             path.Add(current);
             current = graph[current].First(prerequisite => counts[prerequisite] > 0);
         }

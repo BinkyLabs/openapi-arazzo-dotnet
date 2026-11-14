@@ -43,12 +43,12 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the list of success actions.
     /// </summary>
-    public IList<ArazzoSuccessActionUnion>? SuccessActions { get; set; }
+    public IList<IArazzoSuccessAction>? SuccessActions { get; set; }
 
     /// <summary>
     /// Gets or sets the list of failure actions.
     /// </summary>
-    public IList<ArazzoFailureActionUnion>? FailureActions { get; set; }
+    public IList<IArazzoFailureAction>? FailureActions { get; set; }
 
     /// <summary>
     /// Gets or sets output values as runtime expressions or selector objects.
@@ -58,7 +58,7 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
     /// <summary>
     /// Gets or sets the list of workflow parameters.
     /// </summary>
-    public IList<ArazzoParameterUnion>? Parameters { get; set; }
+    public IList<IArazzoParameter>? Parameters { get; set; }
 
     /// <summary>
     /// Gets or sets the extensions dictionary.

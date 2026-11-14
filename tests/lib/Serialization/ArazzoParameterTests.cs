@@ -353,6 +353,45 @@ public class ArazzoParameterTests
     }
 
     [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "$response.statusCode", false)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$response.statusCode", false)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0, "$inputs.id", true)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1, "$inputs.id", true)]
+    public void ReusableOverrides_UseInlineLiteralAndExpressionClassification(ArazzoSpecVersion version, string value, bool expression)
+    {
+        var input = new JsonObject { ["reference"] = "$components.parameters.shared", ["value"] = value };
+        var context = new ParsingContext(new());
+
+        var reference = Assert.IsType<ArazzoParameterReference>(LoadParameter(input, context, version));
+        var inline = context.ParseFragment<ArazzoParameter>(new JsonObject { ["name"] = "input", ["value"] = value }, version);
+
+        Assert.NotNull(reference.Value);
+        Assert.NotNull(inline);
+        Assert.NotNull(inline.Value);
+        Assert.Empty(context.Diagnostic.Errors);
+        if (expression)
+        {
+            Assert.NotNull(reference.Value.Expression);
+            Assert.NotNull(inline.Value.Expression);
+            Assert.Equal(inline.Value.Expression.Expression, reference.Value.Expression.Expression);
+            Assert.Null(reference.Value.Any);
+        }
+        else
+        {
+            Assert.NotNull(reference.Value.Any);
+            Assert.True(JsonNode.DeepEquals(inline.Value.Any, reference.Value.Any));
+            Assert.Null(reference.Value.Expression);
+        }
+        using var text = new StringWriter();
+        var writer = new OpenApiJsonWriter(text);
+        if (version is ArazzoSpecVersion.Arazzo1_0)
+            reference.SerializeAsV1(writer);
+        else
+            reference.SerializeAsV1_1(writer);
+        Assert.True(JsonNode.DeepEquals(input, JsonNode.Parse(text.ToString())));
+    }
+
+    [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0)]
     [InlineData(ArazzoSpecVersion.Arazzo1_1)]
     public void Deserialize_WithDollarRef_ReturnsParameterObject(ArazzoSpecVersion version)

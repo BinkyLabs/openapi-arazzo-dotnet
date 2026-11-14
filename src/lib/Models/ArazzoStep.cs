@@ -79,7 +79,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     /// <summary>
     /// Gets or sets the list of parameters.
     /// </summary>
-    public List<ArazzoParameterUnion>? Parameters { get; set; }
+    public List<IArazzoParameter>? Parameters { get; set; }
 
     /// <summary>
     /// Gets or sets the request body.
@@ -94,12 +94,12 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
     /// <summary>
     /// Gets or sets the success actions.
     /// </summary>
-    public List<ArazzoSuccessActionUnion>? OnSuccess { get; set; }
+    public List<IArazzoSuccessAction>? OnSuccess { get; set; }
 
     /// <summary>
     /// Gets or sets the failure actions.
     /// </summary>
-    public List<ArazzoFailureActionUnion>? OnFailure { get; set; }
+    public List<IArazzoFailureAction>? OnFailure { get; set; }
 
     /// <summary>
     /// Gets or sets output values as runtime expressions or selector objects.

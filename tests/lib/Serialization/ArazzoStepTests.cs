@@ -45,7 +45,7 @@ public class ArazzoStepTests
             Description = "Create a new user",
             StepId = "createUser",
             OperationId = "createUserOp",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter
                 {
@@ -67,7 +67,7 @@ public class ArazzoStepTests
                     Condition = "200"
                 }
             },
-            OnSuccess = new List<ArazzoSuccessActionUnion>
+            OnSuccess = new List<IArazzoSuccessAction>
             {
                 new ArazzoSuccessAction
                 {
@@ -76,7 +76,7 @@ public class ArazzoStepTests
                     StepId = "step2"
                 }
             },
-            OnFailure = new List<ArazzoFailureActionUnion>
+            OnFailure = new List<IArazzoFailureAction>
             {
                 new ArazzoFailureAction
                 {
@@ -355,7 +355,7 @@ public class ArazzoStepTests
             Description = "Create a new user",
             StepId = "createUser",
             OperationId = "createUserOp",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter
                 {
@@ -377,7 +377,7 @@ public class ArazzoStepTests
                     Condition = "200"
                 }
             },
-            OnSuccess = new List<ArazzoSuccessActionUnion>
+            OnSuccess = new List<IArazzoSuccessAction>
             {
                 new ArazzoSuccessAction
                 {
@@ -386,7 +386,7 @@ public class ArazzoStepTests
                     StepId = "step2"
                 }
             },
-            OnFailure = new List<ArazzoFailureActionUnion>
+            OnFailure = new List<IArazzoFailureAction>
             {
                 new ArazzoFailureAction
                 {
@@ -1053,7 +1053,7 @@ public class ArazzoStepTests
         {
             StepId = "duplicateParameterStep",
             WorkflowId = "workflowTarget",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "1" },
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "2" }
@@ -1074,7 +1074,7 @@ public class ArazzoStepTests
         {
             StepId = "duplicateParameterStep",
             WorkflowId = "workflowTarget",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "1" },
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "2" }
@@ -1095,7 +1095,7 @@ public class ArazzoStepTests
         {
             StepId = "duplicateHeaderParameterStep",
             OperationId = "getUser",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "X-Api-Key", In = ParameterLocation.Header, Value = "1" },
                 new ArazzoParameter { Name = "x-api-key", In = ParameterLocation.Header, Value = "2" }
@@ -1116,7 +1116,7 @@ public class ArazzoStepTests
         {
             StepId = "duplicateHeaderParameterStep",
             OperationId = "getUser",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "X-Api-Key", In = ParameterLocation.Header, Value = "1" },
                 new ArazzoParameter { Name = "x-api-key", In = ParameterLocation.Header, Value = "2" }
@@ -1140,7 +1140,7 @@ public class ArazzoStepTests
         {
             StepId = "caseSensitiveParameterStep",
             OperationId = "getUser",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "UserId", In = location, Value = "1" },
                 new ArazzoParameter { Name = "userid", In = location, Value = "2" }
@@ -1165,7 +1165,7 @@ public class ArazzoStepTests
         {
             StepId = "caseSensitiveParameterStep",
             OperationId = "getUser",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "UserId", In = location, Value = "1" },
                 new ArazzoParameter { Name = "userid", In = location, Value = "2" }
@@ -1187,7 +1187,7 @@ public class ArazzoStepTests
         {
             StepId = "parameterStep",
             OperationId = "getUser",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "1" },
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Header, Value = "2" }
@@ -1209,7 +1209,7 @@ public class ArazzoStepTests
         {
             StepId = "parameterStep",
             OperationId = "getUser",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Query, Value = "1" },
                 new ArazzoParameter { Name = "id", In = ParameterLocation.Header, Value = "2" }
@@ -1231,7 +1231,7 @@ public class ArazzoStepTests
         {
             StepId = "operationStep",
             OperationId = "getUser",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", Value = "1" }
             }
@@ -1251,7 +1251,7 @@ public class ArazzoStepTests
         {
             StepId = "operationStep",
             OperationId = "getUser",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "id", Value = "1" }
             }
@@ -1271,7 +1271,7 @@ public class ArazzoStepTests
         {
             StepId = "workflowStep",
             WorkflowId = "childWorkflow",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "input", Value = "1" }
             }
@@ -1292,7 +1292,7 @@ public class ArazzoStepTests
         {
             StepId = "workflowStep",
             WorkflowId = "childWorkflow",
-            Parameters = new List<ArazzoParameterUnion>
+            Parameters = new List<IArazzoParameter>
             {
                 new ArazzoParameter { Name = "input", Value = "1" }
             }

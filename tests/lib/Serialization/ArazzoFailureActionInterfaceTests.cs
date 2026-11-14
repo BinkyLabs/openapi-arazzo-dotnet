@@ -6,7 +6,7 @@ using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
-public class ArazzoFailureActionUnionTests
+public class ArazzoFailureActionInterfaceTests
 {
     [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0)]
@@ -28,8 +28,8 @@ public class ArazzoFailureActionUnionTests
         var parsed = context.ParseFragment<ArazzoWorkflow>(json, version);
         Assert.NotNull(parsed);
         Assert.NotNull(parsed.FailureActions);
-        Assert.NotNull(parsed.FailureActions[0].FailureAction);
-        Assert.NotNull(parsed.FailureActions[1].Reference);
+        Assert.IsType<ArazzoFailureAction>(parsed.FailureActions[0]);
+        Assert.IsType<ArazzoFailureActionReference>(parsed.FailureActions[1]);
         Assert.Equal(4UL, parsed.FailureActions[0].RetryLimit);
         Assert.Equal(1.5m, parsed.FailureActions[0].RetryAfter);
         Assert.Empty(context.Diagnostic.Errors);
@@ -42,33 +42,6 @@ public class ArazzoFailureActionUnionTests
         Assert.Contains(context.Diagnostic.Errors, e => e.Message.Contains("duplicate action", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Conversions_PreserveIdentityAndRejectInvalidStates()
-    {
-        var action = new ArazzoFailureAction { Name = "finish", Type = ArazzoFailureType.End };
-        var reference = new ArazzoFailureActionReference("shared");
-        ArazzoFailureActionUnion value = action;
-        ArazzoFailureAction actual = value;
-        Assert.Same(action, actual);
-        Assert.Throws<InvalidCastException>(() => (ArazzoFailureActionReference)value);
-        value = reference;
-        ArazzoFailureActionReference actualReference = value;
-        Assert.Same(reference, actualReference);
-        Assert.Throws<InvalidCastException>(() => (ArazzoFailureAction)value);
-        value.FailureAction = action;
-        Assert.Throws<InvalidCastException>(() => (ArazzoFailureAction)value);
-        Assert.Throws<InvalidCastException>(() => (ArazzoFailureActionReference)value);
-        Assert.Throws<ArazzoSerializationException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_1));
-        value = new();
-        Assert.Throws<InvalidCastException>(() => (ArazzoFailureAction)value);
-        Assert.Throws<InvalidCastException>(() => (ArazzoFailureActionReference)value);
-        Assert.Throws<ArazzoSerializationException>(() => Serialize(value, ArazzoSpecVersion.Arazzo1_0));
-        Assert.Throws<ArgumentNullException>(() => (ArazzoFailureActionUnion)(ArazzoFailureAction)null!);
-        Assert.Throws<ArgumentNullException>(() => (ArazzoFailureActionUnion)(ArazzoFailureActionReference)null!);
-        Assert.Throws<ArgumentNullException>(() => (ArazzoFailureAction)(ArazzoFailureActionUnion)null!);
-        Assert.Throws<ArgumentNullException>(() => (ArazzoFailureActionReference)(ArazzoFailureActionUnion)null!);
-    }
-
     [Theory]
     [InlineData(ArazzoSpecVersion.Arazzo1_0)]
     [InlineData(ArazzoSpecVersion.Arazzo1_1)]
@@ -76,7 +49,7 @@ public class ArazzoFailureActionUnionTests
     {
         var json = JsonNode.Parse("""{"reference":"$components.failureActions.shared","name":"finish","type":"end"}""");
         Assert.NotNull(json);
-        Assert.Throws<ArazzoReaderException>(() => new ParsingContext(new()).ParseFragment<ArazzoFailureActionUnion>(json, version));
+        Assert.Throws<ArazzoReaderException>(() => new ParsingContext(new()).ParseFragment<IArazzoFailureAction>(json, version));
         json = JsonNode.Parse("""{"workflowId":"test","steps":[{"stepId":"s","operationId":"op"}],"failureActions":[42]}""");
         Assert.NotNull(json);
         var context = new ParsingContext(new());
@@ -101,8 +74,8 @@ public class ArazzoFailureActionUnionTests
         var parsed = context.ParseFragment<ArazzoStep>(json, version);
         Assert.NotNull(parsed);
         Assert.NotNull(parsed.OnFailure);
-        Assert.NotNull(parsed.OnFailure[0].FailureAction);
-        Assert.NotNull(parsed.OnFailure[1].Reference);
+        Assert.IsType<ArazzoFailureAction>(parsed.OnFailure[0]);
+        Assert.IsType<ArazzoFailureActionReference>(parsed.OnFailure[1]);
         Assert.Equal(4UL, parsed.OnFailure[0].RetryLimit);
         Assert.Empty(context.Diagnostic.Errors);
         Assert.True(JsonNode.DeepEquals(json, Serialize(parsed, version)));

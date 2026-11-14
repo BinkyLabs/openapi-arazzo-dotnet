@@ -11,7 +11,7 @@ internal static partial class ArazzoV1Deserializer
 {
     public static ArazzoPayloadReplacementValueUnion LoadPayloadReplacementValue(JsonNode node, ParsingContext context)
     {
-        if (node is JsonObject jsonObject && jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorContext))
+        if (node is JsonObject jsonObject && ArazzoRuntimeExpressionValidator.TryGetSelectorContext(jsonObject, out _))
         {
             if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
             {

@@ -9,6 +9,28 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 public class ArazzoParameterValueUnionTests
 {
     [Theory]
+    [InlineData("""{"context":"customer"}""")]
+    [InlineData("""{"context":"production","id":42}""")]
+    [InlineData("""{"context":"production","type":"object"}""")]
+    public void ContextOnlyObjects_RemainLiteralInV1(string json)
+    {
+        var input = JsonNode.Parse($$"""{"name":"input","value":{{json}}}""");
+        Assert.NotNull(input);
+        var context = new ParsingContext(new());
+
+        var parameter = context.ParseFragment<ArazzoParameter>(input, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.NotNull(parameter);
+        Assert.NotNull(parameter.Value);
+        Assert.NotNull(parameter.Value.Any);
+        Assert.Null(parameter.Value.Selector);
+        Assert.Empty(context.Diagnostic.Errors);
+        using var text = new StringWriter();
+        parameter.SerializeAsV1(new OpenApiJsonWriter(text));
+        Assert.True(JsonNode.DeepEquals(input, JsonNode.Parse(text.ToString())));
+    }
+
+    [Theory]
     [InlineData("42")]
     [InlineData("true")]
     [InlineData("null")]
@@ -74,14 +96,12 @@ public class ArazzoParameterValueUnionTests
     [Theory]
     [InlineData("$workflows.lookup")]
     [InlineData("$message.payload#/id")]
-    public void InterfaceAndUnion_PreserveExpressionIdentityWithoutSelectingAnOutputVersion(string expression)
+    public void Interface_PreservesExpressionIdentityWithoutSelectingAnOutputVersion(string expression)
     {
         var value = new ArazzoRuntimeExpression(expression);
         var concrete = new ArazzoParameter { Name = "id", Value = value };
         IArazzoParameter parameter = concrete;
-        ArazzoParameterUnion union = concrete;
         Assert.Same(concrete.Value, parameter.Value);
-        Assert.Same(concrete.Value, union.Value);
         Assert.NotNull(parameter.Value);
         Assert.Same(value, parameter.Value.Expression);
     }

@@ -30,7 +30,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
         : base(reference)
     {
         ArgumentNullException.ThrowIfNull(reference);
-        _value = reference._value?.Clone();
+        _value = reference._value is null ? null : new ArazzoParameterValueUnion(reference._value);
     }
 
     /// <inheritdoc />
@@ -62,7 +62,7 @@ public class ArazzoParameterReference : BaseArazzoReferenceHolder<ArazzoParamete
         {
             Name = parameter.Name,
             In = parameter.In,
-            Value = _value.Clone(),
+            Value = new ArazzoParameterValueUnion(_value),
             Extensions = ArazzoInput.CloneArazzoExtensions(parameter.Extensions)
         };
     }

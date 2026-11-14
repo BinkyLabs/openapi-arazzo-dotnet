@@ -39,7 +39,7 @@ internal static partial class ArazzoV1Deserializer
             }
         } },
         { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoStepDependsOn), static (o, v, c) => o.DependsOn = v.CreateSimpleList(static n => n.GetScalarValue()!, c).ToHashSet(StringComparer.Ordinal) },
-        { ArazzoConstants.ArazzoStepParameters, static (o, v, c) => o.Parameters = v.CreateUnionList(LoadParameterUnion, c) },
+        { ArazzoConstants.ArazzoStepParameters, static (o, v, c) => o.Parameters = v.CreateObjectList(LoadParameter, c) },
         { ArazzoConstants.ArazzoStepRequestBody, static (o, v, c) => o.RequestBody = LoadRequestBody(v, c) },
         { ArazzoConstants.ArazzoStepSuccessCriteria, static (o, v, c) =>
         {
@@ -51,12 +51,12 @@ internal static partial class ArazzoV1Deserializer
         } },
         { ArazzoConstants.ArazzoStepOnSuccess, static (o, v, c) =>
         {
-            o.OnSuccess = v.CreateUnionList(LoadSuccessActionUnion, c);
+            o.OnSuccess = v.CreateObjectList(LoadSuccessActionByVersion, c);
             ArazzoActionListValidator.ValidateDeserialization(o.OnSuccess, c, $"{nameof(ArazzoStep)} onSuccess");
         } },
         { ArazzoConstants.ArazzoStepOnFailure, static (o, v, c) =>
         {
-            o.OnFailure = v.CreateUnionList(LoadFailureActionUnion, c);
+            o.OnFailure = v.CreateObjectList(LoadFailureActionByVersion, c);
             ArazzoActionListValidator.ValidateDeserialization(o.OnFailure, c, $"{nameof(ArazzoStep)} onFailure");
         } },
         { ArazzoConstants.ArazzoStepOutputs, static (o, v, c) =>

@@ -76,3 +76,7 @@ We *could* mix B and C using conditional compilation (offer B for net11+ TFMs, a
 ### Decision
 
 We'll go with option C, and use xUnion as a naming convention. This can be revisited once net10 falls out of support (Nov 2028).
+
+Dedicated union types are only for distinct value kinds, such as literal JSON values, runtime expressions, and selectors. Do not use union types to distinguish a concrete model from its reference model. Use their shared interface instead, such as `IArazzoParameter`, `IArazzoSuccessAction`, or `IArazzoFailureAction`, and inspect the concrete runtime type when reference-specific behavior is needed. This follows the [C# interface contract model](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces) and preserves direct reference resolution without wrapper objects.
+
+When a union type needs cloning, implement an internal [copy constructor](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/how-to-write-a-copy-constructor), rather than a `Clone` method, for consistency with Microsoft.OpenAPI. Preserve the public parameterless constructor and copy mutable JSON values and metadata without sharing them with the source.

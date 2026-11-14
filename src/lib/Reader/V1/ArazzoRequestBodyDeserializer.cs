@@ -17,7 +17,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoRequestBodyPayloadUnion LoadRequestBodyPayload(JsonNode node, ParsingContext context)
     {
-        if (node is JsonObject map && map.ContainsKey(ArazzoConstants.ArazzoSelectorContext) &&
+        if (node is JsonObject map && ArazzoRuntimeExpressionValidator.TryGetSelectorContext(map, out _) &&
             context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
         {
             throw new ArazzoReaderException("Selector request body payloads are not supported in Arazzo 1.0.", context);

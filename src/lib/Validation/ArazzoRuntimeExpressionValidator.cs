@@ -116,6 +116,10 @@ internal static partial class ArazzoRuntimeExpressionValidator
         return new ArazzoRuntimeExpression(expression);
     }
 
+    internal static bool TryGetSelectorContext(JsonObject jsonObject, out JsonNode? selectorContext) =>
+        jsonObject.TryGetPropertyValue(ArazzoConstants.ArazzoSelectorContext, out selectorContext) &&
+        jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorSelector);
+
     internal static void ValidateDeserializationExpressionStrings(JsonNode? node, ParsingContext context, string elementName)
     {
         foreach (var error in ValidateExpressionStrings(node, elementName, context.Diagnostic.SpecificationVersion))
@@ -154,8 +158,7 @@ internal static partial class ArazzoRuntimeExpressionValidator
 
         if (node is JsonObject jsonObject)
         {
-            if (jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorContext) &&
-                jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorSelector))
+            if (TryGetSelectorContext(jsonObject, out _))
             {
                 if (specVersion is ArazzoSpecVersion.Arazzo1_0)
                 {
