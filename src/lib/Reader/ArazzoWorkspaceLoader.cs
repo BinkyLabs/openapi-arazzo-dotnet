@@ -12,6 +12,9 @@ internal sealed class ArazzoWorkspaceLoader
     private readonly IStreamLoader _loader;
     private readonly ArazzoReaderSettings _readerSettings;
     private readonly ArazzoReaderSettings _leaveOpenReaderSettings;
+    private readonly ArazzoReaderSettings _nonRecursiveReaderSettings;
+
+    internal ArazzoDiagnostic Diagnostic { get; } = new();
 
     public ArazzoWorkspaceLoader(ArazzoWorkspace workspace, IStreamLoader loader, ArazzoReaderSettings readerSettings)
     {
@@ -19,12 +22,15 @@ internal sealed class ArazzoWorkspaceLoader
         _loader = loader;
         _readerSettings = readerSettings;
         _leaveOpenReaderSettings = CloneReaderSettingsWithLeaveOpen(readerSettings);
+        _nonRecursiveReaderSettings = CloneReaderSettingsWithLeaveOpen(readerSettings);
+        _nonRecursiveReaderSettings.OpenApiSettings.LoadExternalRefs = false;
     }
     internal async Task LoadAsync(
         BaseArazzoReference reference,
         ArazzoDocument? document,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         _workspace.AddDocumentId(reference.ExternalResource, document?.BaseUri);
         if (document is not null)
         {
@@ -50,12 +56,13 @@ internal sealed class ArazzoWorkspaceLoader
             var result = await ArazzoModelFactory.LoadFromStreamAsync(
                 bufferedStream,
                 null,
-                _leaveOpenReaderSettings,
+                _nonRecursiveReaderSettings,
                 cancellationToken,
                 resolvedUri).ConfigureAwait(false);
 
             if (result.Document is not null)
             {
+                _workspace.RegisterArazzoDocument(resolvedUri, result.Document);
                 await LoadAsync(remoteReference, result.Document, cancellationToken).ConfigureAwait(false);
                 continue;
             }
@@ -136,13 +143,18 @@ internal sealed class ArazzoWorkspaceLoader
         foreach (var sourceDescription in document.SourceDescriptions)
         {
             if (sourceDescription.Url is null ||
-                string.IsNullOrEmpty(sourceDescription.Name) ||
-                sourceDescription.Type is ArazzoDescriptionType.Arazzo)
+                string.IsNullOrEmpty(sourceDescription.Name))
             {
                 continue;
             }
 
             var resolvedUri = new Uri(document.BaseUri, sourceDescription.Url);
+            if (sourceDescription.Type is ArazzoDescriptionType.Arazzo)
+            {
+                await LoadArazzoSourceDescriptionAsync(document, sourceDescription, resolvedUri, cancellationToken).ConfigureAwait(false);
+                continue;
+            }
+
             if (_workspace.IsOpenApiDocumentLoaded(resolvedUri) || !ShouldTryLoadSourceDescription(sourceDescription.Url))
             {
                 continue;
@@ -160,6 +172,53 @@ internal sealed class ArazzoWorkspaceLoader
             {
                 // Source descriptions that are not locally available are intentionally left unresolved.
             }
+        }
+    }
+
+    private async Task LoadArazzoSourceDescriptionAsync(
+        ArazzoDocument hostDocument,
+        ArazzoSourceDescription sourceDescription,
+        Uri resolvedUri,
+        CancellationToken cancellationToken)
+    {
+        if (_workspace.TryGetArazzoDocument(resolvedUri, out _))
+        {
+            return;
+        }
+
+        try
+        {
+            await using var stream = await _loader.LoadAsync(hostDocument.BaseUri, resolvedUri, cancellationToken).ConfigureAwait(false);
+            var result = await ArazzoModelFactory.LoadFromStreamAsync(
+                stream, null, _nonRecursiveReaderSettings, cancellationToken, resolvedUri).ConfigureAwait(false);
+            var elementName = $"Arazzo sourceDescription '{sourceDescription.Name}' at '{resolvedUri}'";
+            foreach (var error in result.Diagnostic?.Errors ?? [])
+            {
+                Diagnostic.Errors.Add(new OpenApiError(error.Pointer, $"{elementName}: {error.Message}"));
+            }
+            foreach (var warning in result.Diagnostic?.Warnings ?? [])
+            {
+                Diagnostic.Warnings.Add(new OpenApiError(warning.Pointer, $"{elementName}: {warning.Message}"));
+            }
+
+            if (result.Document is null)
+            {
+                if (result.Diagnostic?.Errors.Count is not > 0)
+                {
+                    Diagnostic.Errors.Add(new OpenApiError(string.Empty, $"{elementName} could not be parsed as an Arazzo document."));
+                }
+                return;
+            }
+
+            // Register retrieval and $self URIs before following sources so cycles reuse the loaded document.
+            _workspace.RegisterArazzoDocument(resolvedUri, result.Document);
+            await LoadAsync(new BaseArazzoReference { ExternalResource = resolvedUri.AbsoluteUri },
+                result.Document, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is IOException or HttpRequestException or OpenApiException or SharpYaml.YamlException)
+        {
+            Diagnostic.Errors.Add(new OpenApiError(string.Empty,
+                $"Arazzo sourceDescription '{sourceDescription.Name}' at '{resolvedUri}' could not be loaded: {ex.Message}"));
         }
     }
 

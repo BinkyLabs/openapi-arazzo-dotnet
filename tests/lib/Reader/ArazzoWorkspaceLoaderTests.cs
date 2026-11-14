@@ -11,6 +11,269 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 public class ArazzoWorkspaceLoaderTests
 {
     [Theory]
+    [InlineData("step")]
+    [InlineData("dependsOn")]
+    [InlineData("successActions")]
+    [InlineData("failureActions")]
+    [InlineData("onSuccess")]
+    [InlineData("onFailure")]
+    [InlineData("reusableAction")]
+    public async Task LoadAsync_ReportsMissingExternalWorkflowTargets(string location)
+    {
+        var json = CreateExternalWorkflowDocument("external.json");
+        var workflow = FirstObject(json, "workflows");
+        var step = FirstObject(workflow, "steps");
+        const string missing = "$sourceDescriptions.external.missing";
+        switch (location)
+        {
+            case "step":
+                step["workflowId"] = missing;
+                break;
+            case "dependsOn":
+                Assert.IsType<JsonArray>(workflow["dependsOn"])[0] = missing;
+                break;
+            case "onSuccess":
+            case "onFailure":
+                FirstObject(step, location)["workflowId"] = missing;
+                break;
+            case "reusableAction":
+                json["components"] = JsonNode.Parse("""
+                    {"successActions":{"next":{"name":"next","type":"goto","workflowId":"$sourceDescriptions.external.missing"}}}
+                    """);
+                workflow["successActions"] = JsonNode.Parse("""[{"reference":"$components.successActions.next"}]""");
+                break;
+            default:
+                FirstObject(workflow, location)["workflowId"] = missing;
+                break;
+        }
+        Assert.IsType<JsonArray>(json["workflows"]).Add(JsonNode.Parse("""
+            {"workflowId":"other","steps":[{"stepId":"call","workflowId":"$sourceDescriptions.external.target"}]}
+            """));
+        var loader = new TestStreamLoader(new Dictionary<string, string>
+        {
+            ["https://example.com/root/external.json"] = ExternalWorkflowJson
+        });
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Single(result.Diagnostic.Errors, error =>
+            error.Message.Contains("does not resolve to workflowId 'missing'", StringComparison.Ordinal));
+        Assert.Equal(1, loader.LoadCount);
+        using var output = new StringWriter();
+        var exception = Assert.Throws<ArazzoSerializationException>(() =>
+            result.Document.SerializeAsV1_1(new OpenApiJsonWriter(output)));
+        Assert.Contains("does not resolve to workflowId 'missing'", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("1.0.1", "external.json", ExternalWorkflowJson)]
+    [InlineData("1.1.0", "https://example.com/root/external.yaml", """
+        arazzo: 1.1.0
+        info:
+          title: External
+          version: '1'
+        sourceDescriptions:
+          - name: api
+            url: https://example.com/api.json
+            type: openapi
+        workflows:
+          - workflowId: target
+            steps:
+              - stepId: operation
+                operationId: op
+        """)]
+    public async Task LoadAsync_ResolvesExternalWorkflowsInJsonAndYaml(string version, string url, string external)
+    {
+        var json = CreateExternalWorkflowDocument(url);
+        json["arazzo"] = version;
+        var loader = new TestStreamLoader(new Dictionary<string, string>
+        {
+            [new Uri(new Uri("https://example.com/root/arazzo.json"), url).AbsoluteUri] = external
+        });
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.Equal(1, loader.LoadCount);
+        var workspace = result.Document.Workspace;
+        Assert.NotNull(workspace);
+        var copy = new ArazzoWorkspace(workspace);
+        Assert.True(copy.TryGetArazzoDocument(new Uri(new Uri("https://example.com/root/arazzo.json"), url), out var loaded));
+        Assert.NotNull(loaded);
+        Assert.Contains(loaded.Workflows ?? [], workflow => workflow.WorkflowId == "target");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LoadAsync_LoadsNestedSourcesOnceAndResolvesCyclesUsingSelfAndDocumentScope(bool missingNestedWorkflow)
+    {
+        var json = CreateExternalWorkflowDocument("external.json");
+        var external = CreateExternalWorkflowDocument("https://example.com/root/arazzo.json");
+        external["$self"] = "https://other.example.com/canonical/external.json";
+        FirstObject(external, "workflows")["workflowId"] = "target";
+        FirstObject(external, "sourceDescriptions")["url"] = "leaf.json";
+        if (missingNestedWorkflow)
+        {
+            FirstObject(FirstObject(external, "workflows"), "steps")["workflowId"] = "$sourceDescriptions.external.missing";
+        }
+        var leaf = CreateExternalWorkflowDocument("https://example.com/root/arazzo.json");
+        FirstObject(leaf, "workflows")["workflowId"] = "target";
+        var loader = new TestStreamLoader(new Dictionary<string, string>
+        {
+            ["https://example.com/root/external.json"] = external.ToJsonString(),
+            ["https://other.example.com/canonical/leaf.json"] = leaf.ToJsonString()
+                .Replace("$sourceDescriptions.external.target", "$sourceDescriptions.external.root", StringComparison.Ordinal)
+        });
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        if (missingNestedWorkflow)
+        {
+            Assert.Contains(result.Diagnostic.Errors, error =>
+                error.Message.Contains("Workflow 'target' step 'call'", StringComparison.Ordinal) &&
+                error.Message.Contains("does not resolve to workflowId 'missing'", StringComparison.Ordinal));
+        }
+        else
+        {
+            Assert.Empty(result.Diagnostic.Errors);
+        }
+        Assert.Equal(2, loader.LoadCount);
+    }
+
+    [Fact]
+    public async Task LoadAsync_ReportsUnavailableExternalArazzoSources()
+    {
+        var result = await LoadExternalWorkflowDocumentAsync(CreateExternalWorkflowDocument("external.json"),
+            new TestStreamLoader(new Dictionary<string, string>()));
+
+        Assert.NotNull(result.Diagnostic);
+        Assert.Contains(result.Diagnostic.Errors, error =>
+            error.Message.Contains("Arazzo sourceDescription 'external'", StringComparison.Ordinal) &&
+            error.Message.Contains("could not be loaded", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task LoadAsync_ArazzoSourceWithSelfAlsoResolvesReferencedInputComponents()
+    {
+        var json = CreateExternalWorkflowDocument("external.json");
+        FirstObject(json, "workflows")["inputs"] = JsonNode.Parse("""{"$ref":"external.json#/components/inputs/shared"}""");
+        var external = JsonNode.Parse(ExternalWorkflowJson);
+        Assert.NotNull(external);
+        external["$self"] = "https://other.example.com/canonical/external.json";
+        external["components"] = JsonNode.Parse("""{"inputs":{"shared":{"type":"string"}}}""");
+        var loader = new TestStreamLoader(new Dictionary<string, string>
+        {
+            ["https://example.com/root/external.json"] = external.ToJsonString()
+        });
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.NotNull(result.Document.Workflows);
+        var input = Assert.IsType<ArazzoInputReference>(result.Document.Workflows[0].Inputs);
+        Assert.NotNull(input.Target);
+        Assert.Equal(JsonSchemaType.String, input.Target.Type);
+        Assert.Equal(1, loader.LoadCount);
+    }
+
+    [Fact]
+    public async Task LoadAsync_PropagatesExternalSourceCancellation()
+    {
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            LoadExternalWorkflowDocumentAsync(CreateExternalWorkflowDocument("external.json"), new CancelingStreamLoader()));
+    }
+
+    [Theory]
+    [InlineData("""{"openapi":"3.1.0","info":{"title":"Wrong type","version":"1"},"paths":{}}""")]
+    [InlineData("""{"arazzo":"1.1.0","info":{"title":"Invalid","version":"1"},"sourceDescriptions":[],"workflows":[]}""")]
+    [InlineData("not valid JSON or YAML: [")]
+    public async Task LoadAsync_ReportsInvalidExternalArazzoSources(string external)
+    {
+        var loader = new TestStreamLoader(new Dictionary<string, string>
+        {
+            ["https://example.com/root/external.json"] = external
+        });
+
+        var result = await LoadExternalWorkflowDocumentAsync(CreateExternalWorkflowDocument("external.json"), loader);
+
+        Assert.NotNull(result.Diagnostic);
+        Assert.Contains(result.Diagnostic.Errors, error =>
+            error.Message.Contains("Arazzo sourceDescription 'external'", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task LoadAsync_DoesNotFetchExternalWorkflowsWhenExternalLoadingIsDisabled()
+    {
+        var loader = new TestStreamLoader(new Dictionary<string, string>());
+
+        var result = await LoadExternalWorkflowDocumentAsync(CreateExternalWorkflowDocument("external.json"), loader, false);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.Equal(0, loader.LoadCount);
+    }
+
+    private const string ExternalWorkflowJson = """
+        {
+          "arazzo": "1.1.0",
+          "info": { "title": "External", "version": "1" },
+          "sourceDescriptions": [{ "name": "api", "url": "https://example.com/api.json", "type": "openapi" }],
+          "workflows": [{ "workflowId": "target", "steps": [{ "stepId": "operation", "operationId": "op" }] }]
+        }
+        """;
+
+    private static JsonNode CreateExternalWorkflowDocument(string url)
+    {
+        var json = JsonNode.Parse("""
+            {
+              "arazzo": "1.1.0",
+              "info": { "title": "Test", "version": "1" },
+              "sourceDescriptions": [{ "name": "external", "url": "external.json", "type": "arazzo" }],
+              "workflows": [{
+                "workflowId": "root",
+                "dependsOn": ["$sourceDescriptions.external.target"],
+                "steps": [{
+                  "stepId": "call",
+                  "workflowId": "$sourceDescriptions.external.target",
+                  "onSuccess": [{ "name": "next", "type": "goto", "workflowId": "$sourceDescriptions.external.target" }],
+                  "onFailure": [{ "name": "retry", "type": "retry", "workflowId": "$sourceDescriptions.external.target" }]
+                }],
+                "successActions": [{ "name": "next", "type": "goto", "workflowId": "$sourceDescriptions.external.target" }],
+                "failureActions": [{ "name": "retry", "type": "retry", "workflowId": "$sourceDescriptions.external.target" }]
+              }]
+            }
+            """);
+        Assert.NotNull(json);
+        FirstObject(json, "sourceDescriptions")["url"] = url;
+        return json;
+    }
+
+    private static JsonObject FirstObject(JsonNode node, string property)
+    {
+        return Assert.IsType<JsonObject>(Assert.IsType<JsonArray>(node[property])[0]);
+    }
+
+    private static async Task<ReadResult> LoadExternalWorkflowDocumentAsync(JsonNode json, IStreamLoader loader, bool loadExternalRefs = true)
+    {
+        var settings = new ArazzoReaderSettings();
+        settings.OpenApiSettings.LoadExternalRefs = loadExternalRefs;
+        settings.OpenApiSettings.CustomExternalLoader = loader;
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json.ToJsonString()));
+        return await ArazzoModelFactory.LoadFromStreamAsync(stream, OpenApiConstants.Json, settings,
+            TestContext.Current.CancellationToken, new Uri("https://example.com/root/arazzo.json"));
+    }
+
+    [Theory]
     [InlineData("https://example.com/canonical/arazzo.json", true)]
     [InlineData("https://example.com/canonical/arazzo.json", false)]
     [InlineData("../canonical/arazzo.json", true)]
@@ -525,15 +788,28 @@ components:
 
     private sealed class TestStreamLoader(IDictionary<string, string> documents) : IStreamLoader
     {
+        public int LoadCount { get; private set; }
+
         public Task<Stream> LoadAsync(Uri baseUrl, Uri uri, CancellationToken cancellationToken = default)
         {
+            LoadCount++;
             var resolvedUri = new Uri(baseUrl, uri).AbsoluteUri;
-            return Task.FromResult(CreateStream(documents[resolvedUri]));
+            return Task.FromResult(CreateStream(documents.TryGetValue(resolvedUri, out var document)
+                ? document
+                : throw new FileNotFoundException($"Document '{resolvedUri}' is not available.")));
         }
 
         private static Stream CreateStream(string document)
         {
             return new MemoryStream(Encoding.UTF8.GetBytes(document));
+        }
+    }
+
+    private sealed class CancelingStreamLoader : IStreamLoader
+    {
+        public Task<Stream> LoadAsync(Uri baseUrl, Uri uri, CancellationToken cancellationToken = default)
+        {
+            return Task.FromCanceled<Stream>(new CancellationToken(true));
         }
     }
 }

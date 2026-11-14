@@ -126,10 +126,22 @@ public static class ArazzoModelFactory
             readResult.Document.Workspace = workspace;
             var loader = settings.OpenApiSettings.CustomExternalLoader ?? new DefaultStreamLoader(settings.HttpClient);
             var workspaceLoader = new Reader.ArazzoWorkspaceLoader(workspace, loader, settings);
+            workspace.RegisterArazzoDocument(location, readResult.Document);
             await workspaceLoader.LoadAsync(new BaseArazzoReference { ExternalResource = "/" }, readResult.Document, cancellationToken).ConfigureAwait(false);
-            foreach (var error in ArazzoSemanticReferenceValidator.ValidateLoadedOperationReferences(readResult.Document))
+            foreach (var error in workspaceLoader.Diagnostic.Errors)
             {
-                readResult.Diagnostic?.Errors.Add(new OpenApiError(string.Empty, error));
+                readResult.Diagnostic?.Errors.Add(error);
+            }
+            foreach (var warning in workspaceLoader.Diagnostic.Warnings)
+            {
+                readResult.Diagnostic?.Warnings.Add(warning);
+            }
+            foreach (var loadedDocument in workspace.GetArazzoDocuments())
+            {
+                foreach (var error in ArazzoSemanticReferenceValidator.ValidateLoadedReferences(loadedDocument))
+                {
+                    readResult.Diagnostic?.Errors.Add(new OpenApiError(string.Empty, error));
+                }
             }
         }
 

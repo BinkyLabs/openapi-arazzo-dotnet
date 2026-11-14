@@ -18,7 +18,7 @@ internal static partial class ArazzoSemanticReferenceValidator
     [GeneratedRegex(@"^\$sourceDescriptions\.([^\.\s#]+)\.(.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex SourceDescriptionOperationIdRegex();
 
-    [GeneratedRegex(@"^\$sourceDescriptions\.([^.\s#]+)\.[^.\s#]+$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^\$sourceDescriptions\.([^.\s#]+)\.([^.\s#]+)$", RegexOptions.CultureInvariant)]
     private static partial Regex SourceDescriptionWorkflowExpressionRegex();
 
     internal static void ValidateSerialization(ArazzoDocument document, ArazzoSpecVersion specVersion)
@@ -57,7 +57,7 @@ internal static partial class ArazzoSemanticReferenceValidator
         }
     }
 
-    internal static IEnumerable<string> ValidateLoadedOperationReferences(ArazzoDocument document)
+    internal static IEnumerable<string> ValidateLoadedReferences(ArazzoDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
 
@@ -72,6 +72,12 @@ internal static partial class ArazzoSemanticReferenceValidator
                     yield return error;
                 }
             }
+
+        }
+
+        foreach (var error in ValidateExternalWorkflowReferences(document))
+        {
+            yield return error;
         }
     }
 
@@ -179,6 +185,82 @@ internal static partial class ArazzoSemanticReferenceValidator
         {
             yield return error;
         }
+
+        foreach (var error in ValidateExternalWorkflowReferences(document))
+        {
+            yield return error;
+        }
+    }
+
+    private static IEnumerable<string> ValidateExternalWorkflowReferences(ArazzoDocument document)
+    {
+        foreach (var workflow in document.Workflows ?? [])
+        {
+            var elementName = $"Workflow '{workflow.WorkflowId}'";
+            foreach (var dependency in workflow.DependsOn ?? Enumerable.Empty<string>())
+            {
+                if (GetExternalWorkflowResolutionError(dependency, document, $"{elementName} dependsOn") is { } error)
+                {
+                    yield return error;
+                }
+            }
+            foreach (var error in ValidateExternalActionWorkflowReferences(workflow.SuccessActions, document, $"{elementName} success action"))
+            {
+                yield return error;
+            }
+            foreach (var error in ValidateExternalActionWorkflowReferences(workflow.FailureActions, document, $"{elementName} failure action"))
+            {
+                yield return error;
+            }
+            foreach (var step in workflow.Steps ?? [])
+            {
+                var stepName = $"{elementName} step '{step.StepId}'";
+                if (GetExternalWorkflowResolutionError(step.WorkflowId, document, stepName) is { } error)
+                {
+                    yield return error;
+                }
+                foreach (var actionError in ValidateExternalActionWorkflowReferences(step.OnSuccess, document, $"{stepName} success action"))
+                {
+                    yield return actionError;
+                }
+                foreach (var actionError in ValidateExternalActionWorkflowReferences(step.OnFailure, document, $"{stepName} failure action"))
+                {
+                    yield return actionError;
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<string> ValidateExternalActionWorkflowReferences(
+        IEnumerable<IArazzoResultAction>? actions, ArazzoDocument document, string elementName)
+    {
+        foreach (var action in actions ?? [])
+        {
+            if (GetExternalWorkflowResolutionError(action.WorkflowId, document, $"{elementName} '{action.Name}'") is { } error)
+            {
+                yield return error;
+            }
+        }
+    }
+
+    private static string? GetExternalWorkflowResolutionError(string? reference, ArazzoDocument document, string elementName)
+    {
+        if (string.IsNullOrEmpty(reference))
+        {
+            return null;
+        }
+        var match = SourceDescriptionWorkflowExpressionRegex().Match(reference);
+        if (!match.Success ||
+            document.Workspace?.TryGetSourceDescription(document, match.Groups[1].Value, out var source) != true ||
+            source.Type is not ArazzoDescriptionType.Arazzo ||
+            !document.Workspace.TryGetArazzoDocument(source.Uri, out var targetDocument))
+        {
+            return null;
+        }
+        var workflowId = match.Groups[2].Value;
+        return targetDocument?.Workflows?.Any(workflow => workflow.WorkflowId == workflowId) == true
+            ? null
+            : $"{elementName} workflow reference '{reference}' does not resolve to workflowId '{workflowId}' in sourceDescription '{match.Groups[1].Value}'.";
     }
 
     private static IEnumerable<string> ValidateDependsOnReferences(
@@ -462,7 +544,7 @@ internal static partial class ArazzoSemanticReferenceValidator
 
         var match = OperationPathRegex().Match(operationPath);
         var sourceDescriptionName = match.Groups[1].Value;
-        if (document.Workspace?.TryGetSourceDescription(sourceDescriptionName, out var sourceDescription) != true)
+        if (document.Workspace?.TryGetSourceDescription(document, sourceDescriptionName, out var sourceDescription) != true)
         {
             yield break;
         }
@@ -494,7 +576,7 @@ internal static partial class ArazzoSemanticReferenceValidator
             var sourceDescriptionName = sourceDescriptionOperationIdMatch.Groups[1].Value;
             var referencedOperationId = sourceDescriptionOperationIdMatch.Groups[2].Value;
             if (document.SourceDescriptions?.Any(sourceDescription => sourceDescription.Name == sourceDescriptionName) != true ||
-                document.Workspace?.TryGetSourceDescription(sourceDescriptionName, out var sourceDescription) != true)
+                document.Workspace?.TryGetSourceDescription(document, sourceDescriptionName, out var sourceDescription) != true)
             {
                 yield break;
             }
@@ -522,7 +604,7 @@ internal static partial class ArazzoSemanticReferenceValidator
             yield break;
         }
 
-        var loadedSourceDescriptions = document.Workspace.GetSourceDescriptions()
+        var loadedSourceDescriptions = document.Workspace.GetSourceDescriptions(document)
             .Where(static sourceDescription => sourceDescription.Type is not ArazzoDescriptionType.Arazzo)
             .Where(sourceDescription => document.Workspace.IsOpenApiDocumentLoaded(sourceDescription.Uri))
             .ToList();

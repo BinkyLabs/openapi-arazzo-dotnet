@@ -15,6 +15,7 @@ internal class ArazzoWorkspace
     private readonly Dictionary<string, SourceDescriptionRegistration> _sourceDescriptionRegistry = new(StringComparer.Ordinal);
     private readonly Dictionary<Uri, HashSet<string>> _openApiOperationPointers = new(new UriWithFragmentEqualityComparer());
     private readonly Dictionary<Uri, Dictionary<string, int>> _openApiOperationIdCounts = new(new UriWithFragmentEqualityComparer());
+    private readonly Dictionary<Uri, ArazzoDocument> _arazzoDocuments = new(new UriWithFragmentEqualityComparer());
 
     internal readonly record struct SourceDescriptionRegistration(Uri Uri, ArazzoDescriptionType? Type);
 
@@ -100,6 +101,11 @@ internal class ArazzoWorkspace
         {
             _openApiOperationIdCounts[pair.Key] = new Dictionary<string, int>(pair.Value, StringComparer.Ordinal);
         }
+
+        foreach (var pair in workspace._arazzoDocuments)
+        {
+            _arazzoDocuments[pair.Key] = pair.Value;
+        }
     }
 
     /// <summary>
@@ -118,6 +124,7 @@ internal class ArazzoWorkspace
     {
         ArgumentNullException.ThrowIfNull(document);
 
+        RegisterArazzoDocument(document.BaseUri, document);
         RegisterSourceDescriptions(document);
 
         if (document.Workflows is not null)
@@ -246,9 +253,56 @@ internal class ArazzoWorkspace
         return _sourceDescriptionRegistry.TryGetValue(name, out registration);
     }
 
-    internal IEnumerable<SourceDescriptionRegistration> GetSourceDescriptions()
+    internal bool TryGetSourceDescription(ArazzoDocument document, string name, out SourceDescriptionRegistration registration)
     {
-        return _sourceDescriptionRegistry.Values;
+        var source = document.SourceDescriptions?.FirstOrDefault(source => source.Name == name && source.Url is not null);
+        if (source?.Url is null)
+        {
+            registration = default;
+            return false;
+        }
+
+        registration = new SourceDescriptionRegistration(new Uri(document.BaseUri, source.Url), source.Type);
+        return true;
+    }
+
+    internal IEnumerable<SourceDescriptionRegistration> GetSourceDescriptions(ArazzoDocument document)
+    {
+        return (document.SourceDescriptions ?? [])
+            .Where(static source => !string.IsNullOrEmpty(source.Name) && source.Url is not null)
+            .Select(source => new SourceDescriptionRegistration(new Uri(document.BaseUri, source.Url!), source.Type));
+    }
+
+    internal void RegisterArazzoDocument(Uri documentUri, ArazzoDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(documentUri);
+        ArgumentNullException.ThrowIfNull(document);
+
+        var retrievalUri = WithoutFragment(documentUri);
+        var canonicalUri = WithoutFragment(document.BaseUri);
+        _arazzoDocuments[retrievalUri] = document;
+        _arazzoDocuments[canonicalUri] = document;
+
+        if (!StringComparer.Ordinal.Equals(retrievalUri.AbsoluteUri, canonicalUri.AbsoluteUri))
+        {
+            foreach (var key in _documentsIdRegistry
+                .Where(pair => StringComparer.Ordinal.Equals(pair.Value.AbsoluteUri, retrievalUri.AbsoluteUri))
+                .Select(static pair => pair.Key).ToArray())
+            {
+                _documentsIdRegistry[key] = canonicalUri;
+            }
+        }
+        _documentsIdRegistry[retrievalUri.AbsoluteUri] = canonicalUri;
+    }
+
+    internal bool TryGetArazzoDocument(Uri documentUri, out ArazzoDocument? document)
+    {
+        return _arazzoDocuments.TryGetValue(WithoutFragment(documentUri), out document);
+    }
+
+    internal IEnumerable<ArazzoDocument> GetArazzoDocuments()
+    {
+        return _arazzoDocuments.Values.Distinct();
     }
 
     /// <summary>
