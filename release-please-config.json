@@ -11,7 +11,7 @@
   "include-component-in-tag": false,
   "include-v-in-tag": true,
   "draft": false,
-  "prerelease": true,
+  "prerelease": false,
   "versioning": "prerelease",
   "prerelease-type": "preview",
   "packages": {
