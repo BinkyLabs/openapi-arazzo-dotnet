@@ -13,21 +13,21 @@ public class ArazzoSpecificationExamplesTests
         {
             [Path.Join("DescribingApiWorkflowsWithArazzo", "specs", "error-bnpl.arazzo.yaml")] =
             [
-                "#/workflows/steps/outputs/eligibilityCheckRequired: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibilityCheckRequired': '$response.body.eligibilityCheckRequired'.",
-                "#/workflows/steps/outputs/eligibleProducts: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibleProducts': '$response.body.productCodes'.",
-                "#/workflows/steps/outputs/totalLoanAmount: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'totalLoanAmount': '$response.body.totalAmount'.",
-                "#/workflows/steps/outputs/customer: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'customer': '$response.body.links.self'.",
-                "#/workflows/steps/outputs/redirectAuthToken: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'redirectAuthToken': '$response.body.redirectAuthToken'.",
-                "#/workflows/steps/outputs/loanTransactionId: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'loanTransactionId': '$response.body.loanTransactionId'.",
+                "#/workflows/steps/outputs/eligibilityCheckRequired: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/eligibleProducts: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/totalLoanAmount: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/customer: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/redirectAuthToken: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/loanTransactionId: Output values must be valid runtime expressions or Selector Objects.",
             ],
             [Path.Join("DescribingApiWorkflowsWithArazzo", "specs", "formal-bnpl.arazzo.yaml")] =
             [
-                "#/workflows/steps/outputs/eligibilityCheckRequired: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibilityCheckRequired': '$response.body.eligibilityCheckRequired'.",
-                "#/workflows/steps/outputs/eligibleProducts: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'eligibleProducts': '$response.body.productCodes'.",
-                "#/workflows/steps/outputs/totalLoanAmount: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'totalLoanAmount': '$response.body.totalAmount'.",
-                "#/workflows/steps/outputs/customer: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'customer': '$response.body.links.self'.",
-                "#/workflows/steps/outputs/redirectAuthToken: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'redirectAuthToken': '$response.body.redirectAuthToken'.",
-                "#/workflows/steps/outputs/loanTransactionId: Values in ArazzoStep.Outputs must be valid runtime expressions. Invalid value for key 'loanTransactionId': '$response.body.loanTransactionId'.",
+                "#/workflows/steps/outputs/eligibilityCheckRequired: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/eligibleProducts: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/totalLoanAmount: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/customer: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/redirectAuthToken: Output values must be valid runtime expressions or Selector Objects.",
+                "#/workflows/steps/outputs/loanTransactionId: Output values must be valid runtime expressions or Selector Objects.",
             ],
             [Path.Join("OperationResolution", "ambiguous.arazzo.yaml")] =
             [

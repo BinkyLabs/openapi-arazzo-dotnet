@@ -422,12 +422,145 @@ public class ArazzoReferenceWorkspaceTests
 
         Assert.Equal("userId", reference.Name);
         Assert.Equal(ParameterLocation.Path, reference.In);
-        Assert.Equal("42", reference.Value?.GetValue<string>());
+        Assert.Equal("42", reference.Value?.Any?.GetValue<string>());
 
         var overridden = Assert.IsType<ArazzoParameter>(reference.CopyReferenceAsTargetElementWithOverrides(parameter));
-        Assert.Equal("42", overridden.Value?.GetValue<string>());
+        Assert.Equal("42", overridden.Value?.Any?.GetValue<string>());
         Assert.NotSame(parameter.Value, overridden.Value);
         Assert.Equal("value", Assert.IsType<JsonNodeExtension>(overridden.Extensions!["x-extra"]).Node.GetValue<string>());
+    }
+
+    [Fact]
+    public void ArazzoParameterReference_PreservesResolvedUnionBranches()
+    {
+        ArazzoParameterValueUnion[] values =
+        [
+            JsonValue.Create(42),
+            new ArazzoRuntimeExpression("$workflows.lookup"),
+            new ArazzoRuntimeExpression("$message.payload#/id"),
+            new ArazzoSelector { Context = new("$response.body"), Selector = "/id", Type = ArazzoPayloadRequirementTargetSelectorType.JsonPointer }
+        ];
+        foreach (var value in values)
+        {
+            var parameter = new ArazzoParameter { Name = "shared", Value = value };
+            var document = new ArazzoDocument
+            {
+                Components = new ArazzoComponent
+                {
+                    Parameters = new Dictionary<string, ArazzoParameter> { ["shared"] = parameter }
+                }
+            };
+            document.RegisterComponents();
+            var reference = new ArazzoParameterReference("shared", document);
+            IArazzoParameter asInterface = reference;
+            ArazzoParameterUnion asUnion = reference;
+
+            Assert.Same(value, reference.Value);
+            Assert.Same(value, asInterface.Value);
+            Assert.Same(value, asUnion.Value);
+        }
+    }
+
+    [Theory]
+    [InlineData("""{"id":42}""")]
+    [InlineData("null")]
+    public void ArazzoParameterReference_ClonesLiteralAndNullOverrides(string json)
+    {
+        var reference = new ArazzoParameterReference("shared") { Value = JsonNode.Parse(json) };
+        var copy = new ArazzoParameterReference(reference);
+        var parameter = new ArazzoParameter { Name = "shared", Value = "original" };
+        var overridden = Assert.IsType<ArazzoParameter>(reference.CopyReferenceAsTargetElementWithOverrides(parameter));
+
+        Assert.NotNull(reference.Value);
+        Assert.NotNull(reference.Value.Any);
+        foreach (var value in new[] { copy.Value, overridden.Value })
+        {
+            Assert.NotNull(value);
+            Assert.NotSame(reference.Value, value);
+            Assert.NotNull(value.Any);
+            if (json == "null")
+            {
+                Assert.True(value.Any.IsJsonNullSentinel());
+            }
+            else
+            {
+                Assert.NotSame(reference.Value.Any, value.Any);
+                Assert.True(JsonNode.DeepEquals(reference.Value.Any, value.Any));
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("$workflows.lookup")]
+    [InlineData("$message.payload#/id")]
+    public void ArazzoParameterReference_ClonesExpressionsWithoutSelectingAnOutputVersion(string text)
+    {
+        var expression = new ArazzoRuntimeExpression(text);
+        var reference = new ArazzoParameterReference("shared") { Value = expression };
+        var copy = new ArazzoParameterReference(reference);
+        var parameter = new ArazzoParameter { Name = "shared", Value = "original" };
+        var overridden = Assert.IsType<ArazzoParameter>(reference.CopyReferenceAsTargetElementWithOverrides(parameter));
+
+        Assert.NotNull(reference.Value);
+        foreach (var value in new[] { copy.Value, overridden.Value })
+        {
+            Assert.NotNull(value);
+            Assert.NotSame(reference.Value, value);
+            Assert.Same(expression, value.Expression);
+            Assert.Null(value.Any);
+            Assert.Null(value.Selector);
+        }
+    }
+
+    [Fact]
+    public void ArazzoParameterReference_ClonesMutableSelectorOverrideMembers()
+    {
+        var expressionType = new ArazzoCriterionExpressionType
+        {
+            Type = ArazzoCriterionExpressionTypeType.JsonPath,
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-note"] = new JsonNodeExtension(new JsonObject { ["source"] = true })
+            }
+        };
+        var selector = new ArazzoSelector
+        {
+            Context = new("$response.body"),
+            Selector = "$.id",
+            Type = expressionType,
+            Extensions = new Dictionary<string, IArazzoExtension>
+            {
+                ["x-note"] = new JsonNodeExtension(JsonValue.Create("original"))
+            }
+        };
+        var reference = new ArazzoParameterReference("shared") { Value = selector };
+        var copy = new ArazzoParameterReference(reference);
+        var parameter = new ArazzoParameter { Name = "shared", Value = "original" };
+        var overridden = Assert.IsType<ArazzoParameter>(reference.CopyReferenceAsTargetElementWithOverrides(parameter));
+        selector.Selector = "$.changed";
+        selector.Extensions.Clear();
+        expressionType.Type = ArazzoCriterionExpressionTypeType.XPath;
+        Assert.IsType<JsonNodeExtension>(expressionType.Extensions["x-note"]).Node["source"] = false;
+
+        foreach (var value in new[] { copy.Value, overridden.Value })
+        {
+            Assert.NotNull(value);
+            var clonedSelector = value.Selector;
+            Assert.NotNull(clonedSelector);
+            Assert.NotSame(selector, clonedSelector);
+            Assert.Equal("$.id", clonedSelector.Selector);
+            Assert.Same(selector.Context, clonedSelector.Context);
+            Assert.NotNull(clonedSelector.Type);
+            Assert.NotSame(selector.Type, clonedSelector.Type);
+            var clonedType = clonedSelector.Type.ExpressionType;
+            Assert.NotNull(clonedType);
+            Assert.Equal(ArazzoCriterionExpressionTypeType.JsonPath, clonedType.Type);
+            Assert.Null(clonedType.Version);
+            Assert.NotNull(clonedType.Extensions);
+            Assert.True(Assert.IsType<JsonNodeExtension>(clonedType.Extensions["x-note"]).Node["source"]?.GetValue<bool>());
+            Assert.NotNull(clonedSelector.Extensions);
+            Assert.Equal("original", Assert.IsType<JsonNodeExtension>(clonedSelector.Extensions["x-note"]).Node.GetValue<string>());
+        }
     }
 
     [Fact]
@@ -439,7 +572,7 @@ public class ArazzoReferenceWorkspaceTests
             Type = ArazzoSuccessType.Goto,
             WorkflowId = "workflow",
             StepId = "step",
-            Criteria = [new ArazzoCriterion { Context = "$statusCode", Condition = "200" }]
+            Criteria = [new ArazzoCriterion { Context = new("$statusCode"), Condition = "200" }]
         };
         var failureAction = new ArazzoFailureAction
         {
@@ -449,7 +582,7 @@ public class ArazzoReferenceWorkspaceTests
             StepId = "retry",
             RetryAfter = 2.5m,
             RetryLimit = 3,
-            Criteria = [new ArazzoCriterion { Context = "$statusCode", Condition = "500" }]
+            Criteria = [new ArazzoCriterion { Context = new("$statusCode"), Condition = "500" }]
         };
         var document = new ArazzoDocument
         {
@@ -579,19 +712,19 @@ public class ArazzoReferenceWorkspaceTests
         Assert.Empty(result.Diagnostic.Errors);
 
         var workflow = Assert.Single(result.Document!.Workflows!);
-        var workflowParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!));
-        var workflowSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!));
-        var workflowFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!));
+        var workflowParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(workflow.Parameters!).Reference);
+        var workflowSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(workflow.SuccessActions!).Reference);
+        var workflowFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(workflow.FailureActions!).Reference);
         var step = Assert.Single(workflow.Steps!);
-        var stepParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(step.Parameters!));
-        var stepSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(step.OnSuccess!));
-        var stepFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(step.OnFailure!));
+        var stepParameter = Assert.IsType<ArazzoParameterReference>(Assert.Single(step.Parameters!).Reference);
+        var stepSuccessAction = Assert.IsType<ArazzoSuccessActionReference>(Assert.Single(step.OnSuccess!).Reference);
+        var stepFailureAction = Assert.IsType<ArazzoFailureActionReference>(Assert.Single(step.OnFailure!).Reference);
 
         Assert.Equal("userId", stepParameter.Name);
         Assert.Equal(ParameterLocation.Path, stepParameter.In);
-        Assert.Equal("42", stepParameter.Value?.GetValue<string>());
+        Assert.Equal("42", stepParameter.Value?.Any?.GetValue<string>());
         Assert.Equal("userId", workflowParameter.Name);
-        Assert.Equal("24", workflowParameter.Value?.GetValue<string>());
+        Assert.Equal("24", workflowParameter.Value?.Any?.GetValue<string>());
         Assert.Equal("done", stepSuccessAction.Name);
         Assert.Equal(ArazzoSuccessType.End, stepSuccessAction.Type);
         Assert.Equal("done", workflowSuccessAction.Name);
@@ -793,6 +926,11 @@ public class ArazzoReferenceWorkspaceTests
         public void SerializeAsV1(IOpenApiWriter writer)
         {
             ArgumentNullException.ThrowIfNull(writer);
+        }
+
+        public void SerializeAsV1_1(IOpenApiWriter writer)
+        {
+            SerializeAsV1(writer);
         }
     }
 

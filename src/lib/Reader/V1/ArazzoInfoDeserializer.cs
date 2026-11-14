@@ -13,15 +13,22 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoInfoSummary, static (o, v, c) => o.Summary = v.GetScalarValue() },
         { ArazzoConstants.ArazzoInfoDescription, static (o, v, c) => o.Description = v.GetScalarValue() }
     };
-    public static readonly PatternFieldMap<ArazzoInfo> InfoPatternFields = new()
+    public static PatternFieldMap<ArazzoInfo> GetInfoPatternFields() =>
+    new()
     {
         {s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k,LoadExtension(k, n, c))}
     };
+    public static readonly PatternFieldMap<ArazzoInfo> InfoPatternFields = GetInfoPatternFields();
     public static ArazzoInfo LoadInfo(JsonNode node, ParsingContext context)
+    {
+        return LoadInfoInternal(node, context, InfoFixedFields, InfoPatternFields);
+    }
+
+    public static ArazzoInfo LoadInfoInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoInfo> infoFixedFields, PatternFieldMap<ArazzoInfo> infoPatternFields)
     {
         var mapNode = node.CheckMapNode("Info", context);
         var info = new ArazzoInfo();
-        mapNode.ParseMap(info, InfoFixedFields, InfoPatternFields, context);
+        mapNode.ParseMap(info, infoFixedFields, infoPatternFields, context);
         ValidateInfoRequiredFields(info, context);
 
         return info;

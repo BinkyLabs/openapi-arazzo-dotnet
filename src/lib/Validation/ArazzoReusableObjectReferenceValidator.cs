@@ -13,9 +13,9 @@ internal static class ArazzoReusableObjectReferenceValidator
         ReferenceType.FailureAction
     ];
 
-    internal static bool IsReusableObjectReference(string? reference, ReferenceType? referenceType = null)
+    internal static bool IsReusableObjectReference(string? reference, ArazzoSpecVersion specVersion, ReferenceType? referenceType = null)
     {
-        if (!ArazzoRuntimeExpressionValidator.IsRuntimeExpression(reference) ||
+        if (!ArazzoRuntimeExpressionValidator.IsRuntimeExpression(reference, specVersion) ||
             string.IsNullOrEmpty(reference) ||
             !reference.StartsWith("$components.", StringComparison.Ordinal))
         {
@@ -23,13 +23,13 @@ internal static class ArazzoReusableObjectReferenceValidator
         }
 
         return referenceType is null
-            ? ReusableReferenceTypes.Any(type => IsReusableObjectReference(reference, type))
+            ? ReusableReferenceTypes.Any(type => IsReusableObjectReference(reference, specVersion, type))
             : MatchesReferenceType(reference, referenceType.Value);
     }
 
-    internal static void ValidateSerializationReference(string? reference, ReferenceType? referenceType, string elementName)
+    internal static void ValidateSerializationReference(string? reference, ReferenceType? referenceType, string elementName, ArazzoSpecVersion specVersion)
     {
-        if (!IsReusableObjectReference(reference, referenceType))
+        if (!IsReusableObjectReference(reference, specVersion, referenceType))
         {
             throw new ArazzoSerializationException(GetErrorMessage(reference, referenceType, elementName));
         }
@@ -39,7 +39,7 @@ internal static class ArazzoReusableObjectReferenceValidator
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (!IsReusableObjectReference(reference, referenceType))
+        if (!IsReusableObjectReference(reference, context.Diagnostic.SpecificationVersion, referenceType))
         {
             context.Diagnostic.Errors.Add(new OpenApiError($"{context.GetLocation()}/{ArazzoConstants.ArazzoReusableObjectReference}", GetErrorMessage(reference, referenceType, elementName)));
         }

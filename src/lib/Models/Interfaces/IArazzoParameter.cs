@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo;
@@ -18,7 +16,7 @@ public interface IArazzoParameter : IArazzoSerializable, IArazzoReferenceable
     /// </summary>
     ParameterLocation? In { get; }
     /// <summary>
-    /// Gets or sets the parameter value.
+    /// Gets the parameter value as a literal JSON value, runtime expression, or selector.
     /// </summary>
-    JsonNode? Value { get; }
+    ArazzoParameterValueUnion? Value { get; }
 }

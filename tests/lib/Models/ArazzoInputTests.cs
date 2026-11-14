@@ -720,5 +720,10 @@ public class ArazzoInputTests
         {
             ArgumentNullException.ThrowIfNull(writer);
         }
+
+        public void SerializeAsV1_1(IOpenApiWriter writer)
+        {
+            SerializeAsV1(writer);
+        }
     }
 }

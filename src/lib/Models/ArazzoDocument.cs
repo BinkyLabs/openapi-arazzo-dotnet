@@ -10,6 +10,8 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// </summary>
 public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 {
+    private Uri _baseUri;
+
     /// <summary>
     /// Registers document components into the workspace.
     /// </summary>
@@ -24,9 +26,14 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     internal ArazzoWorkspace? Workspace { get; set; }
 
     /// <summary>
-    /// Gets or sets the Arazzo version. Default is "1.0.1".
+    /// Gets or sets the Arazzo version. Default is "1.1.0".
     /// </summary>
-    public string? Arazzo { get; internal set; } = "1.0.1";
+    public string? Arazzo { get; internal set; } = "1.1.0";
+
+    /// <summary>
+    /// Gets or sets the self-assigned URI of the Arazzo description.
+    /// </summary>
+    public string? Self { get; set; }
 
     /// <summary>
     /// Gets or sets the Arazzo info object.
@@ -52,9 +59,25 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     public IDictionary<string, IArazzoExtension>? Extensions { get; set; }
 
     /// <summary>
-    /// Absolute location of the document or a generated placeholder if location is not given.
+    /// Effective base URI, using the self-assigned URI when present.
     /// </summary>
-    internal Uri BaseUri { get; set; }
+    internal Uri BaseUri
+    {
+        get
+        {
+            ValidateSelf();
+            return Self is null ? _baseUri : new Uri(_baseUri, Self);
+        }
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            if (!value.IsAbsoluteUri)
+            {
+                throw new ArgumentException("Base URI must be absolute.", nameof(value));
+            }
+            _baseUri = value;
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ArazzoDocument"/> class.
@@ -62,7 +85,32 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     public ArazzoDocument()
     {
         Workspace = new ArazzoWorkspace();
-        BaseUri = new Uri(OpenApiConstants.BaseRegistryUri + Guid.NewGuid());
+        _baseUri = new Uri(OpenApiConstants.BaseRegistryUri + Guid.NewGuid());
+    }
+
+    internal static string? GetSelfValidationError(string? self)
+    {
+        if (self is null)
+        {
+            return null;
+        }
+        if (!Uri.TryCreate(self, UriKind.RelativeOrAbsolute, out _))
+        {
+            return "The '$self' property must be a valid URI-reference.";
+        }
+        if (self.Contains('#', StringComparison.Ordinal))
+        {
+            return $"The '$self' property must not contain a fragment identifier ('#'). Found: '{self}'.";
+        }
+        return null;
+    }
+
+    private void ValidateSelf()
+    {
+        if (GetSelfValidationError(Self) is { } error)
+        {
+            throw new ArazzoSerializationException(error);
+        }
     }
 
     /// <summary>
@@ -71,6 +119,21 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>
     public void SerializeAsV1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
+    }
+
+    /// <summary>
+    /// Serializes the Arazzo document as an OpenAPI Arazzo v1.1.0 JSON object.
+    /// </summary>
+    /// <param name="writer">The OpenAPI writer to use for serialization.</param>
+    /// <exception cref="ArazzoSerializationException">Thrown when validation fails.</exception>
+    public void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
     {
         // Validate required fields
         if (Info is null)
@@ -88,21 +151,27 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
             throw new ArazzoSerializationException("Workflows is required and must contain at least one element for ArazzoDocument serialization.");
         }
 
+        ValidateSelf();
         ValidateUniqueSourceDescriptionNames();
         ValidateUniqueWorkflowIds();
-        ArazzoSemanticReferenceValidator.ValidateSerialization(this);
+        ArazzoSemanticReferenceValidator.ValidateSerialization(this, specVersion);
 
         writer.WriteStartObject();
-        writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, "1.0.1");
-        writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, (w, obj) => obj.SerializeAsV1(w));
+        writer.WriteRequiredProperty(ArazzoConstants.ArazzoDocumentArazzo, specVersion is ArazzoSpecVersion.Arazzo1_0 ? "1.0.1" : "1.1.0");
+        writer.WriteProperty(
+            specVersion is ArazzoSpecVersion.Arazzo1_0
+                ? ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoDocumentSelf)
+                : ArazzoConstants.ArazzoDocumentSelf,
+            Self);
+        writer.WriteRequiredObject(ArazzoConstants.ArazzoDocumentInfo, Info, callback);
 
-        writer.WriteRequiredCollection(ArazzoConstants.ArazzoDocumentSourceDescriptions, SourceDescriptions, static (w, s) => s.SerializeAsV1(w));
+        writer.WriteRequiredCollection<ArazzoSourceDescription>(ArazzoConstants.ArazzoDocumentSourceDescriptions, SourceDescriptions, callback);
 
-        writer.WriteRequiredCollection(ArazzoConstants.ArazzoDocumentWorkflows, Workflows, static (w, wf) => wf.SerializeAsV1(w));
+        writer.WriteRequiredCollection<ArazzoWorkflow>(ArazzoConstants.ArazzoDocumentWorkflows, Workflows, callback);
 
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoDocumentComponents, Components, static (w, c) => c.SerializeAsV1(w));
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoDocumentComponents, Components, callback);
 
-        writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
+        writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }
 
@@ -191,8 +260,9 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 
         var relativePath = NormalizeReferencePath(reference);
         var externalResourceUri = useExternal ? Workspace?.GetDocumentId(reference.ExternalResource) : null;
+        var fragmentIndex = relativePath.IndexOf('#', StringComparison.Ordinal);
         var uriLocation = useExternal && externalResourceUri is not null
-            ? externalResourceUri.AbsoluteUri + (relativePath.StartsWith("#", StringComparison.OrdinalIgnoreCase) ? relativePath : $"#{relativePath}")
+            ? externalResourceUri.AbsoluteUri + (fragmentIndex >= 0 ? relativePath[fragmentIndex..] : string.Empty)
             : relativePath.StartsWith("#", StringComparison.OrdinalIgnoreCase)
                 ? new Uri(BaseUri, relativePath).AbsoluteUri
                 : relativePath;

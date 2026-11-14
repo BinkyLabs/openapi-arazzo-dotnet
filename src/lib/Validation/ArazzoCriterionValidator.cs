@@ -15,7 +15,7 @@ internal static class ArazzoCriterionValidator
             throw new ArazzoSerializationException($"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Condition)} is required for ArazzoCriterion serialization.");
         }
 
-        if (criterion.Type is not null && string.IsNullOrEmpty(criterion.Context))
+        if (criterion.Type is not null && criterion.Context is null)
         {
             throw new ArazzoSerializationException($"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Context)} is required when {nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Type)} is specified.");
         }
@@ -31,7 +31,7 @@ internal static class ArazzoCriterionValidator
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Condition)} is required."));
         }
 
-        if (criterion.Type is not null && string.IsNullOrEmpty(criterion.Context))
+        if (criterion.Type is not null && criterion.Context is null)
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Context)} is required when {nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Type)} is specified."));
         }
