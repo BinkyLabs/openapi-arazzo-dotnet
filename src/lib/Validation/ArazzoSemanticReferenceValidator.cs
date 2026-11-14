@@ -169,6 +169,11 @@ internal static partial class ArazzoSemanticReferenceValidator
                 yield return error;
             }
         }
+
+        foreach (var error in ArazzoStepDependencyValidator.Validate(document))
+        {
+            yield return error;
+        }
     }
 
     private static IEnumerable<string> ValidateDependsOnReferences(

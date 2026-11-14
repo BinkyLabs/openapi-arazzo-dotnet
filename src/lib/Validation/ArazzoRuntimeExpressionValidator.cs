@@ -35,6 +35,16 @@ internal static partial class ArazzoRuntimeExpressionValidator
     [GeneratedRegex(@"\{(\$[^{}]+)\}", RegexOptions.CultureInvariant)]
     private static partial Regex BracedRuntimeExpressionRegex();
 
+    internal static IEnumerable<string> GetRuntimeExpressions(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            yield break;
+        if (value.StartsWith("$", StringComparison.Ordinal))
+            yield return value;
+        foreach (Match match in BracedRuntimeExpressionRegex().Matches(value))
+            yield return match.Groups[1].Value;
+    }
+
     /// <summary>
     /// Determines whether the supplied value matches the Arazzo runtime-expression ABNF translated to a regular expression.
     /// See <see href="https://spec.openapis.org/arazzo/v1.0.1.html#runtime-expressions">Runtime Expressions</see>.

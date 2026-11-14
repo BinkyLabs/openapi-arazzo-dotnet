@@ -120,7 +120,7 @@ internal static class ArazzoParameterValidator
         }
     }
 
-    private static string GetDuplicateDetectionName(string name, ParameterLocation? location) =>
+    internal static string GetDuplicateDetectionName(string name, ParameterLocation? location) =>
         location == ParameterLocation.Header ? name.ToUpperInvariant() : name;
 
     private static string GetParameterLocationDisplayName(ParameterLocation? location) =>

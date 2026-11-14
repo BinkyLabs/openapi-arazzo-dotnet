@@ -41,7 +41,7 @@ internal static class ArazzoActionListValidator
                 .Select(x => $"{elementName} contains duplicate action '{x}'.");
     }
 
-    private static string? GetActionKey<T>(T action) where T : IArazzoResultAction =>
+    internal static string? GetActionKey<T>(T action) where T : IArazzoResultAction =>
         ArazzoUnionHelper.Unwrap(action) is IArazzoReferenceHolder<BaseArazzoReference> referenceHolder
             ? referenceHolder.Reference.ReferenceV1
             : action.Name;
