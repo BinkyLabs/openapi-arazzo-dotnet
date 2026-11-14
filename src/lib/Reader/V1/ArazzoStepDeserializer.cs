@@ -86,6 +86,7 @@ internal static partial class ArazzoV1Deserializer
         ValidateStepRequiredFields(step, context);
         ValidateStepTargetFields(step, context);
         ArazzoSemanticReferenceValidator.ValidateOperationPathDeserialization(step.OperationPath, context, $"{nameof(ArazzoStep)} '{step.StepId}'");
+        ArazzoAsyncApiStepValidator.ValidateDeserialization(step, context);
 
         return step;
     }

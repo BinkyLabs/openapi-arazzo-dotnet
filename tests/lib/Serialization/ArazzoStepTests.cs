@@ -158,7 +158,7 @@ public class ArazzoStepTests
         var step = new ArazzoStep
         {
             StepId = "receiveOrder",
-            ChannelPath = "$sourceDescriptions.asyncApi.orders",
+            ChannelPath = "{$sourceDescriptions.asyncApi.url}#/channels/orders",
             Action = ArazzoStepAction.Receive,
             CorrelationId = "$inputs.correlationId",
             Timeout = 6000,
@@ -170,7 +170,7 @@ public class ArazzoStepTests
         step.SerializeAsV1(writer);
         var jsonResultObject = JsonNode.Parse(textWriter.ToString());
 
-        Assert.Equal("$sourceDescriptions.asyncApi.orders", jsonResultObject?["x-channelPath"]?.GetValue<string>());
+        Assert.Equal("{$sourceDescriptions.asyncApi.url}#/channels/orders", jsonResultObject?["x-channelPath"]?.GetValue<string>());
         Assert.Equal("receive", jsonResultObject?["x-action"]?.GetValue<string>());
         Assert.Equal("$inputs.correlationId", jsonResultObject?["x-correlationId"]?.GetValue<string>());
         Assert.Equal(6000, jsonResultObject?["x-timeout"]?.GetValue<int>());
@@ -185,7 +185,7 @@ public class ArazzoStepTests
         var step = new ArazzoStep
         {
             StepId = "receiveOrder",
-            ChannelPath = "$sourceDescriptions.asyncApi.orders",
+            ChannelPath = "{$sourceDescriptions.asyncApi.url}#/channels/orders",
             Action = ArazzoStepAction.Receive,
             CorrelationId = "$inputs.correlationId",
             Timeout = 6000,
@@ -197,7 +197,7 @@ public class ArazzoStepTests
         step.SerializeAsV1_1(writer);
         var jsonResultObject = JsonNode.Parse(textWriter.ToString());
 
-        Assert.Equal("$sourceDescriptions.asyncApi.orders", jsonResultObject?["channelPath"]?.GetValue<string>());
+        Assert.Equal("{$sourceDescriptions.asyncApi.url}#/channels/orders", jsonResultObject?["channelPath"]?.GetValue<string>());
         Assert.Equal("receive", jsonResultObject?["action"]?.GetValue<string>());
         Assert.Equal("$inputs.correlationId", jsonResultObject?["correlationId"]?.GetValue<string>());
         Assert.Equal(6000, jsonResultObject?["timeout"]?.GetValue<int>());
@@ -212,7 +212,7 @@ public class ArazzoStepTests
         var json = """
         {
             "stepId": "receiveOrder",
-            "x-channelPath": "$sourceDescriptions.asyncApi.orders",
+            "x-channelPath": "{$sourceDescriptions.asyncApi.url}#/channels/orders",
             "x-action": "receive",
             "x-correlationId": "$inputs.correlationId",
             "x-timeout": 6000,
@@ -223,7 +223,7 @@ public class ArazzoStepTests
 
         var step = LoadStep(JsonNode.Parse(json)!, parsingContext, ArazzoSpecVersion.Arazzo1_0);
 
-        Assert.Equal("$sourceDescriptions.asyncApi.orders", step.ChannelPath);
+        Assert.Equal("{$sourceDescriptions.asyncApi.url}#/channels/orders", step.ChannelPath);
         Assert.Equal(ArazzoStepAction.Receive, step.Action);
         Assert.Equal("$inputs.correlationId", step.CorrelationId);
         Assert.Equal(6000, step.Timeout);
@@ -257,7 +257,7 @@ public class ArazzoStepTests
         var json = """
         {
             "stepId": "receiveOrder",
-            "channelPath": "$sourceDescriptions.asyncApi.orders",
+            "channelPath": "{$sourceDescriptions.asyncApi.url}#/channels/orders",
             "action": "receive",
             "correlationId": "$inputs.correlationId",
             "timeout": 6000,
@@ -268,7 +268,7 @@ public class ArazzoStepTests
 
         var step = LoadStep(JsonNode.Parse(json)!, parsingContext, ArazzoSpecVersion.Arazzo1_1);
 
-        Assert.Equal("$sourceDescriptions.asyncApi.orders", step.ChannelPath);
+        Assert.Equal("{$sourceDescriptions.asyncApi.url}#/channels/orders", step.ChannelPath);
         Assert.Equal(ArazzoStepAction.Receive, step.Action);
         Assert.Equal("$inputs.correlationId", step.CorrelationId);
         Assert.Equal(6000, step.Timeout);
@@ -295,6 +295,56 @@ public class ArazzoStepTests
         Assert.NotNull(step.Extensions);
         Assert.Contains("x-channelPath", step.Extensions!.Keys);
         Assert.Contains(parsingContext.Diagnostic.Errors, error => error.Message.Contains("must define exactly one of operationId, operationPath, channelPath, or workflowId", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{"stepId": "step", "channelPath": "{$sourceDescriptions.asyncApi.url}#/channels/orders"}""", "action is REQUIRED")]
+    [InlineData("""{"stepId": "step", "channelPath": "$sourceDescriptions.asyncApi.orders", "action": "receive"}""", "JSON Pointer to a channel")]
+    [InlineData("""{"stepId": "step", "channelPath": "{$sourceDescriptions.asyncApi.url}#/channels/bad~2name", "action": "receive"}""", "JSON Pointer to a channel")]
+    [InlineData("""{"stepId": "step", "channelPath": "{$sourceDescriptions.asyncApi.url}#/paths/orders/get", "action": "send"}""", "JSON Pointer to a channel")]
+    [InlineData("""{"stepId": "step", "channelPath": "{$sourceDescriptions.asyncApi.url}#/channels/orders", "action": "send", "correlationId": "id"}""", "correlationId can only be specified for AsyncAPI receive steps")]
+    [InlineData("""{"stepId": "step", "operationId": "receiveOrder", "correlationId": "id"}""", "correlationId can only be specified for AsyncAPI receive steps")]
+    [InlineData("""{"stepId": "step", "operationPath": "{$sourceDescriptions.api.url}#/paths/~1orders/get", "action": "receive"}""", "action can only be specified for AsyncAPI steps")]
+    [InlineData("""{"stepId": "step", "workflowId": "child", "action": "receive"}""", "action can only be specified for AsyncAPI steps")]
+    public void DeserializeAndSerialize_InvalidAsyncApiFields_ReportsError(string json, string expectedMessage)
+    {
+        var jsonNode = JsonNode.Parse(json);
+        Assert.NotNull(jsonNode);
+        var context = new ParsingContext(new());
+
+        var step = LoadStep(jsonNode, context, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
+        using var textWriter = new StringWriter();
+        var exception = Assert.Throws<ArazzoSerializationException>(() => step.SerializeAsV1_1(new OpenApiJsonWriter(textWriter)));
+        Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(ArazzoSpecVersion.Arazzo1_0)]
+    [InlineData(ArazzoSpecVersion.Arazzo1_1)]
+    public void DeserializeAndSerialize_ChannelPathWithoutAction_ReportsError(ArazzoSpecVersion version)
+    {
+        var fieldName = version is ArazzoSpecVersion.Arazzo1_0 ? "x-channelPath" : "channelPath";
+        var jsonNode = new JsonObject
+        {
+            ["stepId"] = "step",
+            [fieldName] = "{$sourceDescriptions.asyncApi.url}#/channels/order~1created"
+        };
+        var context = new ParsingContext(new());
+        var step = LoadStep(jsonNode, context, version);
+
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains("action is REQUIRED", StringComparison.Ordinal));
+        using var textWriter = new StringWriter();
+        var writer = new OpenApiJsonWriter(textWriter);
+        var exception = Assert.Throws<ArazzoSerializationException>(() =>
+        {
+            if (version is ArazzoSpecVersion.Arazzo1_0)
+                step.SerializeAsV1(writer);
+            else
+                step.SerializeAsV1_1(writer);
+        });
+        Assert.Contains("action is REQUIRED", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]

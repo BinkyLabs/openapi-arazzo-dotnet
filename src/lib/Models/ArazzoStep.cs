@@ -134,6 +134,7 @@ public class ArazzoStep : IArazzoExtensible, IArazzoSerializable
         ArgumentException.ThrowIfNullOrEmpty(StepId);
         ValidateOperationReferenceFields(specVersion);
         ArazzoSemanticReferenceValidator.ValidateOperationPathSerialization(OperationPath, $"{nameof(ArazzoStep)} '{StepId}'");
+        ArazzoAsyncApiStepValidator.ValidateSerialization(this);
         ValidateRequestBodyApplicability();
         ValidateParameters();
         ValidateActions();

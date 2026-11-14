@@ -110,6 +110,14 @@ public class ArazzoStepDependencyValidatorTests
                 first.Outputs = new Dictionary<string, ArazzoOutputValueUnion> { ["id"] = expression };
                 break;
             case "correlation":
+                Assert.NotNull(document.SourceDescriptions);
+                document.SourceDescriptions[0].Type = ArazzoDescriptionType.AsyncAPI;
+                foreach (var workflow in document.Workflows)
+                {
+                    Assert.NotNull(workflow.Steps);
+                    foreach (var step in workflow.Steps)
+                        step.Action = ArazzoStepAction.Receive;
+                }
                 first.CorrelationId = expression;
                 break;
             case "action":

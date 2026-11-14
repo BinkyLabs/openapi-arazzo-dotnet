@@ -15,6 +15,76 @@ public class ParsingContextTests
     private static ParsingContext CreateContext() => new(new ArazzoDiagnostic());
 
     [Theory]
+    [InlineData("asyncapi", """{"stepId": "step", "operationId": "receiveOrder"}""", "action is REQUIRED")]
+    [InlineData("asyncapi", """{"stepId": "step", "operationId": "$sourceDescriptions.source.receiveOrder"}""", "action is REQUIRED")]
+    [InlineData("openapi", """{"stepId": "step", "operationId": "getOrder", "action": "send"}""", "action can only be specified for AsyncAPI steps")]
+    [InlineData(null, """{"stepId": "step", "operationId": "getOrder", "action": "receive"}""", "action can only be specified for AsyncAPI steps")]
+    [InlineData("openapi", """{"stepId": "step", "operationId": "$sourceDescriptions.source.getOrder", "action": "receive", "correlationId": "id"}""", "action can only be specified for AsyncAPI steps")]
+    [InlineData("asyncapi", """{"stepId": "step", "channelPath": "{$sourceDescriptions.missing.url}#/channels/orders", "action": "receive"}""", "unknown sourceDescription 'missing'")]
+    [InlineData("openapi", """{"stepId": "step", "channelPath": "{$sourceDescriptions.source.url}#/channels/orders", "action": "send"}""", "channelPath must target an AsyncAPI sourceDescription")]
+    [InlineData("arazzo", """{"stepId": "step", "channelPath": "{$sourceDescriptions.source.url}#/channels/orders", "action": "receive"}""", "channelPath must target an AsyncAPI sourceDescription")]
+    public void ParseAndSerialize_AsyncApiSourceConstraints_ReportsError(string? sourceType, string stepJson, string expectedMessage)
+    {
+        var jsonNode = JsonNode.Parse("""
+        {
+            "arazzo": "1.1.0",
+            "info": {"title": "T", "version": "1"},
+            "sourceDescriptions": [{"name": "source", "url": "https://example.com/api"}],
+            "workflows": [{"workflowId": "wf", "steps": []}]
+        }
+        """);
+        Assert.NotNull(jsonNode);
+        var source = Assert.IsType<JsonObject>(Assert.IsType<JsonArray>(jsonNode["sourceDescriptions"])[0]);
+        if (sourceType is not null)
+            source["type"] = sourceType;
+        var workflow = Assert.IsType<JsonObject>(Assert.IsType<JsonArray>(jsonNode["workflows"])[0]);
+        var stepNode = JsonNode.Parse(stepJson);
+        Assert.NotNull(stepNode);
+        workflow["steps"] = new JsonArray(stepNode);
+        var context = CreateContext();
+
+        var document = context.Parse(jsonNode, new Uri("https://example.com/"));
+
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains(expectedMessage, StringComparison.Ordinal));
+        using var textWriter = new StringWriter();
+        var exception = Assert.Throws<ArazzoSerializationException>(() => document.SerializeAsV1_1(new OpenApiJsonWriter(textWriter)));
+        Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ParseAndSerialize_MixedSources_UsesTargetSourceType()
+    {
+        var jsonNode = JsonNode.Parse("""
+        {
+            "arazzo": "1.1.0",
+            "info": {"title": "T", "version": "1"},
+            "sourceDescriptions": [
+                {"name": "api", "url": "https://example.com/api", "type": "openapi"},
+                {"name": "events", "url": "https://example.com/events", "type": "asyncapi"}
+            ],
+            "workflows": [{
+                "workflowId": "wf",
+                "steps": [
+                    {"stepId": "getOrder", "operationId": "$sourceDescriptions.api.getOrder"},
+                    {"stepId": "receiveOrder", "operationId": "$sourceDescriptions.events.receiveOrder", "action": "receive", "correlationId": "$inputs.id"},
+                    {"stepId": "sendOrder", "channelPath": "{$sourceDescriptions.events.url}#/channels/order~1created", "action": "send"},
+                    {"stepId": "receiveChannel", "channelPath": "{$sourceDescriptions.events.url}#/channels/orders", "action": "receive"}
+                ]
+            }]
+        }
+        """);
+        Assert.NotNull(jsonNode);
+        var context = CreateContext();
+
+        var document = context.Parse(jsonNode, new Uri("https://example.com/"));
+        using var textWriter = new StringWriter();
+        document.SerializeAsV1_1(new OpenApiJsonWriter(textWriter));
+
+        Assert.Empty(context.Diagnostic.Errors);
+        Assert.True(JsonNode.DeepEquals(jsonNode, JsonNode.Parse(textWriter.ToString())));
+    }
+
+    [Theory]
     [InlineData(0, false)]
     [InlineData(1, false)]
     [InlineData(2, false)]

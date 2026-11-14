@@ -133,6 +133,11 @@ internal static partial class ArazzoSemanticReferenceValidator
                     yield return error;
                 }
 
+                foreach (var error in ValidateAsyncApiSourceConstraints(step, sourceDescriptionTypes, $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'"))
+                {
+                    yield return error;
+                }
+
                 foreach (var error in ValidateOperationReferenceResolution(step, document, $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'"))
                 {
                     yield return error;
@@ -380,6 +385,51 @@ internal static partial class ArazzoSemanticReferenceValidator
             {
                 yield return $"{elementName} {fieldName} '{value}' references sourceDescription '{sourceDescriptionName}' with type 'arazzo'; {fieldName} must target an OpenAPI sourceDescription.";
             }
+        }
+    }
+
+    private static IEnumerable<string> ValidateAsyncApiSourceConstraints(
+        ArazzoStep step,
+        IReadOnlyDictionary<string, ArazzoDescriptionType?> sourceDescriptionTypes,
+        string elementName)
+    {
+        if (ArazzoAsyncApiStepValidator.GetChannelSourceName(step.ChannelPath) is string channelSourceName)
+        {
+            if (!sourceDescriptionTypes.TryGetValue(channelSourceName, out var channelSourceType))
+                yield return $"{elementName} references unknown sourceDescription '{channelSourceName}'.";
+            else if (channelSourceType is not ArazzoDescriptionType.AsyncAPI)
+                yield return $"{elementName} channelPath must target an AsyncAPI sourceDescription; '{channelSourceName}' is not an AsyncAPI sourceDescription.";
+        }
+
+        if (string.IsNullOrEmpty(step.OperationId))
+            yield break;
+
+        ArazzoDescriptionType? sourceType;
+        var match = SourceDescriptionOperationIdRegex().Match(step.OperationId);
+        if (match.Success)
+        {
+            if (!sourceDescriptionTypes.TryGetValue(match.Groups[1].Value, out sourceType))
+                yield break;
+        }
+        else
+        {
+            var candidates = sourceDescriptionTypes.Values.Where(static type => type is not ArazzoDescriptionType.Arazzo).Take(2).ToArray();
+            if (candidates.Length != 1)
+                yield break;
+            sourceType = candidates[0];
+        }
+
+        if (sourceType is ArazzoDescriptionType.AsyncAPI)
+        {
+            if (!step.Action.HasValue)
+                yield return $"{elementName} action is REQUIRED for AsyncAPI steps.";
+        }
+        else
+        {
+            if (step.Action.HasValue)
+                yield return $"{elementName} action can only be specified for AsyncAPI steps.";
+            if (step.CorrelationId is not null && step.Action is ArazzoStepAction.Receive)
+                yield return $"{elementName} correlationId can only be specified for AsyncAPI receive steps.";
         }
     }
 

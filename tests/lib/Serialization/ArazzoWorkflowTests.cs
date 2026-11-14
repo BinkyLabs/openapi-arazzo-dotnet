@@ -30,7 +30,7 @@ public class ArazzoWorkflowTests
         var workflow = new ArazzoWorkflow
         {
             WorkflowId = "wf",
-            Steps = [new ArazzoStep { StepId = "send", ChannelPath = "$sourceDescriptions.api.orders" }],
+            Steps = [new ArazzoStep { StepId = "send", ChannelPath = "{$sourceDescriptions.api.url}#/channels/orders", Action = ArazzoStepAction.Send }],
             Parameters = [new ArazzoParameter { Name = "id", Value = "one" }]
         };
         using var textWriter = new StringWriter();
