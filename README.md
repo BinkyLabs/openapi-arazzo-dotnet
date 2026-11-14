@@ -21,7 +21,7 @@ The object model, readers, and writers support the new Arazzo 1.1 fields and mod
 
 AsyncAPI support currently covers the document model and parsing/serialization, not loading or resolving AsyncAPI descriptions. The library does not execute workflows or evaluate runtime expressions, selectors, or conditions. Additional semantic validation and reference-resolution work is tracked in [#115](https://github.com/BinkyLabs/openapi-arazzo-dotnet/issues/115).
 
-With `settings.OpenApiSettings.LoadExternalRefs = true`, the readers also load Arazzo source descriptions (JSON or YAML, including HTTP(S) URLs) and check external workflow targets in steps, actions, and workflow dependencies. Nested sources use their own `$self` base URI and source names; already loaded documents are reused to avoid repeated loading through source cycles. Source loading and parsing errors are included in the returned diagnostics. External loading is disabled by default.
+With `settings.OpenApiSettings.LoadExternalRefs = true`, the readers also load Arazzo source descriptions (JSON or YAML, including HTTP(S) URLs) and check external workflow targets in steps, actions, and workflow dependencies. Nested sources use their own `$self` base URI and source names; already loaded documents are reused to avoid repeated loading through source cycles. Retrieval URLs and absolute `$self` URIs identify the same loaded document, so references through either identity do not trigger another fetch. Source loading and parsing errors are included in the returned diagnostics. External loading is disabled by default.
 
 ### Installing the library
 

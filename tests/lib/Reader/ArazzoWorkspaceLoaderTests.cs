@@ -11,6 +11,70 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 public class ArazzoWorkspaceLoaderTests
 {
     [Theory]
+    [InlineData("https://example.com/canonical/arazzo.json")]
+    [InlineData("https://EXAMPLE.COM:443/canonical/./arazzo.json")]
+    [InlineData("https://EXAMPLE.COM:443/root/./arazzo.json")]
+    public async Task LoadAsync_ReferencesToParsedDocumentIdentitiesDoNotFetchAgain(string referenceUrl)
+    {
+        var json = JsonNode.Parse(ExternalWorkflowJson);
+        Assert.NotNull(json);
+        json["$self"] = "https://example.com/canonical/arazzo.json";
+        json["components"] = JsonNode.Parse("""{"inputs":{"shared":{"type":"string"}}}""");
+        FirstObject(json, "workflows")["inputs"] = new JsonObject
+        {
+            ["$ref"] = $"{referenceUrl}#/components/inputs/shared"
+        };
+        var loader = new TestStreamLoader(new Dictionary<string, string>());
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.NotNull(result.Document.Workflows);
+        var input = Assert.IsType<ArazzoInputReference>(result.Document.Workflows[0].Inputs);
+        Assert.NotNull(input.Target);
+        Assert.Equal(JsonSchemaType.String, input.Target.Type);
+        Assert.Equal(0, loader.LoadCount);
+    }
+
+    [Theory]
+    [InlineData("https://other.example.com/canonical/external.json")]
+    [InlineData("https://OTHER.EXAMPLE.COM:443/canonical/./external.json")]
+    public async Task LoadAsync_RetrievalAndCanonicalReferencesReuseExternalDocumentComponents(string canonicalUrl)
+    {
+        var json = CreateExternalWorkflowDocument("external.json");
+        FirstObject(json, "workflows")["inputs"] = new JsonObject
+        {
+            ["allOf"] = new JsonArray(
+                new JsonObject { ["$ref"] = "external.json#/components/inputs/shared" },
+                new JsonObject { ["$ref"] = $"{canonicalUrl}#/components/inputs/shared" })
+        };
+        var external = JsonNode.Parse(ExternalWorkflowJson);
+        Assert.NotNull(external);
+        external["$self"] = "https://other.example.com/canonical/external.json";
+        external["components"] = JsonNode.Parse("""{"inputs":{"shared":{"type":"string"}}}""");
+        var loader = new TestStreamLoader(new Dictionary<string, string>
+        {
+            ["https://example.com/root/external.json"] = external.ToJsonString()
+        });
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.NotNull(result.Document.Workflows);
+        var input = Assert.IsType<ArazzoInput>(result.Document.Workflows[0].Inputs);
+        Assert.NotNull(input.AllOf);
+        var retrieval = Assert.IsType<ArazzoInputReference>(input.AllOf[0]);
+        var canonical = Assert.IsType<ArazzoInputReference>(input.AllOf[1]);
+        Assert.NotNull(retrieval.Target);
+        Assert.Same(retrieval.Target, canonical.Target);
+        Assert.Equal(1, loader.LoadCount);
+    }
+
+    [Theory]
     [InlineData("step")]
     [InlineData("dependsOn")]
     [InlineData("successActions")]

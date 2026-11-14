@@ -295,7 +295,7 @@ internal class ArazzoWorkspace
         _documentsIdRegistry[retrievalUri.AbsoluteUri] = canonicalUri;
     }
 
-    internal bool TryGetArazzoDocument(Uri documentUri, out ArazzoDocument? document)
+    internal bool TryGetArazzoDocument(Uri documentUri, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out ArazzoDocument? document)
     {
         return _arazzoDocuments.TryGetValue(WithoutFragment(documentUri), out document);
     }

@@ -42,14 +42,24 @@ internal sealed class ArazzoWorkspaceLoader
 
         foreach (var remoteReference in CollectRemoteReferences(document))
         {
-            if (remoteReference.ExternalResource is null || _workspace.Contains(remoteReference.ExternalResource))
+            if (remoteReference.ExternalResource is null)
             {
                 continue;
             }
 
             var inputUri = new Uri(remoteReference.ExternalResource, UriKind.RelativeOrAbsolute);
-            await using var stream = await _loader.LoadAsync(remoteReference.HostDocument!.BaseUri, inputUri, cancellationToken).ConfigureAwait(false);
-            var resolvedUri = new Uri(remoteReference.HostDocument.BaseUri, inputUri);
+            var resolvedUri = new Uri(remoteReference.HostDocument!.BaseUri, inputUri);
+            if (_workspace.TryGetArazzoDocument(resolvedUri, out var loadedDocument))
+            {
+                _workspace.AddDocumentId(remoteReference.ExternalResource, loadedDocument.BaseUri);
+                continue;
+            }
+            if (_workspace.Contains(remoteReference.ExternalResource))
+            {
+                continue;
+            }
+
+            await using var stream = await _loader.LoadAsync(remoteReference.HostDocument.BaseUri, inputUri, cancellationToken).ConfigureAwait(false);
             await using var bufferedStream = new MemoryStream();
             await stream.CopyToAsync(bufferedStream, cancellationToken).ConfigureAwait(false);
             ResetStream(bufferedStream);
