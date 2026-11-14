@@ -23,6 +23,8 @@ AsyncAPI support currently covers the document model and parsing/serialization, 
 
 With `settings.OpenApiSettings.LoadExternalRefs = true`, the readers also load Arazzo source descriptions (JSON or YAML, including HTTP(S) URLs) and check external workflow targets in steps, actions, and workflow dependencies. Nested sources use their own `$self` base URI and source names; already loaded documents are reused to avoid repeated loading through source cycles. Retrieval URLs and absolute `$self` URIs identify the same loaded document, so references through either identity do not trigger another fetch. Source loading and parsing errors are included in the returned diagnostics. External loading is disabled by default.
 
+Input schema references support JSON Pointers and plain-name `$anchor` fragments such as `#shared`, including nested `$id` resource scopes and anchors in loaded JSON/YAML schema descriptions.
+
 ### Installing the library
 
 You can install this library via the package explorer or using the following command.

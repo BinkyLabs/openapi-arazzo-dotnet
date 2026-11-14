@@ -303,11 +303,14 @@ public class ArazzoInput : IArazzoInput
         return (OpenApiSchema)ConvertToOpenApiSchema(value);
     }
 
-    internal static IArazzoInput ConvertFromOpenApiSchema(IOpenApiSchema schema, ArazzoDocument? hostDocument = null)
+    internal static IArazzoInput ConvertFromOpenApiSchema(IOpenApiSchema schema, ArazzoDocument? hostDocument = null, JsonNode? sourceNode = null)
     {
         if (schema is OpenApiSchemaReference schemaReference)
         {
-            return ArazzoInputReferenceFactory.Create(schemaReference, hostDocument);
+            var sourceReference = sourceNode is JsonObject sourceObject
+                ? BaseArazzoReference.GetPropertyValueFromNode(sourceObject, "$ref")
+                : null;
+            return ArazzoInputReferenceFactory.Create(schemaReference, hostDocument, sourceReference);
         }
 
         if (schema is not OpenApiSchema openApiSchema)
@@ -316,6 +319,7 @@ public class ArazzoInput : IArazzoInput
         }
 
         ValidateUnsupportedOpenApiKeywords(openApiSchema);
+        var source = sourceNode as JsonObject;
 
         return new ArazzoInput
         {
@@ -326,7 +330,7 @@ public class ArazzoInput : IArazzoInput
             Vocabulary = schema.Vocabulary is null ? null : new Dictionary<string, bool>(schema.Vocabulary),
             DynamicRef = schema.DynamicRef,
             DynamicAnchor = schema.DynamicAnchor,
-            Definitions = ConvertSchemaMap(schema.Definitions, hostDocument),
+            Definitions = ConvertSchemaMap(schema.Definitions, hostDocument, source?["$defs"]),
             Anchor = openApiSchema.Anchor,
             ExclusiveMaximum = schema.ExclusiveMaximum,
             ExclusiveMinimum = schema.ExclusiveMinimum,
@@ -343,36 +347,36 @@ public class ArazzoInput : IArazzoInput
             Default = CloneNode(schema.Default),
             ReadOnly = schema.ReadOnly,
             WriteOnly = schema.WriteOnly,
-            AllOf = ConvertSchemaList(schema.AllOf, hostDocument),
-            OneOf = ConvertSchemaList(schema.OneOf, hostDocument),
-            AnyOf = ConvertSchemaList(schema.AnyOf, hostDocument),
-            Not = schema.Not is null ? null : ConvertFromOpenApiSchema(schema.Not, hostDocument),
+            AllOf = ConvertSchemaList(schema.AllOf, hostDocument, source?["allOf"]),
+            OneOf = ConvertSchemaList(schema.OneOf, hostDocument, source?["oneOf"]),
+            AnyOf = ConvertSchemaList(schema.AnyOf, hostDocument, source?["anyOf"]),
+            Not = schema.Not is null ? null : ConvertFromOpenApiSchema(schema.Not, hostDocument, source?["not"]),
             Required = schema.Required is null ? null : new HashSet<string>(schema.Required),
-            Items = schema.Items is null ? null : ConvertFromOpenApiSchema(schema.Items, hostDocument),
+            Items = schema.Items is null ? null : ConvertFromOpenApiSchema(schema.Items, hostDocument, source?["items"]),
             MaxItems = schema.MaxItems,
             MinItems = schema.MinItems,
             UniqueItems = schema.UniqueItems,
-            Contains = openApiSchema.Contains is null ? null : ConvertFromOpenApiSchema(openApiSchema.Contains, hostDocument),
+            Contains = openApiSchema.Contains is null ? null : ConvertFromOpenApiSchema(openApiSchema.Contains, hostDocument, source?["contains"]),
             MaxContains = openApiSchema.MaxContains,
             MinContains = openApiSchema.MinContains,
-            Properties = ConvertSchemaMap(schema.Properties, hostDocument),
-            PatternProperties = ConvertSchemaMap(schema.PatternProperties, hostDocument),
+            Properties = ConvertSchemaMap(schema.Properties, hostDocument, source?["properties"]),
+            PatternProperties = ConvertSchemaMap(schema.PatternProperties, hostDocument, source?["patternProperties"]),
             MaxProperties = schema.MaxProperties,
             MinProperties = schema.MinProperties,
             AdditionalPropertiesAllowed = schema.AdditionalPropertiesAllowed,
-            AdditionalProperties = schema.AdditionalProperties is null ? null : ConvertFromOpenApiSchema(schema.AdditionalProperties, hostDocument),
+            AdditionalProperties = schema.AdditionalProperties is null ? null : ConvertFromOpenApiSchema(schema.AdditionalProperties, hostDocument, source?["additionalProperties"]),
             Examples = CloneNodeList(schema.Examples),
             Enum = CloneNodeList(schema.Enum),
             UnevaluatedProperties = openApiSchema.UnevaluatedProperties,
-            UnevaluatedPropertiesSchema = openApiSchema.UnevaluatedPropertiesSchema is null ? null : ConvertFromOpenApiSchema(openApiSchema.UnevaluatedPropertiesSchema, hostDocument),
+            UnevaluatedPropertiesSchema = openApiSchema.UnevaluatedPropertiesSchema is null ? null : ConvertFromOpenApiSchema(openApiSchema.UnevaluatedPropertiesSchema, hostDocument, source?["unevaluatedProperties"]),
             ContentEncoding = openApiSchema.ContentEncoding,
             ContentMediaType = openApiSchema.ContentMediaType,
-            ContentSchema = openApiSchema.ContentSchema is null ? null : ConvertFromOpenApiSchema(openApiSchema.ContentSchema, hostDocument),
-            PropertyNames = openApiSchema.PropertyNames is null ? null : ConvertFromOpenApiSchema(openApiSchema.PropertyNames, hostDocument),
-            DependentSchemas = ConvertSchemaMap(openApiSchema.DependentSchemas, hostDocument),
-            If = openApiSchema.If is null ? null : ConvertFromOpenApiSchema(openApiSchema.If, hostDocument),
-            Then = openApiSchema.Then is null ? null : ConvertFromOpenApiSchema(openApiSchema.Then, hostDocument),
-            Else = openApiSchema.Else is null ? null : ConvertFromOpenApiSchema(openApiSchema.Else, hostDocument),
+            ContentSchema = openApiSchema.ContentSchema is null ? null : ConvertFromOpenApiSchema(openApiSchema.ContentSchema, hostDocument, source?["contentSchema"]),
+            PropertyNames = openApiSchema.PropertyNames is null ? null : ConvertFromOpenApiSchema(openApiSchema.PropertyNames, hostDocument, source?["propertyNames"]),
+            DependentSchemas = ConvertSchemaMap(openApiSchema.DependentSchemas, hostDocument, source?["dependentSchemas"]),
+            If = openApiSchema.If is null ? null : ConvertFromOpenApiSchema(openApiSchema.If, hostDocument, source?["if"]),
+            Then = openApiSchema.Then is null ? null : ConvertFromOpenApiSchema(openApiSchema.Then, hostDocument, source?["then"]),
+            Else = openApiSchema.Else is null ? null : ConvertFromOpenApiSchema(openApiSchema.Else, hostDocument, source?["else"]),
             Deprecated = schema.Deprecated,
             Extensions = ConvertExtensions(openApiSchema.Extensions),
             DependentRequired = CloneDependentRequired(schema.DependentRequired)
@@ -493,14 +497,16 @@ public class ArazzoInput : IArazzoInput
 
     private static IDictionary<string, IArazzoInput>? ConvertSchemaMap(
         IDictionary<string, IOpenApiSchema>? source,
-        ArazzoDocument? hostDocument)
+        ArazzoDocument? hostDocument,
+        JsonNode? sourceNode = null)
     {
         if (source is null)
         {
             return null;
         }
 
-        return source.ToDictionary(static pair => pair.Key, pair => ConvertFromOpenApiSchema(pair.Value, hostDocument));
+        var sourceObject = sourceNode as JsonObject;
+        return source.ToDictionary(static pair => pair.Key, pair => ConvertFromOpenApiSchema(pair.Value, hostDocument, sourceObject?[pair.Key]));
     }
 
     private static IDictionary<string, IOpenApiSchema>? ConvertSchemaMap(
@@ -516,14 +522,17 @@ public class ArazzoInput : IArazzoInput
 
     private static IList<IArazzoInput>? ConvertSchemaList(
         IList<IOpenApiSchema>? source,
-        ArazzoDocument? hostDocument)
+        ArazzoDocument? hostDocument,
+        JsonNode? sourceNode = null)
     {
         if (source is null)
         {
             return null;
         }
 
-        return source.Select(schema => ConvertFromOpenApiSchema(schema, hostDocument)).ToList();
+        var sourceArray = sourceNode as JsonArray;
+        return source.Select((schema, index) => ConvertFromOpenApiSchema(schema, hostDocument,
+            sourceArray is not null && index < sourceArray.Count ? sourceArray[index] : null)).ToList();
     }
 
     private static IList<IOpenApiSchema>? ConvertSchemaList(
@@ -630,10 +639,16 @@ public class ArazzoInput : IArazzoInput
 
     private static class ArazzoInputReferenceFactory
     {
-        internal static ArazzoInputReference Create(OpenApiSchemaReference schemaReference, ArazzoDocument? hostDocument)
+        internal static ArazzoInputReference Create(OpenApiSchemaReference schemaReference, ArazzoDocument? hostDocument, string? sourceReference)
         {
-            var referenceId = schemaReference.Reference.Id ?? throw new InvalidOperationException("Schema reference Id is required.");
-            var reference = new ArazzoInputReference(referenceId, hostDocument, schemaReference.Reference.ExternalResource)
+            var referenceId = sourceReference is null
+                ? schemaReference.Reference.Id ?? throw new InvalidOperationException("Schema reference Id is required.")
+                : Reader.V1.ArazzoV1Deserializer.GetReferenceId(sourceReference);
+            var externalResource = sourceReference is null
+                ? schemaReference.Reference.ExternalResource
+                : Reader.V1.ArazzoV1Deserializer.GetExternalResource(sourceReference) ??
+                    (sourceReference.StartsWith("#", StringComparison.Ordinal) ? null : schemaReference.Reference.ExternalResource);
+            var reference = new ArazzoInputReference(referenceId, hostDocument, externalResource)
             {
                 Title = schemaReference.Reference.Title,
                 Description = schemaReference.Reference.Description,
@@ -657,9 +672,10 @@ public class ArazzoInput : IArazzoInput
                 reference.Deprecated = schemaReference.Reference.Deprecated.Value;
             }
 
-            if (!string.IsNullOrEmpty(schemaReference.Reference.ReferenceV3))
+            var referenceValue = sourceReference ?? schemaReference.Reference.ReferenceV3;
+            if (!string.IsNullOrEmpty(referenceValue))
             {
-                reference.Reference.SetJsonPointerPath(schemaReference.Reference.ReferenceV3!, "#");
+                reference.Reference.SetJsonPointerPath(referenceValue, "#");
             }
 
             return reference;

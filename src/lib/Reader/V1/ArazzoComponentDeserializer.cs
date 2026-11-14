@@ -60,7 +60,7 @@ internal static partial class ArazzoV1Deserializer
         var jsonReader = new OpenApiJsonReader();
         var schema = jsonReader.ReadFragment<OpenApiSchema>(node, OpenApiSpecVersion.OpenApi3_2, new(), out var _);
         var host = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
-        return schema is OpenApiSchema openApiSchema ? ArazzoInput.ConvertFromOpenApiSchema(openApiSchema, host) : null;
+        return schema is OpenApiSchema openApiSchema ? ArazzoInput.ConvertFromOpenApiSchema(openApiSchema, host, node) : null;
     }
 
     internal static string GetReferenceId(string referenceString)

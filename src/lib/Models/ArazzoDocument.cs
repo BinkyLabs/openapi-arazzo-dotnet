@@ -258,13 +258,20 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
             return null;
         }
 
-        var relativePath = NormalizeReferencePath(reference);
-        var externalResourceUri = useExternal ? Workspace?.GetDocumentId(reference.ExternalResource) : null;
+        var inputBaseUri = reference.Type is ReferenceType.Input ? Workspace?.GetInputReferenceBaseUri(reference) : null;
+        var referenceBaseUri = reference.ReferenceV1?.StartsWith("$components.", StringComparison.OrdinalIgnoreCase) == true
+            ? BaseUri
+            : inputBaseUri ?? BaseUri;
+        var relativePath = NormalizeReferencePath(reference, referenceBaseUri);
+        var externalResourceUri = useExternal && reference.ExternalResource is not null
+            ? Workspace?.GetDocumentId(new Uri(referenceBaseUri, reference.ExternalResource).AbsoluteUri) ??
+                (inputBaseUri is null ? Workspace?.GetDocumentId(reference.ExternalResource) : null)
+            : null;
         var fragmentIndex = relativePath.IndexOf('#', StringComparison.Ordinal);
         var uriLocation = useExternal && externalResourceUri is not null
             ? externalResourceUri.AbsoluteUri + (fragmentIndex >= 0 ? relativePath[fragmentIndex..] : string.Empty)
             : relativePath.StartsWith("#", StringComparison.OrdinalIgnoreCase)
-                ? new Uri(BaseUri, relativePath).AbsoluteUri
+                ? new Uri(referenceBaseUri, relativePath).AbsoluteUri
                 : relativePath;
 
         var absoluteUri = new Uri(uriLocation).AbsoluteUri;
@@ -277,7 +284,7 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
         return Workspace?.ResolveReference<IArazzoReferenceable>(absoluteUri);
     }
 
-    private string NormalizeReferencePath(BaseArazzoReference reference)
+    private static string NormalizeReferencePath(BaseArazzoReference reference, Uri baseUri)
     {
         var referenceValue = !string.IsNullOrEmpty(reference.ReferenceV1)
             ? reference.ReferenceV1!
@@ -296,7 +303,7 @@ public class ArazzoDocument : IArazzoSerializable, IArazzoExtensible
 
         return normalizedReferenceValue.StartsWith("#", StringComparison.OrdinalIgnoreCase) || Uri.TryCreate(normalizedReferenceValue, UriKind.Absolute, out _)
             ? normalizedReferenceValue
-            : new Uri(BaseUri, normalizedReferenceValue).AbsoluteUri;
+            : new Uri(baseUri, normalizedReferenceValue).AbsoluteUri;
     }
 
     private static string NormalizeComponentReferenceSyntax(string referenceValue)

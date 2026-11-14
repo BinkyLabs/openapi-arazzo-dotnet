@@ -11,6 +11,207 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests.Reader;
 public class ArazzoWorkspaceLoaderTests
 {
     [Theory]
+    [InlineData("#shared")]
+    [InlineData("#%73hared")]
+    public async Task LoadAsync_ResolvesPlainNameAnchorsLikeJsonPointers(string anchorReference)
+    {
+        var json = JsonNode.Parse(ExternalWorkflowJson);
+        Assert.NotNull(json);
+        json["$self"] = "https://example.com/canonical/arazzo.json";
+        var schema = JsonNode.Parse("""
+            {
+              "$anchor": "node",
+              "$defs": { "shared": { "$anchor": "shared", "type": "string" } },
+              "properties": {
+                "anchor": { "$ref": "#shared" },
+                "pointer": { "$ref": "#/workflows/0/inputs/$defs/shared" },
+                "recursive": { "$ref": "#node" }
+              }
+            }
+            """);
+        Assert.NotNull(schema);
+        Assert.IsType<JsonObject>(schema["properties"])["anchor"] = new JsonObject { ["$ref"] = anchorReference };
+        FirstObject(json, "workflows")["inputs"] = schema;
+        var loader = new TestStreamLoader(new Dictionary<string, string>());
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.NotNull(result.Document.Workflows);
+        var input = Assert.IsType<ArazzoInput>(result.Document.Workflows[0].Inputs);
+        Assert.NotNull(input.Definitions);
+        Assert.NotNull(input.Properties);
+        var anchor = Assert.IsType<ArazzoInputReference>(input.Properties["anchor"]);
+        var pointer = Assert.IsType<ArazzoInputReference>(input.Properties["pointer"]);
+        var recursive = Assert.IsType<ArazzoInputReference>(input.Properties["recursive"]);
+        Assert.Same(input.Definitions["shared"], anchor.Target);
+        Assert.Same(pointer.Target, anchor.Target);
+        Assert.Same(input, recursive.Target);
+        Assert.Equal(0, loader.LoadCount);
+
+        using var output = new StringWriter();
+        result.Document.SerializeAsV1_1(new OpenApiJsonWriter(output));
+        var roundTrip = await ArazzoModelFactory.ParseAsync(output.ToString(), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(roundTrip.Document);
+        Assert.NotNull(roundTrip.Diagnostic);
+        Assert.Empty(roundTrip.Diagnostic.Errors);
+        Assert.NotNull(roundTrip.Document.Workflows);
+        var roundTripInput = Assert.IsType<ArazzoInput>(roundTrip.Document.Workflows[0].Inputs);
+        Assert.NotNull(roundTripInput.Definitions);
+        Assert.NotNull(roundTripInput.Properties);
+        Assert.Same(roundTripInput.Definitions["shared"], Assert.IsType<ArazzoInputReference>(roundTripInput.Properties["anchor"]).Target);
+    }
+
+    [Theory]
+    [InlineData("contains")]
+    [InlineData("if")]
+    [InlineData("dependentSchemas")]
+    public async Task LoadAsync_RegistersAnchorsInOtherSubschemaKeywords(string keyword)
+    {
+        var json = JsonNode.Parse(ExternalWorkflowJson);
+        Assert.NotNull(json);
+        var anchored = new JsonObject { ["$anchor"] = "shared", ["type"] = "string" };
+        FirstObject(json, "workflows")["inputs"] = new JsonObject
+        {
+            [keyword] = keyword == "dependentSchemas" ? new JsonObject { ["trigger"] = anchored } : anchored,
+            ["allOf"] = new JsonArray(new JsonObject { ["$ref"] = "#shared" })
+        };
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, new TestStreamLoader(new Dictionary<string, string>()));
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.NotNull(result.Document.Workflows);
+        var input = Assert.IsType<ArazzoInput>(result.Document.Workflows[0].Inputs);
+        Assert.NotNull(input.AllOf);
+        var reference = Assert.IsType<ArazzoInputReference>(input.AllOf[0]);
+        Assert.NotNull(reference.Target);
+        Assert.Equal(JsonSchemaType.String, reference.Target.Type);
+    }
+
+    [Fact]
+    public async Task LoadAsync_ResolvesAnchorsWithinNestedSchemaIdScopes()
+    {
+        var json = JsonNode.Parse(ExternalWorkflowJson);
+        Assert.NotNull(json);
+        FirstObject(json, "workflows")["inputs"] = JsonNode.Parse("""
+            {
+              "$id": "schemas/root.json",
+              "$defs": {
+                "shared": { "$anchor": "shared", "type": "string" },
+                "nested": {
+                  "$id": "nested/inner.json",
+                  "$defs": { "shared": { "$anchor": "shared", "type": "integer" } },
+                  "properties": {
+                    "anchor": { "$ref": "#shared" },
+                    "pointer": { "$ref": "#/$defs/shared" },
+                    "parent": { "$ref": "../root.json#shared" }
+                  }
+                }
+              },
+              "properties": {
+                "anchor": { "$ref": "#shared" },
+                "nested": { "$ref": "nested/inner.json#shared" },
+                "root": { "$ref": "#" },
+                "unknown": { "$ref": "#Shared" }
+              }
+            }
+            """);
+        var loader = new TestStreamLoader(new Dictionary<string, string>());
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.NotNull(result.Document.Workflows);
+        var input = Assert.IsType<ArazzoInput>(result.Document.Workflows[0].Inputs);
+        Assert.NotNull(input.Definitions);
+        Assert.NotNull(input.Properties);
+        var nested = Assert.IsType<ArazzoInput>(input.Definitions["nested"]);
+        Assert.NotNull(nested.Definitions);
+        Assert.NotNull(nested.Properties);
+        Assert.Same(input.Definitions["shared"], Assert.IsType<ArazzoInputReference>(input.Properties["anchor"]).Target);
+        Assert.Same(nested.Definitions["shared"], Assert.IsType<ArazzoInputReference>(input.Properties["nested"]).Target);
+        Assert.Same(nested.Definitions["shared"], Assert.IsType<ArazzoInputReference>(nested.Properties["anchor"]).Target);
+        var pointer = Assert.IsType<ArazzoInputReference>(nested.Properties["pointer"]);
+        Assert.NotNull(pointer.Target);
+        Assert.Same(nested.Definitions["shared"], pointer.Target);
+        Assert.Same(input.Definitions["shared"], Assert.IsType<ArazzoInputReference>(nested.Properties["parent"]).Target);
+        Assert.Same(input, Assert.IsType<ArazzoInputReference>(input.Properties["root"]).Target);
+        Assert.Null(Assert.IsType<ArazzoInputReference>(input.Properties["unknown"]).Target);
+        Assert.Equal(0, loader.LoadCount);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("https://schemas.example.com/canonical.json", false)]
+    [InlineData("https://schemas.example.com/canonical.json", true)]
+    public async Task LoadAsync_ResolvesAnchorsInExternalJsonAndYamlSchemaResources(string? id, bool yaml)
+    {
+        var json = JsonNode.Parse(ExternalWorkflowJson);
+        Assert.NotNull(json);
+        FirstObject(json, "workflows")["inputs"] = JsonNode.Parse("""{"$ref":"schema.json#shared"}""");
+        var schema = JsonNode.Parse("""
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$defs": {
+                "shared": { "$anchor": "shared", "type": "string" },
+                "nested": {
+                  "$id": "nested/inner.json",
+                  "$defs": { "shared": { "$anchor": "shared", "type": "integer" } },
+                  "properties": { "pointer": { "$ref": "#/$defs/shared" } }
+                }
+              }
+            }
+            """);
+        Assert.NotNull(schema);
+        if (id is not null)
+        {
+            schema["$id"] = id;
+        }
+        var loader = new TestStreamLoader(new Dictionary<string, string>
+        {
+            ["https://example.com/root/schema.json"] = yaml ? $"""
+                $schema: https://json-schema.org/draft/2020-12/schema
+                $id: {id}
+                $defs:
+                  shared:
+                    $anchor: shared
+                    type: string
+                  nested:
+                    $id: nested/inner.json
+                    $defs:
+                      shared:
+                        $anchor: shared
+                        type: integer
+                    properties:
+                      pointer:
+                        $ref: '#/$defs/shared'
+                """ : schema.ToJsonString()
+        });
+
+        var result = await LoadExternalWorkflowDocumentAsync(json, loader);
+
+        Assert.NotNull(result.Document);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Empty(result.Diagnostic.Errors);
+        Assert.NotNull(result.Document.Workflows);
+        var input = Assert.IsType<ArazzoInputReference>(result.Document.Workflows[0].Inputs);
+        Assert.NotNull(input.Target);
+        Assert.Equal(JsonSchemaType.String, input.Target.Type);
+        Assert.NotNull(result.Document.Workspace);
+        var pointer = Assert.IsType<ArazzoInputReference>(result.Document.Workspace.ResolveJsonSchemaReference(
+            "https://example.com/root/schema.json#/$defs/nested/properties/pointer"));
+        Assert.NotNull(pointer.Target);
+        Assert.Equal(JsonSchemaType.Integer, pointer.Target.Type);
+        Assert.Equal(1, loader.LoadCount);
+    }
+
+    [Theory]
     [InlineData("https://example.com/canonical/arazzo.json")]
     [InlineData("https://EXAMPLE.COM:443/canonical/./arazzo.json")]
     [InlineData("https://EXAMPLE.COM:443/root/./arazzo.json")]
