@@ -154,6 +154,25 @@ internal static partial class ArazzoRuntimeExpressionValidator
 
         if (node is JsonObject jsonObject)
         {
+            if (jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorContext) &&
+                jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorSelector))
+            {
+                if (specVersion is ArazzoSpecVersion.Arazzo1_0)
+                {
+                    yield return $"{elementName} contains a Selector object, which is not supported in Arazzo 1.0.";
+                }
+                else
+                {
+                    var selectorContext = new ParsingContext(new ArazzoDiagnostic());
+                    selectorContext.ParseFragment<ArazzoSelector>(jsonObject, specVersion);
+                    foreach (var error in selectorContext.Diagnostic.Errors)
+                    {
+                        yield return $"{elementName} contains an invalid Selector object: {error.Message}";
+                    }
+                }
+                yield break;
+            }
+
             foreach (var item in jsonObject.Select(static property => property.Value))
             {
                 foreach (var error in ValidateExpressionStrings(item, elementName, specVersion))

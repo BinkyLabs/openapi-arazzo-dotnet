@@ -9,6 +9,69 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 public class ArazzoRequestBodyPayloadUnionTests
 {
     [Theory]
+    [InlineData("""
+        {"user":{"context":"$response.body","selector":"$.id","type":"jsonpath","x-note":"$notRuntime"},"id":"$inputs.id"}
+        """)]
+    [InlineData("""
+        [{"nested":[{"context":"$response.body","selector":"$[?@.id == '$request.body.invalid']","type":{"type":"jsonpath","version":"rfc9535"}}]}]
+        """)]
+    public void NestedSelectors_RoundTripWithinStructuredPayloads(string json)
+    {
+        var input = JsonNode.Parse($$"""{"payload":{{json}}}""");
+        Assert.NotNull(input);
+        var context = new ParsingContext(new());
+
+        var body = context.ParseFragment<ArazzoRequestBody>(input, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.NotNull(body);
+        Assert.NotNull(body.Payload);
+        Assert.NotNull(body.Payload.Any);
+        Assert.Null(body.Payload.Selector);
+        Assert.Empty(context.Diagnostic.Errors);
+        Assert.True(JsonNode.DeepEquals(input, JsonNode.Parse(Serialize(body, ArazzoSpecVersion.Arazzo1_1))));
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(json), JsonNode.Parse(Serialize(body.Payload, ArazzoSpecVersion.Arazzo1_1))));
+    }
+
+    [Theory]
+    [InlineData("""{"user":{"context":"literal","selector":"$.id","type":"jsonpath"}}""", "must be a valid runtime expression")]
+    [InlineData("""{"user":{"context":"$response.body.invalid","selector":"$.id","type":"jsonpath"}}""", "must be a valid runtime expression")]
+    [InlineData("""{"user":{"context":"$response.body","selector":"$.id"}}""", "ArazzoSelector.Type is a REQUIRED field")]
+    [InlineData("""{"user":{"context":"$response.body","selector":"","type":"jsonpath"}}""", "ArazzoSelector.Selector is a REQUIRED field")]
+    [InlineData("""{"user":{"context":"$response.body","selector":"$.id","type":"unknown"}}""", "not recognized")]
+    [InlineData("""{"user":{"context":"$response.body","selector":"$.id","type":"jsonpath"},"other":"$response.body.invalid"}""", "contains an invalid runtime expression")]
+    [InlineData("""{"user":{"selector":"$.id"}}""", "contains an invalid runtime expression")]
+    public void NestedSelectors_KeepSelectorAndSurroundingExpressionValidation(string json, string message)
+    {
+        var input = JsonNode.Parse($$"""{"payload":{{json}}}""");
+        Assert.NotNull(input);
+        var context = new ParsingContext(new());
+
+        var body = context.ParseFragment<ArazzoRequestBody>(input, ArazzoSpecVersion.Arazzo1_1);
+
+        Assert.NotNull(body);
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains(message, StringComparison.Ordinal));
+        var exception = Assert.Throws<ArazzoSerializationException>(() => Serialize(body, ArazzoSpecVersion.Arazzo1_1));
+        Assert.Contains(message, exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NestedSelectors_AreRejectedInArazzoV1()
+    {
+        var input = JsonNode.Parse("""
+            {"payload":{"user":{"context":"$response.body","selector":"/id","type":"jsonpointer"}}}
+            """);
+        Assert.NotNull(input);
+        var context = new ParsingContext(new());
+
+        var body = context.ParseFragment<ArazzoRequestBody>(input, ArazzoSpecVersion.Arazzo1_0);
+
+        Assert.NotNull(body);
+        Assert.Contains(context.Diagnostic.Errors, error => error.Message.Contains("not supported in Arazzo 1.0", StringComparison.Ordinal));
+        var exception = Assert.Throws<ArazzoSerializationException>(() => Serialize(body, ArazzoSpecVersion.Arazzo1_0));
+        Assert.Contains("not supported in Arazzo 1.0", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData("42")]
     [InlineData("true")]
     [InlineData("null")]
