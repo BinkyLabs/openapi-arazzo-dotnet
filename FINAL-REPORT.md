@@ -19,8 +19,9 @@ The library and standalone validation tools are available as:
 - [BinkyLabs.OpenApi.Arazzo](https://www.nuget.org/packages/BinkyLabs.OpenApi.Arazzo): the .NET library.
 - [BinkyLabs.OpenApi.Arazzo.Tool](https://www.nuget.org/packages/BinkyLabs.OpenApi.Arazzo.Tool): the companion validation CLI.
 - [Docker image](https://github.com/orgs/BinkyLabs/packages/container/package/openapi-arazzo-dotnet): the containerized validation CLI, published as `ghcr.io/binkylabs/openapi-arazzo-dotnet`.
+- [GitHub Action](https://github.com/BinkyLabs/openapi-arazzo-dotnet#using-the-github-action): integrates document validation into GitHub Actions workflows with `uses: BinkyLabs/openapi-arazzo-dotnet@v1`.
 
-Both the .NET tool and Docker image enable standalone validation of Arazzo documents without building an application around the library. This is a useful added benefit for use cases such as continuous integration, where workflow descriptions can be checked automatically.
+The .NET tool, Docker image, and GitHub Action enable standalone validation of Arazzo documents without building an application around the library. This is a useful added benefit for use cases such as continuous integration, where workflow descriptions can be checked automatically.
 
 ## Project Impact & Target Audiences
 
