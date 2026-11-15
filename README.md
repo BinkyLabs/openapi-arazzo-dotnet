@@ -37,6 +37,45 @@ dotnet add <pathToCsProj> package BinkyLabs.OpenApi.Arazzo
 
 ### Examples
 
+#### A small Arazzo document
+
+This Arazzo 1.1 workflow creates a pet, then uses its returned ID to fetch it. Steps run in order by default, and runtime expressions pass data between them.
+
+```yaml
+arazzo: 1.1.0
+info:
+  title: Create and fetch a pet
+  version: 1.0.0
+sourceDescriptions:
+  - name: petStore
+    url: https://petstore3.swagger.io/api/v3/openapi.json
+    type: openapi
+workflows:
+  - workflowId: createAndFetchPet
+    steps:
+      - stepId: createPet
+        operationId: addPet
+        requestBody:
+          contentType: application/json
+          payload:
+            name: Fido
+            photoUrls: []
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          petId: $response.body#/id
+      - stepId: fetchPet
+        operationId: getPetById
+        parameters:
+          - name: petId
+            in: path
+            value: $steps.createPet.outputs.petId
+        successCriteria:
+          - condition: $statusCode == 200
+```
+
+Save this as `pets.arazzo.yaml` to parse it with the library or validate it with `clia validate pets.arazzo.yaml`. Validation checks the description; it does not execute the API calls.
+
 #### Parsing an Arazzo document
 
 The readers detect Arazzo 1.0.x and 1.1.x documents automatically. The following example loads an Arazzo document from JSON or YAML.
