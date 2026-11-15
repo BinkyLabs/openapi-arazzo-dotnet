@@ -42,7 +42,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoRequestBody LoadRequestBodyInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoRequestBody> requestBodyFixedFields, PatternFieldMap<ArazzoRequestBody> requestBodyPatternFields)
     {
-        var mapNode = node.CheckMapNode("RequestBody", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoRequestBody), context);
         var requestBody = new ArazzoRequestBody();
         mapNode.ParseMap(requestBody, requestBodyFixedFields, requestBodyPatternFields, context);
         if (mapNode.TryGetPropertyValue(ArazzoConstants.ArazzoRequestBodyPayload, out var payloadNode) && payloadNode is null)

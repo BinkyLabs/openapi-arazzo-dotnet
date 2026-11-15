@@ -36,7 +36,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoSourceDescription LoadSourceDescriptionInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoSourceDescription> sourceDescriptionFixedFields, PatternFieldMap<ArazzoSourceDescription> sourceDescriptionPatternFields)
     {
-        var mapNode = node.CheckMapNode("SourceDescription", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoSourceDescription), context);
         var sourceDescription = new ArazzoSourceDescription();
         mapNode.ParseMap(sourceDescription, sourceDescriptionFixedFields, sourceDescriptionPatternFields, context);
         ValidateSourceDescriptionRequiredFields(sourceDescription, context);

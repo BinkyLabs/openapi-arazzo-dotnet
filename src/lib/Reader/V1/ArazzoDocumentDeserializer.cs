@@ -30,7 +30,7 @@ internal static partial class ArazzoV1Deserializer
         var document = new ArazzoDocument();
         document.BaseUri = location;
         context.SetTempStorage("CurrentDocument", document);
-        node.CheckMapNode("Document", context).ParseMap(document, documentFixedFields, documentPatternFields, context);
+        node.CheckMapNode(nameof(ArazzoDocument), context).ParseMap(document, documentFixedFields, documentPatternFields, context);
         context.SetTempStorage("CurrentDocument", null);
         return document;
     }

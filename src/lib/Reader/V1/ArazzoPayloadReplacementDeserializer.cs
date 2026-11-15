@@ -29,7 +29,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoPayloadReplacement LoadPayloadReplacementInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoPayloadReplacement> payloadReplacementFixedFields, PatternFieldMap<ArazzoPayloadReplacement> payloadReplacementPatternFields)
     {
-        var mapNode = node.CheckMapNode("PayloadReplacement", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoPayloadReplacement), context);
         var replacement = new ArazzoPayloadReplacement();
         mapNode.ParseMap(replacement, payloadReplacementFixedFields, payloadReplacementPatternFields, context);
         if (mapNode.TryGetPropertyValue(ArazzoConstants.ArazzoPayloadReplacementValue, out var valueNode) && valueNode is null)

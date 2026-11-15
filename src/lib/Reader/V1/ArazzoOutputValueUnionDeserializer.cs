@@ -24,7 +24,7 @@ internal static partial class ArazzoV1Deserializer
 
     private static Dictionary<string, ArazzoOutputValueUnion> LoadOutputMap(JsonNode node, ParsingContext context)
     {
-        var map = node.CheckMapNode("Outputs", context);
+        var map = node.CheckMapNode(nameof(ArazzoWorkflow.Outputs), context);
         var outputs = new Dictionary<string, ArazzoOutputValueUnion>(StringComparer.Ordinal);
         foreach (var (key, value) in map)
         {

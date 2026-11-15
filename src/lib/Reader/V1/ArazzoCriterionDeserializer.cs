@@ -38,7 +38,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoCriterion LoadCriterionInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoCriterion> criterionFixedFields, PatternFieldMap<ArazzoCriterion> criterionPatternFields)
     {
-        var mapNode = node.CheckMapNode("Criterion", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoCriterion), context);
         var criterion = new ArazzoCriterion();
         mapNode.ParseMap(criterion, criterionFixedFields, criterionPatternFields, context);
         ArazzoCriterionValidator.ValidateDeserialization(criterion, context);

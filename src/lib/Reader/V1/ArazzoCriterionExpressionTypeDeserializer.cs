@@ -49,7 +49,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoCriterionExpressionType LoadCriterionExpressionTypeInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoCriterionExpressionType> criterionExpressionTypeFixedFields, PatternFieldMap<ArazzoCriterionExpressionType> criterionExpressionTypePatternFields)
     {
-        var mapNode = node.CheckMapNode("CriterionExpressionType", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoCriterionExpressionType), context);
         var expressionType = new ArazzoCriterionExpressionType();
         mapNode.ParseMap(expressionType, criterionExpressionTypeFixedFields, criterionExpressionTypePatternFields, context);
         ApplyDefaultVersion(expressionType, context, mapNode.ContainsKey(ArazzoConstants.ArazzoCriterionExpressionTypeVersion));

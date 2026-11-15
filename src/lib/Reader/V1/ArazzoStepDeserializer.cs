@@ -80,7 +80,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoStep LoadStepInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoStep> stepFixedFields, PatternFieldMap<ArazzoStep> stepPatternFields)
     {
-        var mapNode = node.CheckMapNode("Step", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoStep), context);
         var step = new ArazzoStep();
         mapNode.ParseMap(step, stepFixedFields, stepPatternFields, context);
         ValidateStepRequiredFields(step, context);

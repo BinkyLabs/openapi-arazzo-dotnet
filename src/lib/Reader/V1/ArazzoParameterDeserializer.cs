@@ -94,7 +94,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoParameter LoadParameterObjectInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoParameter> parameterFixedFields, PatternFieldMap<ArazzoParameter> parameterPatternFields)
     {
-        var mapNode = node.CheckMapNode("Parameter", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoParameter), context);
         var parameter = new ArazzoParameter();
         mapNode.ParseMap(parameter, parameterFixedFields, parameterPatternFields, context);
         if (mapNode.TryGetPropertyValue(ArazzoConstants.ArazzoParameterValue, out var valueNode) && valueNode is null)

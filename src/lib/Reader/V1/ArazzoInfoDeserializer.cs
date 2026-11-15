@@ -26,7 +26,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoInfo LoadInfoInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoInfo> infoFixedFields, PatternFieldMap<ArazzoInfo> infoPatternFields)
     {
-        var mapNode = node.CheckMapNode("Info", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoInfo), context);
         var info = new ArazzoInfo();
         mapNode.ParseMap(info, infoFixedFields, infoPatternFields, context);
         ValidateInfoRequiredFields(info, context);

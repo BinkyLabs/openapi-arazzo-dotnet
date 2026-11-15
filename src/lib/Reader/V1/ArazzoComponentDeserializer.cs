@@ -157,7 +157,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoComponent LoadComponentInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoComponent> componentFixedFields, PatternFieldMap<ArazzoComponent> componentPatternFields)
     {
-        var mapNode = node.CheckMapNode("Component", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoComponent), context);
         var component = new ArazzoComponent();
 
         mapNode.ParseMap(component, componentFixedFields, componentPatternFields, context);

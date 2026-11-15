@@ -40,7 +40,7 @@ internal static partial class ArazzoV1_1Deserializer
 
     internal static ArazzoSelector LoadSelectorInternal(JsonNode node, ParsingContext context)
     {
-        var mapNode = node.CheckMapNode("Selector", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoSelector), context);
         var selector = new ArazzoSelector();
         mapNode.ParseMap(selector, SelectorFixedFields, SelectorPatternFields, context);
         ValidateSelectorRequiredFields(selector, context);

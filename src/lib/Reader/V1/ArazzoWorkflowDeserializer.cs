@@ -57,7 +57,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoWorkflow LoadWorkflowInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoWorkflow> workflowFixedFields, PatternFieldMap<ArazzoWorkflow> workflowPatternFields)
     {
-        var mapNode = node.CheckMapNode("Workflow", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoWorkflow), context);
         var workflow = new ArazzoWorkflow();
 
         mapNode.ParseMap(workflow, workflowFixedFields, workflowPatternFields, context);

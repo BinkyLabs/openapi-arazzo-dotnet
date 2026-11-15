@@ -62,7 +62,7 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoSuccessAction LoadSuccessActionObjectInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoSuccessAction> successActionFixedFields, PatternFieldMap<ArazzoSuccessAction> successActionPatternFields)
     {
-        var mapNode = node.CheckMapNode("SuccessAction", context);
+        var mapNode = node.CheckMapNode(nameof(ArazzoSuccessAction), context);
         var successAction = new ArazzoSuccessAction();
         mapNode.ParseMap(successAction, successActionFixedFields, successActionPatternFields, context);
         ArazzoResultActionValidator.ValidateDeserialization(successAction, context);
