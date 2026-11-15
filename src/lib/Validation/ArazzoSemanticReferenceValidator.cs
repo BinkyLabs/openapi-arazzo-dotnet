@@ -197,12 +197,11 @@ internal static partial class ArazzoSemanticReferenceValidator
         foreach (var workflow in document.Workflows ?? [])
         {
             var elementName = $"Workflow '{workflow.WorkflowId}'";
-            foreach (var dependency in workflow.DependsOn ?? Enumerable.Empty<string>())
+            foreach (var error in (workflow.DependsOn ?? Enumerable.Empty<string>())
+                .Select(dependency => GetExternalWorkflowResolutionError(dependency, document, $"{elementName} dependsOn"))
+                .OfType<string>())
             {
-                if (GetExternalWorkflowResolutionError(dependency, document, $"{elementName} dependsOn") is { } error)
-                {
-                    yield return error;
-                }
+                yield return error;
             }
             foreach (var error in ValidateExternalActionWorkflowReferences(workflow.SuccessActions, document, $"{elementName} success action"))
             {
@@ -234,12 +233,11 @@ internal static partial class ArazzoSemanticReferenceValidator
     private static IEnumerable<string> ValidateExternalActionWorkflowReferences(
         IEnumerable<IArazzoResultAction>? actions, ArazzoDocument document, string elementName)
     {
-        foreach (var action in actions ?? [])
+        foreach (var error in (actions ?? [])
+            .Select(action => GetExternalWorkflowResolutionError(action.WorkflowId, document, $"{elementName} '{action.Name}'"))
+            .OfType<string>())
         {
-            if (GetExternalWorkflowResolutionError(action.WorkflowId, document, $"{elementName} '{action.Name}'") is { } error)
-            {
-                yield return error;
-            }
+            yield return error;
         }
     }
 

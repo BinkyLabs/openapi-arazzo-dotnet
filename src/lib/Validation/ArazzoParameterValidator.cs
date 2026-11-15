@@ -89,11 +89,13 @@ internal static class ArazzoParameterValidator
     internal static IEnumerable<string> ValidateQueryStringContent(
         IEnumerable<IArazzoParameter> parameters, IReadOnlyList<IOpenApiParameter> operationParameters, string elementName)
     {
-        foreach (var parameter in parameters.Where(static parameter => parameter.In is ParameterLocation.QueryString))
+        foreach (var parameter in parameters.Where(static parameter =>
+            parameter.In is ParameterLocation.QueryString &&
+            parameter.Value?.Any is JsonValue literal &&
+            literal.TryGetValue<string>(out var value) &&
+            !ArazzoRuntimeExpressionValidator.GetRuntimeExpressions(value).Any()))
         {
-            if (parameter.Value?.Any is not JsonValue literal || !literal.TryGetValue<string>(out var value) ||
-                ArazzoRuntimeExpressionValidator.GetRuntimeExpressions(value).Any())
-                continue;
+            var value = parameter.Value!.Any!.GetValue<string>();
             var definition = operationParameters.FirstOrDefault(candidate =>
                 candidate.In is ParameterLocation.QueryString && candidate.Name == parameter.Name);
             foreach (var mediaType in definition?.Content?.Keys ?? [])

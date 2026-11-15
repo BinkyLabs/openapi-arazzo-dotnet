@@ -25,16 +25,14 @@ internal static partial class ArazzoStepDependencyValidator
         foreach (var currentDocument in documents)
         {
             var currentSources = new Dictionary<string, ArazzoDescriptionType?>(StringComparer.Ordinal);
-            foreach (var source in currentDocument.SourceDescriptions ?? [])
-                if (!string.IsNullOrEmpty(source.Name))
-                    currentSources.TryAdd(source.Name, source.Type);
+            foreach (var source in (currentDocument.SourceDescriptions ?? []).Where(static source => !string.IsNullOrEmpty(source.Name)))
+                currentSources.TryAdd(source.Name!, source.Type);
             sources.Add(currentDocument, currentSources);
 
-            foreach (var workflow in currentDocument.Workflows ?? [])
+            foreach (var workflow in (currentDocument.Workflows ?? []).Where(static workflow => !string.IsNullOrEmpty(workflow.WorkflowId)))
             {
-                if (string.IsNullOrEmpty(workflow.WorkflowId))
-                    continue;
-                var completion = new DependencyNode(currentDocument, workflow.WorkflowId, null);
+                var workflowId = workflow.WorkflowId!;
+                var completion = new DependencyNode(currentDocument, workflowId, null);
                 if (!graph.TryAdd(completion, []))
                     continue;
                 var sequential = workflow.Steps?.Any(static step => step.DependsOn is { Count: > 0 }) != true;
@@ -44,7 +42,7 @@ internal static partial class ArazzoStepDependencyValidator
                     var step = workflow.Steps![index];
                     if (string.IsNullOrEmpty(step.StepId))
                         continue;
-                    var node = new DependencyNode(currentDocument, workflow.WorkflowId, step.StepId);
+                    var node = new DependencyNode(currentDocument, workflowId, step.StepId);
                     if (!graph.TryAdd(node, []))
                         continue;
                     steps.Add(node, (workflow, step, index, sequential));
