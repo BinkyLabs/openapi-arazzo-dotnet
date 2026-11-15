@@ -14,10 +14,13 @@ The result is a new .NET library supporting both Arazzo 1.0 and 1.1, with an obj
 
 Because this is a new project, the main reference for the work is the [BinkyLabs/openapi-arazzo-dotnet repository](https://github.com/BinkyLabs/openapi-arazzo-dotnet), which contains the implementation, documentation, tests, and performance benchmarks.
 
-The NuGet package pages are:
+The library and standalone validation tools are available as:
 
 - [BinkyLabs.OpenApi.Arazzo](https://www.nuget.org/packages/BinkyLabs.OpenApi.Arazzo): the .NET library.
 - [BinkyLabs.OpenApi.Arazzo.Tool](https://www.nuget.org/packages/BinkyLabs.OpenApi.Arazzo.Tool): the companion validation CLI.
+- [Docker image](https://github.com/orgs/BinkyLabs/packages/container/package/openapi-arazzo-dotnet): the containerized validation CLI, published as `ghcr.io/binkylabs/openapi-arazzo-dotnet`.
+
+Both the .NET tool and Docker image enable standalone validation of Arazzo documents without building an application around the library. This is a useful added benefit for use cases such as continuous integration, where workflow descriptions can be checked automatically.
 
 ## Project Impact & Target Audiences
 
