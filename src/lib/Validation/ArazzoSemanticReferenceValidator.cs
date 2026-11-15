@@ -197,11 +197,13 @@ internal static partial class ArazzoSemanticReferenceValidator
         foreach (var workflow in document.Workflows ?? [])
         {
             var elementName = $"Workflow '{workflow.WorkflowId}'";
-            foreach (var error in (workflow.DependsOn ?? Enumerable.Empty<string>())
-                .Select(dependency => GetExternalWorkflowResolutionError(dependency, document, $"{elementName} dependsOn"))
-                .OfType<string>())
+            // Direct iteration avoids captured delegates and LINQ iterators on the parsing hot path.
+            foreach (var dependency in workflow.DependsOn ?? Enumerable.Empty<string>())
             {
-                yield return error;
+                if (GetExternalWorkflowResolutionError(dependency, document, $"{elementName} dependsOn") is { } error)
+                {
+                    yield return error;
+                }
             }
             foreach (var error in ValidateExternalActionWorkflowReferences(workflow.SuccessActions, document, $"{elementName} success action"))
             {
@@ -233,11 +235,13 @@ internal static partial class ArazzoSemanticReferenceValidator
     private static IEnumerable<string> ValidateExternalActionWorkflowReferences(
         IEnumerable<IArazzoResultAction>? actions, ArazzoDocument document, string elementName)
     {
-        foreach (var error in (actions ?? [])
-            .Select(action => GetExternalWorkflowResolutionError(action.WorkflowId, document, $"{elementName} '{action.Name}'"))
-            .OfType<string>())
+        // Most action collections are empty; avoid allocating a capturing LINQ pipeline.
+        foreach (var action in actions ?? [])
         {
-            yield return error;
+            if (GetExternalWorkflowResolutionError(action.WorkflowId, document, $"{elementName} '{action.Name}'") is { } error)
+            {
+                yield return error;
+            }
         }
     }
 
