@@ -5,6 +5,10 @@ namespace BinkyLabs.OpenApi.Arazzo;
 /// <summary>
 /// Represents the version of a criterion expression.
 /// </summary>
+/// <remarks>
+/// XPath 1.0, 2.0, 3.0, and 3.1 are represented in the model, but their expression grammar is not currently validated.
+/// The legacy draft-goessner-dispatch-jsonpath-00 grammar is also not validated.
+/// </remarks>
 public enum ArazzoCriterionExpressionVersion
 {
     /// <summary>

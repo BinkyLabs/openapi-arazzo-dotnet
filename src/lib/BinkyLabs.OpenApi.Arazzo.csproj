@@ -48,6 +48,8 @@
     <None Include="..\Assets\logo-binkylabs.png" Pack="true" PackagePath="logo-binkylabs.png"/>
     <PackageReference Include="Microsoft.OpenApi" Version="3.11.0"/>
     <PackageReference Include="Microsoft.OpenApi.YamlReader" Version="3.11.0"/>
+    <PackageReference Include="JsonPath.Net" Version="3.0.3"/>
+    <PackageReference Include="JsonPointer.Net" Version="3.0.3"/>
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

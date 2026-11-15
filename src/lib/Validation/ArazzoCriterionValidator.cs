@@ -6,7 +6,7 @@ namespace BinkyLabs.OpenApi.Arazzo.Validation;
 
 internal static class ArazzoCriterionValidator
 {
-    internal static void ValidateSerialization(ArazzoCriterion criterion)
+    internal static void ValidateSerialization(ArazzoCriterion criterion, ArazzoSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(criterion);
 
@@ -19,6 +19,8 @@ internal static class ArazzoCriterionValidator
         {
             throw new ArazzoSerializationException($"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Context)} is required when {nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Type)} is specified.");
         }
+        if (GetSyntaxError(criterion, specVersion) is { } error)
+            throw new ArazzoSerializationException(error);
     }
 
     internal static void ValidateDeserialization(ArazzoCriterion criterion, ParsingContext context)
@@ -35,5 +37,11 @@ internal static class ArazzoCriterionValidator
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Context)} is required when {nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Type)} is specified."));
         }
+        if (GetSyntaxError(criterion, context.Diagnostic.SpecificationVersion) is { } error)
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
     }
+
+    private static string? GetSyntaxError(ArazzoCriterion criterion, ArazzoSpecVersion specVersion) =>
+        ArazzoExpressionSyntaxValidator.GetError(criterion.Condition, criterion.Type?.Type, criterion.Type?.ExpressionType,
+            $"{nameof(ArazzoCriterion)}.{nameof(ArazzoCriterion.Condition)}", specVersion, allowRuntimeExpressions: true);
 }

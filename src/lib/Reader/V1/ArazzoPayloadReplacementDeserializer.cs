@@ -53,8 +53,8 @@ internal static partial class ArazzoV1Deserializer
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Value)} is a REQUIRED field."));
         }
         if (ArazzoSelectorSyntaxValidator.GetError(replacement.Target,
-            ArazzoSelectorSyntaxValidator.IsJsonPointer(replacement.TargetSelectorType?.Type, replacement.TargetSelectorType?.ExpressionType),
-            $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Target)}") is { } error)
+            replacement.TargetSelectorType?.Type, replacement.TargetSelectorType?.ExpressionType,
+            $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Target)}", context.Diagnostic.SpecificationVersion) is { } error)
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
     }
 }

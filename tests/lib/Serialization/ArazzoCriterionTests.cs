@@ -8,6 +8,37 @@ namespace BinkyLabs.OpenApi.Arazzo.Tests;
 
 public class ArazzoCriterionTests
 {
+    [Theory]
+    [InlineData(null, "$.items[?@.id == 1]", true)]
+    [InlineData("rfc9535", "$.items[?@.id == 1]", true)]
+    [InlineData(null, "$.items[?@.id == '{$inputs.id}']", true)]
+    [InlineData(null, "$.items[?@.id == '{$inputs.id}'", false)]
+    [InlineData(null, "$.items[?@.id == {$inputs.id}]", true)]
+    [InlineData(null, "{$inputs.query}", true)]
+    [InlineData("draft-goessner-dispatch-jsonpath-00", "$.items[(@.length-1)]", true)]
+    [InlineData(null, "$.status == 200", false)]
+    [InlineData("rfc9535", "$.items[?@.id + 1 == 2]", false)]
+    public void JsonPathConditions_ValidateGrammarDuringReadingAndWriting(string? version, string condition, bool valid)
+    {
+        JsonNode type = version is null ? JsonValue.Create("jsonpath") :
+            new JsonObject { ["type"] = "jsonpath", ["version"] = version };
+        var json = new JsonObject { ["context"] = "$response.body", ["condition"] = condition, ["type"] = type };
+        var context = new ParsingContext(new());
+        var criterion = context.ParseFragment<ArazzoCriterion>(json, ArazzoSpecVersion.Arazzo1_1);
+        Assert.NotNull(criterion);
+        using var text = new StringWriter();
+        if (valid)
+        {
+            Assert.Empty(context.Diagnostic.Errors);
+            criterion.SerializeAsV1_1(new OpenApiJsonWriter(text));
+        }
+        else
+        {
+            Assert.Single(context.Diagnostic.Errors);
+            Assert.Throws<ArazzoSerializationException>(() => criterion.SerializeAsV1_1(new OpenApiJsonWriter(text)));
+        }
+    }
+
     [Fact]
     public void SerializeAsV1_WithSimpleType_ShouldWriteTypeAsString()
     {

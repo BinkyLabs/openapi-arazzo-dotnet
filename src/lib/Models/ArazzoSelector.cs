@@ -52,7 +52,7 @@ public class ArazzoSelector : IArazzoSerializable, IArazzoExtensible
         var isPointer = ArazzoSelectorSyntaxValidator.IsJsonPointer(Type.Type, Type.ExpressionType);
         if (!isPointer)
             ArgumentException.ThrowIfNullOrEmpty(Selector);
-        if (ArazzoSelectorSyntaxValidator.GetError(Selector, isPointer, $"{nameof(ArazzoSelector)}.{nameof(Selector)}") is { } error)
+        if (ArazzoSelectorSyntaxValidator.GetError(Selector, Type.Type, Type.ExpressionType, $"{nameof(ArazzoSelector)}.{nameof(Selector)}", specVersion) is { } error)
             throw new ArazzoSerializationException(error);
         ArazzoRuntimeExpressionValidator.ValidateSerializationExpression(Context.Expression, $"{nameof(ArazzoSelector)}.{nameof(Context)}", specVersion);
 

@@ -1,20 +1,28 @@
-using System.Text.RegularExpressions;
+using Json.Pointer;
 
 namespace BinkyLabs.OpenApi.Arazzo.Validation;
 
-internal static partial class ArazzoSelectorSyntaxValidator
+internal static class ArazzoSelectorSyntaxValidator
 {
-    [GeneratedRegex(@"\A(?:/(?:[^~/]|~[01])*)*\z", RegexOptions.CultureInvariant)]
-    private static partial Regex JsonPointerRegex();
-
     internal static bool IsJsonPointer(ArazzoPayloadRequirementTargetSelectorType? type, ArazzoCriterionExpressionType? expressionType) =>
         type is ArazzoPayloadRequirementTargetSelectorType.JsonPointer ||
         expressionType?.Type is ArazzoCriterionExpressionTypeType.JsonPointer;
 
     internal static string? GetError(string? expression, bool isJsonPointer, string elementName) =>
-        expression is not null && isJsonPointer && !JsonPointerRegex().IsMatch(expression)
+        expression is not null && isJsonPointer &&
+        (expression.Length > 0 && expression[0] != '/' || !JsonPointer.TryParse(expression, out _))
             ? $"{elementName} '{expression}' must be a valid RFC 6901 JSON Pointer."
             : null;
+
+    internal static string? GetError(string? expression, ArazzoPayloadRequirementTargetSelectorType? type,
+        ArazzoCriterionExpressionType? expressionType, string elementName, ArazzoSpecVersion specVersion) =>
+        GetError(expression, IsJsonPointer(type, expressionType), elementName) ??
+        ArazzoExpressionSyntaxValidator.GetError(expression, type switch
+        {
+            ArazzoPayloadRequirementTargetSelectorType.JsonPath => ArazzoCriterionExpressionTypeType.JsonPath,
+            ArazzoPayloadRequirementTargetSelectorType.XPath => ArazzoCriterionExpressionTypeType.XPath,
+            _ => null
+        }, expressionType, elementName, specVersion);
 
     internal static IEnumerable<string> ValidateReplacements(ArazzoRequestBody body, ArazzoSpecVersion version)
     {
@@ -22,10 +30,10 @@ internal static partial class ArazzoSelectorSyntaxValidator
             body.ContentType?.Split(';', 2)[0].Trim().Equals("application/json", StringComparison.OrdinalIgnoreCase) == true;
         foreach (var replacement in body.Replacements ?? [])
         {
-            var type = replacement.TargetSelectorType;
+            if (replacement.TargetSelectorType is not null)
+                continue;
             if (GetError(replacement.Target,
-                type is null ? defaultPointer : IsJsonPointer(type.Type, type.ExpressionType),
-                $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Target)}") is { } error)
+                defaultPointer, $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Target)}") is { } error)
                 yield return error;
         }
     }

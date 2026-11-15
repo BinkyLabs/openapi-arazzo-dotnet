@@ -52,8 +52,8 @@ public class ArazzoPayloadReplacement : IArazzoSerializable, IArazzoExtensible
         ArgumentNullException.ThrowIfNull(Target);
         ArgumentNullException.ThrowIfNull(Value);
         if (ArazzoSelectorSyntaxValidator.GetError(Target,
-            ArazzoSelectorSyntaxValidator.IsJsonPointer(TargetSelectorType?.Type, TargetSelectorType?.ExpressionType),
-            $"{nameof(ArazzoPayloadReplacement)}.{nameof(Target)}") is { } error)
+            TargetSelectorType?.Type, TargetSelectorType?.ExpressionType,
+            $"{nameof(ArazzoPayloadReplacement)}.{nameof(Target)}", specVersion) is { } error)
             throw new ArazzoSerializationException(error);
 
         writer.WriteStartObject();

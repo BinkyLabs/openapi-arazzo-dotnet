@@ -15,7 +15,7 @@ The object model, readers, and writers support the new Arazzo 1.1 fields and mod
 - `$self` document identifiers and base URI calculation for relative references.
 - AsyncAPI source description types and step fields: `channelPath`, `action`, `correlationId`, `timeout`, and step-level `dependsOn`.
 - Selector Objects and typed unions for workflow/step outputs, parameter values, request body payloads, and payload replacement values.
-- JSONPath, XPath, and JSON Pointer expression types with type/version compatibility validation.
+- JSONPath, XPath, and JSON Pointer expression types with type/version compatibility validation, plus JSONPath and JSON Pointer grammar validation.
 - `querystring` parameter locations, action-level workflow parameters, and payload replacement `targetSelectorType`.
 - Runtime expression syntax for `$message`, `$self`, and workflow input/output references.
 
@@ -23,7 +23,13 @@ AsyncAPI support currently covers the document model and parsing/serialization, 
 
 With `settings.OpenApiSettings.LoadExternalRefs = true`, the readers load Arazzo and OpenAPI source descriptions (JSON or YAML, including HTTP(S) URLs through the configured stream loader). They check external workflow and step dependency targets and detect dependency cycles across loaded Arazzo documents. Nested sources use their own `$self` base URI and source names; already loaded documents are reused to avoid repeated loading through source cycles. Retrieval URLs and absolute `$self` URIs identify the same loaded document, so references through either identity do not trigger another fetch. Source loading and parsing errors are included in the returned diagnostics; cancellation propagates to the caller. External loading is disabled by default.
 
-Arazzo 1.1 runtime expressions are checked against the 1.1 grammar; permissive 1.0 compatibility syntax is not accepted as valid 1.1 syntax. Dependency analysis includes runtime expressions embedded in regex, JSONPath, and XPath conditions. JSON Pointer selectors and replacement targets are checked against RFC 6901, including default JSON Pointer targets for JSON request bodies. JSONPath/XPath grammar and evaluation remain outside the library's validation scope. When target OpenAPI parameter metadata is loaded, literal `querystring` values are checked for JSON and form URL-encoded content syntax, including inherited parameters. Custom media types, schema validation of content, and values computed by runtime expressions or selectors require an evaluator or application-level validation.
+Arazzo 1.1 runtime expressions are checked against the 1.1 grammar; permissive 1.0 compatibility syntax is not accepted as valid 1.1 syntax. Dependency analysis includes runtime expressions embedded in regex, JSONPath, and XPath conditions.
+
+Readers and writers check JSONPath selectors, conditions, and explicitly typed replacement targets against RFC 9535. JSON Pointer selectors and replacement targets are checked against RFC 6901, including default JSON Pointer targets for JSON request bodies. XPath grammar validation is deferred for all supported versions (1.0, 2.0, 3.0, and 3.1); XPath type/version compatibility is still checked. The explicitly selected `draft-goessner-dispatch-jsonpath-00` dialect retains permissive compatibility handling; its grammar is not validated. Quoted runtime-expression substitutions in JSONPath conditions are masked for static grammar checks; conditions containing unquoted substitutions require validation after runtime expression evaluation. Selector and condition evaluation remain outside the library's scope.
+
+Grammar validation uses [JsonPath.Net 3.0.3](https://www.nuget.org/packages/JsonPath.Net/3.0.3) (MIT source; distributed binaries include the [Open Source Maintenance Fee Agreement](https://www.nuget.org/packages/JsonPath.Net/3.0.3/License)) and [JsonPointer.Net 3.0.3](https://www.nuget.org/packages/JsonPointer.Net/3.0.3) (MIT). Consumers should review the dependencies' license terms for their own use.
+
+When target OpenAPI parameter metadata is loaded, literal `querystring` values are checked for JSON and form URL-encoded content syntax, including inherited parameters. Custom media types, schema validation of content, and values computed by runtime expressions or selectors require an evaluator or application-level validation.
 
 Input schema references support JSON Pointers and plain-name `$anchor` fragments such as `#shared`, including nested `$id` resource scopes and anchors in loaded JSON/YAML schema descriptions.
 

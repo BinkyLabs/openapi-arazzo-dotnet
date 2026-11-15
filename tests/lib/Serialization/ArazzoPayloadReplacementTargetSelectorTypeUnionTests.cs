@@ -19,12 +19,12 @@ public class ArazzoPayloadReplacementTargetSelectorTypeUnionTests
     {
         var replacement = new ArazzoPayloadReplacement
         {
-            Target = "/id",
+            Target = type is ArazzoPayloadRequirementTargetSelectorType.JsonPath ? "$.id" : "/id",
             TargetSelectorType = type,
             Value = JsonValue.Create(42)
         };
         var propertyName = GetPropertyName(version);
-        var expected = JsonNode.Parse($$"""{"target":"/id","{{propertyName}}":"{{displayName}}","value":42}""");
+        var expected = JsonNode.Parse($$"""{"target":"{{replacement.Target}}","{{propertyName}}":"{{displayName}}","value":42}""");
 
         var json = JsonNode.Parse(Serialize(replacement, version));
 
@@ -112,7 +112,8 @@ public class ArazzoPayloadReplacementTargetSelectorTypeUnionTests
     [InlineData("jsonpointer", ArazzoCriterionExpressionTypeType.JsonPointer, ArazzoCriterionExpressionVersion.Rfc6901, "rfc6901")]
     public void Deserialize_V1_1ExpressionTypeAppliesDefaultVersion(string typeName, ArazzoCriterionExpressionTypeType type, ArazzoCriterionExpressionVersion expectedVersion, string versionName)
     {
-        var input = JsonNode.Parse($$"""{"target":"/id","targetSelectorType":{"type":"{{typeName}}"},"value":42}""");
+        var target = type is ArazzoCriterionExpressionTypeType.JsonPath ? "$.id" : "/id";
+        var input = JsonNode.Parse($$"""{"target":"{{target}}","targetSelectorType":{"type":"{{typeName}}"},"value":42}""");
         Assert.NotNull(input);
         var context = new ParsingContext(new());
 
@@ -126,7 +127,7 @@ public class ArazzoPayloadReplacementTargetSelectorTypeUnionTests
         Assert.Equal(type, expressionType.Type);
         Assert.Equal(expectedVersion, expressionType.Version);
         Assert.Empty(context.Diagnostic.Errors);
-        var expected = JsonNode.Parse($$"""{"target":"/id","targetSelectorType":{"type":"{{typeName}}","version":"{{versionName}}"},"value":42}""");
+        var expected = JsonNode.Parse($$"""{"target":"{{target}}","targetSelectorType":{"type":"{{typeName}}","version":"{{versionName}}"},"value":42}""");
         Assert.True(JsonNode.DeepEquals(expected, JsonNode.Parse(Serialize(replacement, ArazzoSpecVersion.Arazzo1_1))));
     }
 
