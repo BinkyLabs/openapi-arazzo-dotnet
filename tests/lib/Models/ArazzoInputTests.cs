@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 
+using BinkyLabs.OpenApi.Arazzo.Reader;
+
 using Microsoft.OpenApi;
 
 namespace BinkyLabs.OpenApi.Arazzo.Tests;
@@ -364,7 +366,7 @@ public class ArazzoInputTests
         var context = new global::BinkyLabs.OpenApi.Arazzo.Reader.ParsingContext(
             new global::BinkyLabs.OpenApi.Arazzo.Reader.ArazzoDiagnostic());
 
-        var input = Arazzo.Reader.V1.ArazzoV1Deserializer.LoadSchema(json, context);
+        var input = ArazzoInputDeserializer.LoadSchema(json, context);
 
         var reference = Assert.IsType<ArazzoInputReference>(input);
         Assert.Equal("#/$defs/shared", reference.Reference.ReferenceV1);
@@ -391,7 +393,7 @@ public class ArazzoInputTests
         var context = new global::BinkyLabs.OpenApi.Arazzo.Reader.ParsingContext(
             new global::BinkyLabs.OpenApi.Arazzo.Reader.ArazzoDiagnostic());
 
-        var input = Arazzo.Reader.V1.ArazzoV1Deserializer.LoadSchema(json, context);
+        var input = ArazzoInputDeserializer.LoadSchema(json, context);
 
         var reference = Assert.IsType<ArazzoInputReference>(input);
         Assert.Equal("override", reference.Title);
@@ -444,7 +446,7 @@ public class ArazzoInputTests
             .GetProperty(nameof(BaseOpenApiReference.ReferenceV3))!
             .SetValue(schemaReference.Reference, "https://example.com/external.json#/components/schemas/shared");
 
-        var converted = Assert.IsType<ArazzoInputReference>(ArazzoInput.ConvertFromOpenApiSchema(schemaReference));
+        var converted = Assert.IsType<ArazzoInputReference>(ArazzoInputDeserializer.ConvertFromOpenApiSchema(schemaReference));
 
         Assert.Equal("title", converted.Title);
         Assert.Equal("description", converted.Description);
@@ -462,7 +464,7 @@ public class ArazzoInputTests
     {
         var schemaReference = new OpenApiSchemaReference("shared", null, null);
 
-        var converted = Assert.IsType<ArazzoInputReference>(ArazzoInput.ConvertFromOpenApiSchema(schemaReference));
+        var converted = Assert.IsType<ArazzoInputReference>(ArazzoInputDeserializer.ConvertFromOpenApiSchema(schemaReference));
 
         Assert.Equal("shared", converted.Reference.Id);
         Assert.Null(converted.Title);

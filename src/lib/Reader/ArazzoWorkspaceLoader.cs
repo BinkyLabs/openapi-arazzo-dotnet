@@ -138,14 +138,14 @@ internal sealed class ArazzoWorkspaceLoader
                 Workspace = _workspace
             };
             var sourceNode = await ReadSourceNodeAsync(stream, cancellationToken).ConfigureAwait(false);
-            var sourceComponents = (sourceNode as JsonObject)?["components"] as JsonObject;
-            var sourceSchemas = sourceComponents?["schemas"] as JsonObject;
+            var sourceComponents = (sourceNode as JsonObject)?[OpenApiConstants.Components] as JsonObject;
+            var sourceSchemas = sourceComponents?[OpenApiConstants.Schemas] as JsonObject;
 
             foreach (var schema in result.Document.Components.Schemas)
             {
                 _workspace.RegisterInputSchema(
                     $"{resolvedUri.AbsoluteUri}#/components/schemas/{schema.Key}",
-                    ArazzoInput.ConvertFromOpenApiSchema(schema.Value, hostDocument, sourceSchemas?[schema.Key]));
+                    ArazzoInputDeserializer.ConvertFromOpenApiSchema(schema.Value, hostDocument, sourceSchemas?[schema.Key]));
             }
 
             return true;
@@ -263,7 +263,7 @@ internal sealed class ArazzoWorkspaceLoader
             return null;
         }
         var sourceNode = await ReadSourceNodeAsync(stream, cancellationToken).ConfigureAwait(false);
-        return ArazzoInput.ConvertFromOpenApiSchema(schema, hostDocument, sourceNode);
+        return ArazzoInputDeserializer.ConvertFromOpenApiSchema(schema, hostDocument, sourceNode);
     }
 
     private async Task<Microsoft.OpenApi.Reader.ReadResult> ReadExternalOpenApiDocumentAsync(MemoryStream stream, Uri resolvedUri, CancellationToken cancellationToken)
@@ -276,6 +276,9 @@ internal sealed class ArazzoWorkspaceLoader
             cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Reads the original JSON representation without OpenAPI reference normalization, returning null for non-JSON input.
+    /// </summary>
     private static async Task<JsonNode?> TryParseJsonNodeAsync(Stream stream, CancellationToken cancellationToken)
     {
         try
@@ -289,6 +292,13 @@ internal sealed class ArazzoWorkspaceLoader
         }
     }
 
+    /// <summary>
+    /// Rereads the original JSON or YAML as a node tree so schema deserialization can preserve scoped $ref values.
+    /// </summary>
+    /// <remarks>
+    /// The OpenAPI reader may normalize references relative to the document root; this source tree supplies
+    /// the original spelling needed to resolve references correctly within nested $id resources.
+    /// </remarks>
     private static async Task<JsonNode?> ReadSourceNodeAsync(MemoryStream stream, CancellationToken cancellationToken)
     {
         ResetStream(stream);
