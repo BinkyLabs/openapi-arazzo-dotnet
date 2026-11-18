@@ -71,13 +71,13 @@ public class ParsingContext
 
         switch (inputVersion)
         {
-            case string version when IsArazzoV1Version(version):
+            case string version when IsArazzoV1_0Version(version):
                 VersionService = new ArazzoV1VersionService(Diagnostic);
                 this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_0;
                 doc = VersionService.LoadDocument(jsonNode, location, this);
                 ValidateRequiredFields(doc, version);
                 break;
-            case string version when ArazzoV1_1Version.Equals(version, StringComparison.OrdinalIgnoreCase):
+            case string version when IsArazzoV1_1Version(version):
                 VersionService = new ArazzoV1_1VersionService(Diagnostic);
                 this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_1;
                 doc = VersionService.LoadDocument(jsonNode, location, this);
@@ -89,6 +89,11 @@ public class ParsingContext
         }
 
         return doc;
+    }
+
+    private static bool IsArazzoV1_1Version(string version)
+    {
+        return ArazzoV1_1Version.Equals(version, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -142,7 +147,7 @@ public class ParsingContext
         return version;
     }
 
-    private static bool IsArazzoV1Version(string version)
+    private static bool IsArazzoV1_0Version(string version)
     {
         return ArazzoV1Versions.Any(supportedVersion => supportedVersion.Equals(version, StringComparison.OrdinalIgnoreCase));
     }
@@ -269,7 +274,7 @@ public class ParsingContext
 
     private void ValidateRequiredFields(ArazzoDocument doc, string version)
     {
-        if ((IsArazzoV1Version(version) || ArazzoV1_1Version.Equals(version, StringComparison.OrdinalIgnoreCase)) && JsonNode is not null)
+        if ((IsArazzoV1_0Version(version) || IsArazzoV1_1Version(version)) && JsonNode is not null)
         {
             if (doc.Info == null)
             {
