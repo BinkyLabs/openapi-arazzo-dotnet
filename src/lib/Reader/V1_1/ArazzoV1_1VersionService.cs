@@ -24,7 +24,7 @@ internal class ArazzoV1_1VersionService : BaseArazzoVersionService
         [typeof(ArazzoCriterionTypeUnion)] = V1.ArazzoV1Deserializer.LoadCriterionTypeUnion,
         [typeof(ArazzoCriterionExpressionType)] = ArazzoV1_1Deserializer.LoadCriterionExpressionType,
         [typeof(ArazzoSelector)] = ArazzoV1_1Deserializer.LoadSelector,
-        [typeof(ArazzoSelectorTypeUnion)] = ArazzoV1_1Deserializer.LoadSelectorTypeUnion,
+        [typeof(ArazzoSelectorTypeUnion)] = V1.ArazzoV1Deserializer.LoadSelectorTypeUnion,
         [typeof(ArazzoDocument)] = ArazzoV1_1Deserializer.LoadDocument,
         [typeof(ArazzoInfo)] = ArazzoV1_1Deserializer.LoadInfo,
         [typeof(ArazzoParameter)] = ArazzoV1_1Deserializer.LoadParameterObject,
@@ -42,8 +42,8 @@ internal class ArazzoV1_1VersionService : BaseArazzoVersionService
         [typeof(ArazzoWorkflow)] = ArazzoV1_1Deserializer.LoadWorkflow,
         [typeof(ArazzoOutputValueUnion)] = V1.ArazzoV1Deserializer.LoadOutputValueUnion,
         [typeof(IArazzoParameter)] = V1.ArazzoV1Deserializer.LoadParameter,
-        [typeof(IArazzoSuccessAction)] = V1.ArazzoV1Deserializer.LoadSuccessActionByVersion,
-        [typeof(IArazzoFailureAction)] = V1.ArazzoV1Deserializer.LoadFailureActionByVersion,
+        [typeof(IArazzoSuccessAction)] = ArazzoV1_1Deserializer.LoadSuccessAction,
+        [typeof(IArazzoFailureAction)] = ArazzoV1_1Deserializer.LoadFailureAction,
     };
 
     public override ArazzoDocument LoadDocument(JsonNode jsonNode, Uri location, ParsingContext context)

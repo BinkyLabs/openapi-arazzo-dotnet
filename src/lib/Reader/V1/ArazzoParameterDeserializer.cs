@@ -36,7 +36,7 @@ internal static partial class ArazzoV1Deserializer
             {
                 if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
                     throw new ArazzoReaderException("Selector parameter values are not supported in Arazzo 1.0.", context);
-                return new() { Selector = V1_1.ArazzoV1_1Deserializer.LoadSelectorInternal(node, context) };
+                return new() { Selector = LoadSelectorInternal(node, context) };
             }
             if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
                 return new() { Any = node };

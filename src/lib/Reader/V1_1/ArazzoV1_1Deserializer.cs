@@ -67,44 +67,23 @@ internal static partial class ArazzoV1_1Deserializer
     public static ArazzoCriterionExpressionType LoadCriterionExpressionType(JsonNode node, ParsingContext context) =>
         LoadWithArazzo1_1(node, context, ArazzoV1Deserializer.LoadCriterionExpressionType);
 
+    public static ArazzoSelector LoadSelector(JsonNode node, ParsingContext context) =>
+        LoadWithArazzo1_1(node, context, ArazzoV1Deserializer.LoadSelectorInternal);
+
     public static IArazzoParameter LoadParameter(JsonNode node, ParsingContext context) =>
         LoadWithArazzo1_1(node, context, ArazzoV1Deserializer.LoadParameter);
 
     public static ArazzoParameter LoadParameterObject(JsonNode node, ParsingContext context) =>
         LoadWithArazzo1_1(node, context, ArazzoV1Deserializer.LoadParameterObject);
 
-    public static IArazzoSuccessAction LoadSuccessAction(JsonNode node, ParsingContext context)
-    {
-        if (ArazzoV1Deserializer.TryGetReferenceObject(node, out _, out var referenceString))
-        {
-            return ArazzoV1Deserializer.CreateLocalReusableReference(
-                referenceString,
-                context,
-                ReferenceType.SuccessAction,
-                "Success action",
-                static (referenceId, hostDocument) => new ArazzoSuccessActionReference(referenceId, hostDocument));
-        }
-
-        return LoadSuccessActionObject(node, context);
-    }
+    public static IArazzoSuccessAction LoadSuccessAction(JsonNode node, ParsingContext context) =>
+        ArazzoV1Deserializer.LoadSuccessActionInternal(node, context, LoadSuccessActionObject);
 
     public static ArazzoSuccessAction LoadSuccessActionObject(JsonNode node, ParsingContext context) =>
         LoadWithArazzo1_1(node, context, static (n, c) => ArazzoV1Deserializer.LoadSuccessActionObjectInternal(n, c, SuccessActionFixedFields, SuccessActionPatternFields));
 
-    public static IArazzoFailureAction LoadFailureAction(JsonNode node, ParsingContext context)
-    {
-        if (ArazzoV1Deserializer.TryGetReferenceObject(node, out _, out var referenceString))
-        {
-            return ArazzoV1Deserializer.CreateLocalReusableReference(
-                referenceString,
-                context,
-                ReferenceType.FailureAction,
-                "Failure action",
-                static (referenceId, hostDocument) => new ArazzoFailureActionReference(referenceId, hostDocument));
-        }
-
-        return LoadFailureActionObject(node, context);
-    }
+    public static IArazzoFailureAction LoadFailureAction(JsonNode node, ParsingContext context) =>
+        ArazzoV1Deserializer.LoadFailureActionInternal(node, context, LoadFailureActionObject);
 
     public static ArazzoFailureAction LoadFailureActionObject(JsonNode node, ParsingContext context) =>
         LoadWithArazzo1_1(node, context, static (n, c) => ArazzoV1Deserializer.LoadFailureActionObjectInternal(n, c, FailureActionFixedFields, FailureActionPatternFields));
@@ -165,12 +144,12 @@ internal static partial class ArazzoV1_1Deserializer
             [ArazzoConstants.ArazzoStepRequestBody] = static (o, v, c) => o.RequestBody = LoadRequestBody(v, c),
             [ArazzoConstants.ArazzoStepOnSuccess] = static (o, v, c) =>
             {
-                o.OnSuccess = v.CreateObjectList(ArazzoV1Deserializer.LoadSuccessActionByVersion, c);
+                o.OnSuccess = v.CreateObjectList(LoadSuccessAction, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.OnSuccess, c, $"{nameof(ArazzoStep)} onSuccess");
             },
             [ArazzoConstants.ArazzoStepOnFailure] = static (o, v, c) =>
             {
-                o.OnFailure = v.CreateObjectList(ArazzoV1Deserializer.LoadFailureActionByVersion, c);
+                o.OnFailure = v.CreateObjectList(LoadFailureAction, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.OnFailure, c, $"{nameof(ArazzoStep)} onFailure");
             },
         };
@@ -221,12 +200,12 @@ internal static partial class ArazzoV1_1Deserializer
             [ArazzoConstants.ArazzoWorkflowSteps] = static (o, v, c) => o.Steps = v.CreateList(LoadStep, c),
             [ArazzoConstants.ArazzoWorkflowSuccessActions] = static (o, v, c) =>
             {
-                o.SuccessActions = v.CreateObjectList(ArazzoV1Deserializer.LoadSuccessActionByVersion, c);
+                o.SuccessActions = v.CreateObjectList(LoadSuccessAction, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.SuccessActions, c, $"{nameof(ArazzoWorkflow)} successActions");
             },
             [ArazzoConstants.ArazzoWorkflowFailureActions] = static (o, v, c) =>
             {
-                o.FailureActions = v.CreateObjectList(ArazzoV1Deserializer.LoadFailureActionByVersion, c);
+                o.FailureActions = v.CreateObjectList(LoadFailureAction, c);
                 ArazzoActionListValidator.ValidateDeserialization(o.FailureActions, c, $"{nameof(ArazzoWorkflow)} failureActions");
             }
         };

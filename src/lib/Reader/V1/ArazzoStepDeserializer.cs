@@ -51,12 +51,12 @@ internal static partial class ArazzoV1Deserializer
         } },
         { ArazzoConstants.ArazzoStepOnSuccess, static (o, v, c) =>
         {
-            o.OnSuccess = v.CreateObjectList(LoadSuccessActionByVersion, c);
+            o.OnSuccess = v.CreateObjectList(LoadSuccessAction, c);
             ArazzoActionListValidator.ValidateDeserialization(o.OnSuccess, c, $"{nameof(ArazzoStep)} onSuccess");
         } },
         { ArazzoConstants.ArazzoStepOnFailure, static (o, v, c) =>
         {
-            o.OnFailure = v.CreateObjectList(LoadFailureActionByVersion, c);
+            o.OnFailure = v.CreateObjectList(LoadFailureAction, c);
             ArazzoActionListValidator.ValidateDeserialization(o.OnFailure, c, $"{nameof(ArazzoStep)} onFailure");
         } },
         { ArazzoConstants.ArazzoStepOutputs, static (o, v, c) =>

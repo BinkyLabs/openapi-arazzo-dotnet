@@ -6,16 +6,6 @@ namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
 internal static partial class ArazzoV1Deserializer
 {
-    public static IArazzoSuccessAction LoadSuccessActionByVersion(JsonNode node, ParsingContext context)
-    {
-        if (node is JsonObject map && map.ContainsKey(ArazzoConstants.ArazzoReusableObjectReference) &&
-            (map.ContainsKey(ArazzoConstants.ArazzoResultActionName) || map.ContainsKey(ArazzoConstants.ArazzoResultActionType)))
-            throw new ArazzoReaderException("A success action must be either a Success Action Object or a Reusable Object, not both.", context);
-        return context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_1
-            ? V1_1.ArazzoV1_1Deserializer.LoadSuccessAction(node, context)
-            : LoadSuccessAction(node, context);
-    }
-
     public static readonly FixedFieldMap<ArazzoSuccessAction> SuccessActionFixedFields = new()
     {
         { ArazzoConstants.ArazzoResultActionName, static (o, v, c) => o.Name = v.GetScalarValue() },
@@ -40,8 +30,15 @@ internal static partial class ArazzoV1Deserializer
     };
     public static readonly PatternFieldMap<ArazzoSuccessAction> SuccessActionPatternFields = GetSuccessActionPatternFields();
 
-    public static IArazzoSuccessAction LoadSuccessAction(JsonNode node, ParsingContext context)
+    public static IArazzoSuccessAction LoadSuccessAction(JsonNode node, ParsingContext context) =>
+        LoadSuccessActionInternal(node, context, LoadSuccessActionObject);
+
+    internal static IArazzoSuccessAction LoadSuccessActionInternal(JsonNode node, ParsingContext context, Func<JsonNode, ParsingContext, ArazzoSuccessAction> loadObject)
     {
+        if (node is JsonObject map && map.ContainsKey(ArazzoConstants.ArazzoReusableObjectReference) &&
+            (map.ContainsKey(ArazzoConstants.ArazzoResultActionName) || map.ContainsKey(ArazzoConstants.ArazzoResultActionType)))
+            throw new ArazzoReaderException("A success action must be either a Success Action Object or a Reusable Object, not both.", context);
+
         if (TryGetReferenceObject(node, out _, out var referenceString))
         {
             return CreateLocalReusableReference(
@@ -52,7 +49,7 @@ internal static partial class ArazzoV1Deserializer
                 static (referenceId, hostDocument) => new ArazzoSuccessActionReference(referenceId, hostDocument));
         }
 
-        return LoadSuccessActionObject(node, context);
+        return loadObject(node, context);
     }
 
     public static ArazzoSuccessAction LoadSuccessActionObject(JsonNode node, ParsingContext context)

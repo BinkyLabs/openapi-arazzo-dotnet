@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 
-using BinkyLabs.OpenApi.Arazzo.Reader.V1_1;
 using BinkyLabs.OpenApi.Arazzo.Validation;
 
 using Microsoft.OpenApi;
@@ -18,7 +17,7 @@ internal static partial class ArazzoV1Deserializer
                 context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), "Selector payload replacement values are not supported in Arazzo 1.0."));
             }
 
-            return new() { Selector = ArazzoV1_1Deserializer.LoadSelectorInternal(node, context) };
+            return new() { Selector = LoadSelectorInternal(node, context) };
         }
 
         if (node is JsonValue value && value.TryGetValue<string>(out var expression) &&

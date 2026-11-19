@@ -24,7 +24,7 @@ internal class ArazzoV1VersionService : BaseArazzoVersionService
         [typeof(JsonNodeExtension)] = static (node, _) => new JsonNodeExtension(node),
         [typeof(ArazzoCriterion)] = ArazzoV1Deserializer.LoadCriterion,
         [typeof(ArazzoSelector)] = static (n, c) => throw new ArazzoReaderException("Selector objects are not supported in Arazzo 1.0.", c),
-        [typeof(ArazzoSelectorTypeUnion)] = V1_1.ArazzoV1_1Deserializer.LoadSelectorTypeUnion,
+        [typeof(ArazzoSelectorTypeUnion)] = static (n, c) => throw new ArazzoReaderException("Selector types are not supported in Arazzo 1.0.", c),
         [typeof(ArazzoCriterionTypeUnion)] = ArazzoV1Deserializer.LoadCriterionTypeUnion,
         [typeof(ArazzoCriterionExpressionType)] = ArazzoV1Deserializer.LoadCriterionExpressionType,
         [typeof(ArazzoDocument)] = ArazzoV1Deserializer.LoadDocument,
@@ -44,8 +44,8 @@ internal class ArazzoV1VersionService : BaseArazzoVersionService
         [typeof(ArazzoWorkflow)] = ArazzoV1Deserializer.LoadWorkflow,
         [typeof(ArazzoOutputValueUnion)] = ArazzoV1Deserializer.LoadOutputValueUnion,
         [typeof(IArazzoParameter)] = ArazzoV1Deserializer.LoadParameter,
-        [typeof(IArazzoSuccessAction)] = ArazzoV1Deserializer.LoadSuccessActionByVersion,
-        [typeof(IArazzoFailureAction)] = ArazzoV1Deserializer.LoadFailureActionByVersion,
+        [typeof(IArazzoSuccessAction)] = ArazzoV1Deserializer.LoadSuccessAction,
+        [typeof(IArazzoFailureAction)] = ArazzoV1Deserializer.LoadFailureAction,
     };
 
     public override ArazzoDocument LoadDocument(JsonNode jsonNode, Uri location, ParsingContext context)
