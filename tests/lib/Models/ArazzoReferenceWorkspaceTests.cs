@@ -85,6 +85,54 @@ public class ArazzoReferenceWorkspaceTests
     }
 
     [Fact]
+    public void RegisterOpenApiDocument_IndexesEffectiveParametersByPointerAndUniqueId()
+    {
+        var uri = new Uri("https://example.com/openapi.json");
+        var workspace = new ArazzoWorkspace();
+        var inherited = new OpenApiParameter { Name = "filter", In = ParameterLocation.Query };
+        var overridden = new OpenApiParameter { Name = "filter", In = ParameterLocation.Query };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["/pets"] = new OpenApiPathItem
+                {
+                    Parameters = [inherited],
+                    Operations = new Dictionary<HttpMethod, OpenApiOperation>
+                    {
+                        [HttpMethod.Get] = new OpenApiOperation { OperationId = "listPets", Parameters = [overridden] },
+                        [HttpMethod.Post] = new OpenApiOperation { OperationId = "savePet" },
+                        [HttpMethod.Put] = new OpenApiOperation { OperationId = "savePet" }
+                    }
+                }
+            }
+        };
+
+        workspace.RegisterOpenApiDocument(uri, document);
+
+        var byId = workspace.GetOpenApiOperationParameters(uri, "listPets", isPointer: false);
+        Assert.NotNull(byId);
+        Assert.Same(overridden, Assert.Single(byId));
+        var byPointer = workspace.GetOpenApiOperationParameters(uri, "#/paths/~1pets/get", isPointer: true);
+        Assert.NotNull(byPointer);
+        Assert.Same(overridden, Assert.Single(byPointer));
+        Assert.Equal(2, workspace.CountOpenApiOperationId(uri, "savePet"));
+        Assert.Null(workspace.GetOpenApiOperationParameters(uri, "savePet", isPointer: false));
+        var inheritedParameters = workspace.GetOpenApiOperationParameters(uri, "/paths/~1pets/post", isPointer: true);
+        Assert.NotNull(inheritedParameters);
+        Assert.Same(inherited, Assert.Single(inheritedParameters));
+
+        var copy = new ArazzoWorkspace(workspace);
+        copy.RegisterOpenApiDocument(uri, new OpenApiDocument());
+
+        Assert.True(copy.IsOpenApiDocumentLoaded(uri));
+        Assert.False(copy.ContainsOpenApiOperationPointer(uri, "#/paths/~1pets/get"));
+        Assert.Equal(0, copy.CountOpenApiOperationId(uri, "listPets"));
+        Assert.True(workspace.ContainsOpenApiOperationPointer(uri, "#/paths/~1pets/get"));
+        Assert.Equal(1, workspace.CountOpenApiOperationId(uri, "listPets"));
+    }
+
+    [Fact]
     public void RegisterComponents_RegistersWorkflowInputsAndResolvesInlineSubSchemas()
     {
         var definitionsInput = new ArazzoInput { Type = JsonSchemaType.String };

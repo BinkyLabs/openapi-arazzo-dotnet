@@ -13,14 +13,15 @@ internal class ArazzoWorkspace
     private readonly Dictionary<Uri, IArazzoReferenceable> _componentRegistry = new(new UriWithFragmentEqualityComparer());
     private readonly Dictionary<Uri, IArazzoInput> _inputRegistry = new(new UriWithFragmentEqualityComparer());
     private readonly Dictionary<string, SourceDescriptionRegistration> _sourceDescriptionRegistry = new(StringComparer.Ordinal);
-    private readonly Dictionary<Uri, HashSet<string>> _openApiOperationPointers = new(new UriWithFragmentEqualityComparer());
-    private readonly Dictionary<Uri, Dictionary<string, int>> _openApiOperationIdCounts = new(new UriWithFragmentEqualityComparer());
-    private readonly Dictionary<Uri, Dictionary<string, OpenApiOperationMetadata>> _openApiOperations = new(new UriWithFragmentEqualityComparer());
+    private readonly Dictionary<Uri, OpenApiOperationIndex> _openApiOperationIndexes = new(new UriWithFragmentEqualityComparer());
     private readonly Dictionary<Uri, ArazzoDocument> _arazzoDocuments = new(new UriWithFragmentEqualityComparer());
     private readonly Dictionary<BaseArazzoReference, Uri> _inputReferenceBaseUris = new();
 
     internal readonly record struct SourceDescriptionRegistration(Uri Uri, ArazzoDescriptionType? Type);
-    private sealed record OpenApiOperationMetadata(string? OperationId, IReadOnlyList<IOpenApiParameter> Parameters);
+    private sealed record OpenApiOperationIndex(
+        IReadOnlyDictionary<string, IReadOnlyList<IOpenApiParameter>> ByPointer,
+        IReadOnlyDictionary<string, OperationIdEntry> ById);
+    private readonly record struct OperationIdEntry(int Count, IReadOnlyList<IOpenApiParameter>? UniqueParameters);
 
     private sealed class UriWithFragmentEqualityComparer : IEqualityComparer<Uri>
     {
@@ -95,17 +96,10 @@ internal class ArazzoWorkspace
             _sourceDescriptionRegistry[pair.Key] = pair.Value;
         }
 
-        foreach (var pair in workspace._openApiOperationPointers)
+        foreach (var pair in workspace._openApiOperationIndexes)
         {
-            _openApiOperationPointers[pair.Key] = new HashSet<string>(pair.Value, StringComparer.Ordinal);
+            _openApiOperationIndexes[pair.Key] = pair.Value;
         }
-
-        foreach (var pair in workspace._openApiOperationIdCounts)
-        {
-            _openApiOperationIdCounts[pair.Key] = new Dictionary<string, int>(pair.Value, StringComparer.Ordinal);
-        }
-        foreach (var pair in workspace._openApiOperations)
-            _openApiOperations[pair.Key] = new Dictionary<string, OpenApiOperationMetadata>(pair.Value, StringComparer.Ordinal);
 
         foreach (var pair in workspace._arazzoDocuments)
         {
@@ -195,70 +189,56 @@ internal class ArazzoWorkspace
 
         var documentUriWithoutFragment = WithoutFragment(documentUri);
         AddDocumentId(documentUriWithoutFragment.AbsoluteUri, documentUriWithoutFragment);
-        var operationPointers = _openApiOperationPointers.GetValueOrDefault(documentUriWithoutFragment);
-        if (operationPointers is null)
-        {
-            operationPointers = new HashSet<string>(StringComparer.Ordinal);
-            _openApiOperationPointers[documentUriWithoutFragment] = operationPointers;
-        }
-
-        var operationIdCounts = _openApiOperationIdCounts.GetValueOrDefault(documentUriWithoutFragment);
-        if (operationIdCounts is null)
-        {
-            operationIdCounts = new Dictionary<string, int>(StringComparer.Ordinal);
-            _openApiOperationIdCounts[documentUriWithoutFragment] = operationIdCounts;
-        }
+        var byPointer = new Dictionary<string, IReadOnlyList<IOpenApiParameter>>(StringComparer.Ordinal);
+        var byId = new Dictionary<string, OperationIdEntry>(StringComparer.Ordinal);
 
         foreach (var path in document.Paths ?? [])
         {
             foreach (var operation in path.Value.Operations ?? [])
             {
                 var pointer = ArazzoStep.BuildOperationPointer(path.Key, operation.Key.Method);
-                operationPointers.Add(pointer);
-                if (!_openApiOperations.TryGetValue(documentUriWithoutFragment, out var metadata))
-                {
-                    metadata = new Dictionary<string, OpenApiOperationMetadata>(StringComparer.Ordinal);
-                    _openApiOperations.Add(documentUriWithoutFragment, metadata);
-                }
                 var parameters = (path.Value.Parameters ?? []).Concat(operation.Value.Parameters ?? [])
                     .GroupBy(static parameter => (parameter.Name, parameter.In))
                     .Select(static group => group.Last()).ToArray();
-                metadata[pointer] = new OpenApiOperationMetadata(operation.Value.OperationId, parameters);
-                if (!string.IsNullOrEmpty(operation.Value.OperationId))
+                byPointer[pointer] = parameters;
+                if (operation.Value.OperationId is { Length: > 0 } id)
                 {
-                    operationIdCounts[operation.Value.OperationId] = operationIdCounts.GetValueOrDefault(operation.Value.OperationId) + 1;
+                    byId[id] = byId.TryGetValue(id, out var entry)
+                        ? new(entry.Count + 1, null)
+                        : new(1, parameters);
                 }
             }
         }
+
+        _openApiOperationIndexes[documentUriWithoutFragment] = new(byPointer, byId);
     }
 
     internal bool IsOpenApiDocumentLoaded(Uri documentUri)
     {
-        return _openApiOperationPointers.ContainsKey(WithoutFragment(documentUri));
+        return _openApiOperationIndexes.ContainsKey(WithoutFragment(documentUri));
     }
 
     internal IReadOnlyList<IOpenApiParameter>? GetOpenApiOperationParameters(Uri documentUri, string identifier, bool isPointer)
     {
-        if (!_openApiOperations.TryGetValue(WithoutFragment(documentUri), out var operations))
+        if (!_openApiOperationIndexes.TryGetValue(WithoutFragment(documentUri), out var operations))
             return null;
-        if (isPointer)
-            return operations.TryGetValue(NormalizeFragment(identifier), out var operation) ? operation.Parameters : null;
-        var matches = operations.Values.Where(operation => operation.OperationId == identifier).Take(2).ToArray();
-        return matches.Length == 1 ? matches[0].Parameters : null;
+
+        return isPointer
+            ? operations.ByPointer.GetValueOrDefault(NormalizeFragment(identifier))
+            : operations.ById.GetValueOrDefault(identifier).UniqueParameters;
     }
 
     internal bool ContainsOpenApiOperationPointer(Uri documentUri, string pointer)
     {
-        return _openApiOperationPointers.TryGetValue(WithoutFragment(documentUri), out var operationPointers) &&
-            operationPointers.Contains(NormalizeFragment(pointer));
+        return _openApiOperationIndexes.TryGetValue(WithoutFragment(documentUri), out var operations) &&
+            operations.ByPointer.ContainsKey(NormalizeFragment(pointer));
     }
 
     internal int CountOpenApiOperationId(Uri documentUri, string operationId)
     {
-        return _openApiOperationIdCounts.TryGetValue(WithoutFragment(documentUri), out var operationIdCounts) &&
-            operationIdCounts.TryGetValue(operationId, out var count)
-                ? count
-                : 0;
+        return _openApiOperationIndexes.TryGetValue(WithoutFragment(documentUri), out var operations)
+            ? operations.ById.GetValueOrDefault(operationId).Count
+            : 0;
     }
 
     internal void RegisterSourceDescriptions(ArazzoDocument document)
