@@ -2,13 +2,36 @@
 
 # OpenAPI Arazzo Library for dotnet
 
-This project provides a .NET implementation of the [OpenAPI Arazzo Specification](https://spec.openapis.org/arazzo/latest.html), allowing you to manage workflows for REST APIs with OpenAPI documents (v3.0+), following the official OpenAPI Arazzo 1.0.0 specification.
-
-The library enables developers to programmatically apply parse, build, serialize, validate arazzo documents.
+This project provides a .NET implementation of the [OpenAPI Arazzo Specification](https://spec.openapis.org/arazzo/latest.html), enabling developers to parse, build, serialize, and validate Arazzo 1.0.x and 1.1.x documents describing workflows across APIs.
 
 This library was funded in part by the Interledger Foundation. See the related announcement: [SDK Grant Funds Security Features, OpenAPI Specification, and Arazzo Workflow Support in Kiota](https://interledger.org/news/sdk-grant-funds-security-features-openapi-specification-and-arazzo-workflow-support-kiota).
 
 ## Library
+
+### Arazzo 1.1 support
+
+The object model, readers, and writers support the new Arazzo 1.1 fields and models, including:
+
+- `$self` document identifiers and base URI calculation for relative references.
+- AsyncAPI source description types and step fields: `channelPath`, `action`, `correlationId`, `timeout`, and step-level `dependsOn`.
+- Selector Objects and typed unions for workflow/step outputs, parameter values, request body payloads, and payload replacement values.
+- JSONPath, XPath, and JSON Pointer expression types with type/version compatibility validation, plus JSONPath and JSON Pointer grammar validation.
+- `querystring` parameter locations, action-level workflow parameters, and payload replacement `targetSelectorType`.
+- Runtime expression syntax for `$message`, `$self`, and workflow input/output references.
+
+AsyncAPI support currently covers the document model and parsing/serialization, not loading or resolving AsyncAPI descriptions. The library does not execute workflows or evaluate runtime expressions, selectors, or conditions. Additional semantic validation and reference-resolution work is tracked in [#115](https://github.com/BinkyLabs/openapi-arazzo-dotnet/issues/115).
+
+With `settings.OpenApiSettings.LoadExternalRefs = true`, the readers load Arazzo and OpenAPI source descriptions (JSON or YAML, including HTTP(S) URLs through the configured stream loader). They check external workflow and step dependency targets and detect dependency cycles across loaded Arazzo documents. Nested sources use their own `$self` base URI and source names; already loaded documents are reused to avoid repeated loading through source cycles. Retrieval URLs and absolute `$self` URIs identify the same loaded document, so references through either identity do not trigger another fetch. Source loading and parsing errors are included in the returned diagnostics; cancellation propagates to the caller. External loading is disabled by default.
+
+Arazzo 1.1 runtime expressions are checked against the 1.1 grammar; permissive 1.0 compatibility syntax is not accepted as valid 1.1 syntax. Dependency analysis includes runtime expressions embedded in regex, JSONPath, and XPath conditions.
+
+Readers and writers check JSONPath selectors, conditions, and explicitly typed replacement targets against RFC 9535. JSON Pointer selectors and replacement targets are checked against RFC 6901, including default JSON Pointer targets for JSON request bodies. XPath grammar validation is deferred for all supported versions (1.0, 2.0, 3.0, and 3.1); XPath type/version compatibility is still checked. The explicitly selected `draft-goessner-dispatch-jsonpath-00` dialect retains permissive compatibility handling; its grammar is not validated. Quoted runtime-expression substitutions in JSONPath conditions are masked for static grammar checks; conditions containing unquoted substitutions require validation after runtime expression evaluation. Selector and condition evaluation remain outside the library's scope.
+
+Grammar validation uses [JsonPath.Net 3.0.3](https://www.nuget.org/packages/JsonPath.Net/3.0.3) (MIT source; distributed binaries include the [Open Source Maintenance Fee Agreement](https://www.nuget.org/packages/JsonPath.Net/3.0.3/License)) and [JsonPointer.Net 3.0.3](https://www.nuget.org/packages/JsonPointer.Net/3.0.3) (MIT). Consumers should review the dependencies' license terms for their own use.
+
+When target OpenAPI parameter metadata is loaded, literal `querystring` values are checked for JSON and form URL-encoded content syntax, including inherited parameters. Custom media types, schema validation of content, and values computed by runtime expressions or selectors require an evaluator or application-level validation.
+
+Input schema references support JSON Pointers and plain-name `$anchor` fragments such as `#shared`, including nested `$id` resource scopes and anchors in loaded JSON/YAML schema descriptions.
 
 ### Installing the library
 
@@ -20,13 +43,117 @@ dotnet add <pathToCsProj> package BinkyLabs.OpenApi.Arazzo
 
 ### Examples
 
+#### A small Arazzo document
+
+This Arazzo 1.1 workflow creates a pet, then uses its returned ID to fetch it. Steps run in order by default, and runtime expressions pass data between them.
+
+```yaml
+arazzo: 1.1.0
+info:
+  title: Create and fetch a pet
+  version: 1.0.0
+sourceDescriptions:
+  - name: petStore
+    url: https://petstore3.swagger.io/api/v3/openapi.json
+    type: openapi
+workflows:
+  - workflowId: createAndFetchPet
+    steps:
+      - stepId: createPet
+        operationId: addPet
+        requestBody:
+          contentType: application/json
+          payload:
+            name: Fido
+            photoUrls: []
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          petId: $response.body#/id
+      - stepId: fetchPet
+        operationId: getPetById
+        parameters:
+          - name: petId
+            in: path
+            value: $steps.createPet.outputs.petId
+        successCriteria:
+          - condition: $statusCode == 200
+```
+
+Save this as `pets.arazzo.yaml` to parse it with the library or validate it with `clia validate pets.arazzo.yaml`. Validation checks the description; it does not execute the API calls.
+
 #### Parsing an Arazzo document
 
-The following example illustrates how you can load or parse an Arazzo document from JSON or YAML.
+The readers detect Arazzo 1.0.x and 1.1.x documents automatically. The following example loads an Arazzo document from JSON or YAML.
 
 ```csharp
-var (arazzoDocument) = await ArazzoDocument.LoadFromUrlAsync("https://source/arazzo.json");
+var (arazzoDocument, diagnostic) = await ArazzoDocument.LoadFromUrlAsync("https://source/arazzo.json");
 ```
+
+Inspect `diagnostic.Errors` and `diagnostic.Warnings` before using the parsed document.
+
+#### Serializing an Arazzo 1.1 document
+
+Use `SerializeAsV1_1` to write Arazzo 1.1.0 JSON. `Info.Version` identifies your workflow description; it does not select the Arazzo specification version.
+
+```csharp
+using BinkyLabs.OpenApi.Arazzo;
+using Microsoft.OpenApi;
+
+var arazzoDocument = new ArazzoDocument
+{
+    Self = "https://example.com/workflows/pets.arazzo.json",
+    Info = new ArazzoInfo
+    {
+        Title = "Pet workflow",
+        Version = "1.0.0"
+    },
+    SourceDescriptions = new List<ArazzoSourceDescription>
+    {
+        new ArazzoSourceDescription
+        {
+            Name = "petStore",
+            Url = new Uri("https://petstore3.swagger.io/api/v3/openapi.json"),
+            Type = ArazzoDescriptionType.OpenAPI
+        }
+    },
+    Workflows = new List<ArazzoWorkflow>
+    {
+        new ArazzoWorkflow
+        {
+            WorkflowId = "getPet",
+            Steps = new List<ArazzoStep>
+            {
+                new ArazzoStep
+                {
+                    StepId = "fetchPet",
+                    OperationId = "getPetById",
+                    Parameters = new List<IArazzoParameter>
+                    {
+                        new ArazzoParameter
+                        {
+                            Name = "petId",
+                            In = ParameterLocation.Path,
+                            Value = "1"
+                        }
+                    },
+                    Outputs = new Dictionary<string, ArazzoOutputValueUnion>
+                    {
+                        ["pet"] = new ArazzoRuntimeExpression("$response.body")
+                    }
+                }
+            }
+        }
+    }
+};
+
+using var textWriter = new StringWriter();
+var writer = new OpenApiJsonWriter(textWriter);
+arazzoDocument.SerializeAsV1_1(writer);
+var jsonResult = textWriter.ToString();
+```
+
+Use `SerializeAsV1` when targeting Arazzo 1.0.1. Features without a 1.0 representation may be written as specification extensions or rejected.
 
 ## CLI
 
@@ -68,34 +195,6 @@ docker run --rm \
   -v $(pwd)/arazzo:/app/arazzo:ro \
   ghcr.io/binkylabs/openapi-arazzo-dotnet:1 \
   validate /app/arazzo/arazzo.yaml
-```
-
-#### Serializing an Arazzo document
-
-The following example illustrates how you can serialize an Arazzo document, built by the application or previously parsed, to JSON.
-
-```csharp
-var arazzoDocument = new ArazzoDocument
-{
-    Info = new ArazzoInfo
-    {
-        Title = "Test Arazzo",
-        Version = "1.0.0"
-    },
-    Workflows = new List<ArazzoWorkflow>
-    {
-        new ArazzoWorkflow
-        {
-            //...
-        }
-    }
-};
-
-using var textWriter = new StringWriter();
-var writer = new OpenApiJsonWriter(textWriter);
-document.SerializeAsV1(writer);
-var jsonResult = textWriter.ToString();
-// or use flush async if the underlying writer is a stream writer to a file or network stream
 ```
 
 ## Experimental features

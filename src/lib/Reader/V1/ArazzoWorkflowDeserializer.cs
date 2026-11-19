@@ -15,7 +15,7 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoWorkflowWorkflowId, static (o, v, c) => o.WorkflowId = v.GetScalarValue() },
         { ArazzoConstants.ArazzoWorkflowSummary, static (o, v, c) => o.Summary = v.GetScalarValue() },
         { ArazzoConstants.ArazzoWorkflowDescription, static (o, v, c) => o.Description = v.GetScalarValue() },
-        { ArazzoConstants.ArazzoWorkflowInputs, static (o, v, c) => o.Inputs = LoadSchema(v, c) },
+        { ArazzoConstants.ArazzoWorkflowInputs, static (o, v, c) => o.Inputs = ArazzoInputDeserializer.LoadSchema(v, c) },
         { ArazzoConstants.ArazzoWorkflowDependsOn, static (o, v, c) =>
         {
             var list = v.CreateSimpleList(static n => n.GetScalarValue(), c);
@@ -27,36 +27,40 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoWorkflowSteps, static (o, v, c) => o.Steps = v.CreateList(LoadStep, c) },
         { ArazzoConstants.ArazzoWorkflowSuccessActions, static (o, v, c) =>
         {
-            o.SuccessActions = v.CreateList<IArazzoSuccessAction>(LoadSuccessAction, c);
+            o.SuccessActions = v.CreateObjectList(LoadSuccessAction, c);
             ArazzoActionListValidator.ValidateDeserialization(o.SuccessActions, c, $"{nameof(ArazzoWorkflow)} successActions");
         } },
         { ArazzoConstants.ArazzoWorkflowFailureActions, static (o, v, c) =>
         {
-            o.FailureActions = v.CreateList<IArazzoFailureAction>(LoadFailureAction, c);
+            o.FailureActions = v.CreateObjectList(LoadFailureAction, c);
             ArazzoActionListValidator.ValidateDeserialization(o.FailureActions, c, $"{nameof(ArazzoWorkflow)} failureActions");
         } },
         { ArazzoConstants.ArazzoWorkflowOutputs, static (o, v, c) =>
         {
             ArazzoKeyValidator.ValidateDeserializationKeys(v, c, $"{nameof(ArazzoWorkflow)}.{nameof(ArazzoWorkflow.Outputs)}");
-            o.Outputs = v.CreateSimpleMap(static n => n.GetScalarValue(), c)
-                .Where(static x => x.Value is not null)
-                .ToDictionary(static x => x.Key, static x => x.Value!);
-            ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressions(o.Outputs, c, $"{nameof(ArazzoWorkflow)}.{nameof(ArazzoWorkflow.Outputs)}");
+            o.Outputs = LoadOutputMap(v, c);
         } },
-        { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) },
+        { ArazzoConstants.ArazzoWorkflowParameters, static (o, v, c) => o.Parameters = v.CreateObjectList(LoadParameter, c) },
     };
 
-    public static readonly PatternFieldMap<ArazzoWorkflow> WorkflowPatternFields = new()
+    public static PatternFieldMap<ArazzoWorkflow> GetWorkflowPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoWorkflow> WorkflowPatternFields = GetWorkflowPatternFields();
 
     public static ArazzoWorkflow LoadWorkflow(JsonNode node, ParsingContext context)
     {
-        var mapNode = node.CheckMapNode("Workflow", context);
+        return LoadWorkflowInternal(node, context, WorkflowFixedFields, WorkflowPatternFields);
+    }
+
+    public static ArazzoWorkflow LoadWorkflowInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoWorkflow> workflowFixedFields, PatternFieldMap<ArazzoWorkflow> workflowPatternFields)
+    {
+        var mapNode = node.CheckMapNode(nameof(ArazzoWorkflow), context);
         var workflow = new ArazzoWorkflow();
 
-        mapNode.ParseMap(workflow, WorkflowFixedFields, WorkflowPatternFields, context);
+        mapNode.ParseMap(workflow, workflowFixedFields, workflowPatternFields, context);
         ValidateWorkflowRequiredFields(workflow, context);
 
         return workflow;

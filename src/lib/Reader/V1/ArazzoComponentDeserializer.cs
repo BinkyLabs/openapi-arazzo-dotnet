@@ -4,7 +4,6 @@ using System.Text.Json.Nodes;
 using BinkyLabs.OpenApi.Arazzo.Validation;
 
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Reader;
 
 namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
 
@@ -30,36 +29,16 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoComponentInputs, static (o, v, c) =>
         {
             ArazzoKeyValidator.ValidateDeserializationKeys(v, c, $"{nameof(ArazzoComponent)}.{nameof(ArazzoComponent.Inputs)}");
-            o.Inputs = v.CreateMap(LoadSchema, c).Where(static x => x.Value != null).ToDictionary(static x => x.Key, static x => x.Value!);
+            o.Inputs = v.CreateMap(ArazzoInputDeserializer.LoadSchema, c).Where(static x => x.Value != null).ToDictionary(static x => x.Key, static x => x.Value!);
         } },
     };
 
-    public static readonly PatternFieldMap<ArazzoComponent> ComponentPatternFields = new()
+    public static PatternFieldMap<ArazzoComponent> GetComponentPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
-
-    public static IArazzoInput? LoadSchema(JsonNode node, ParsingContext context)
-    {
-        if (node is JsonObject jsonObject &&
-            jsonObject.TryGetPropertyValue("$ref", out var reference)
-            && reference is JsonValue referenceValue
-            && referenceValue.TryGetValue<string>(out var referenceString)
-            && !string.IsNullOrEmpty(referenceString))
-        {
-            var hostDocument = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
-            var inputReference = new ArazzoInputReference(GetReferenceId(referenceString), hostDocument, GetExternalResource(referenceString));
-            inputReference.SetMetadataFromJsonObject(jsonObject);
-            inputReference.Reference.EnsureHostDocumentIsSet(hostDocument ?? new ArazzoDocument());
-            inputReference.Reference.SetJsonPointerPath(referenceString, context.GetLocation());
-            return inputReference;
-        }
-
-        var jsonReader = new OpenApiJsonReader();
-        var schema = jsonReader.ReadFragment<OpenApiSchema>(node, OpenApiSpecVersion.OpenApi3_2, new(), out var _);
-        var host = context.GetFromTempStorage<ArazzoDocument>("CurrentDocument");
-        return schema is OpenApiSchema openApiSchema ? ArazzoInput.ConvertFromOpenApiSchema(openApiSchema, host) : null;
-    }
+    public static readonly PatternFieldMap<ArazzoComponent> ComponentPatternFields = GetComponentPatternFields();
 
     internal static string GetReferenceId(string referenceString)
     {
@@ -150,10 +129,15 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoComponent LoadComponent(JsonNode node, ParsingContext context)
     {
-        var mapNode = node.CheckMapNode("Component", context);
+        return LoadComponentInternal(node, context, ComponentFixedFields, ComponentPatternFields);
+    }
+
+    public static ArazzoComponent LoadComponentInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoComponent> componentFixedFields, PatternFieldMap<ArazzoComponent> componentPatternFields)
+    {
+        var mapNode = node.CheckMapNode(nameof(ArazzoComponent), context);
         var component = new ArazzoComponent();
 
-        mapNode.ParseMap(component, ComponentFixedFields, ComponentPatternFields, context);
+        mapNode.ParseMap(component, componentFixedFields, componentPatternFields, context);
 
         return component;
     }

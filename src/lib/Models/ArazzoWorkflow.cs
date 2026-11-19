@@ -51,9 +51,9 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
     public IList<IArazzoFailureAction>? FailureActions { get; set; }
 
     /// <summary>
-    /// Gets or sets the outputs dictionary.
+    /// Gets or sets output values as runtime expressions or selector objects.
     /// </summary>
-    public IDictionary<string, string>? Outputs { get; set; }
+    public IDictionary<string, ArazzoOutputValueUnion>? Outputs { get; set; }
 
     /// <summary>
     /// Gets or sets the list of workflow parameters.
@@ -71,6 +71,20 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
     /// <param name="writer">The OpenAPI writer to use for serialization.</param>
     public void SerializeAsV1(IOpenApiWriter writer)
     {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_0, static (w, obj) => obj.SerializeAsV1(w));
+    }
+
+    /// <summary>
+    /// Serializes the workflow as an OpenAPI Arazzo v1.1.0 JSON object.
+    /// </summary>
+    /// <param name="writer">The OpenAPI writer to use for serialization.</param>
+    public void SerializeAsV1_1(IOpenApiWriter writer)
+    {
+        SerializeInternal(writer, ArazzoSpecVersion.Arazzo1_1, static (w, obj) => obj.SerializeAsV1_1(w));
+    }
+
+    private void SerializeInternal(IOpenApiWriter writer, ArazzoSpecVersion specVersion, Action<IOpenApiWriter, IArazzoSerializable> callback)
+    {
         ArgumentNullException.ThrowIfNull(writer);
 
         ArgumentException.ThrowIfNullOrEmpty(WorkflowId);
@@ -81,7 +95,6 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         ValidateUniqueStepIds();
         ValidateWorkflowParameters();
         ValidateActions();
-        ArazzoRuntimeExpressionValidator.ValidateSerializationExpressions(Outputs, $"{nameof(ArazzoWorkflow)}.{nameof(Outputs)}");
 
         writer.WriteStartObject();
         writer.WriteProperty(ArazzoConstants.ArazzoWorkflowWorkflowId, WorkflowId);
@@ -89,29 +102,29 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         writer.WriteProperty(ArazzoConstants.ArazzoWorkflowDescription, Description);
 
         // Write inputs
-        writer.WriteOptionalObject(ArazzoConstants.ArazzoWorkflowInputs, Inputs, static (w, i) => i.SerializeAsV1(w));
+        writer.WriteOptionalObject(ArazzoConstants.ArazzoWorkflowInputs, Inputs, callback);
 
         // Write dependsOn
         writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowDependsOn, DependsOn, static (w, d) => w.WriteValue(d!));
 
         // Write steps
-        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowSteps, Steps, static (w, s) => s.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowSteps, Steps, callback);
 
         // Write success actions
-        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowSuccessActions, SuccessActions, static (w, a) => a.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowSuccessActions, SuccessActions, callback);
 
         // Write failure actions
-        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowFailureActions, FailureActions, static (w, a) => a.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowFailureActions, FailureActions, callback);
 
         ArazzoKeyValidator.ValidateSerializationKeys(Outputs?.Keys, $"{nameof(ArazzoWorkflow)}.{nameof(Outputs)}");
 
         // Write outputs
-        writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowOutputs, Outputs, static (w, s) => w.WriteValue(s));
+        writer.WriteOptionalMap(ArazzoConstants.ArazzoWorkflowOutputs, Outputs, callback);
 
         // Write parameters
-        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowParameters, Parameters, static (w, p) => p.SerializeAsV1(w));
+        writer.WriteOptionalCollection(ArazzoConstants.ArazzoWorkflowParameters, Parameters, callback);
 
-        writer.WriteArazzoExtensions(Extensions, ArazzoSpecVersion.Arazzo1_0);
+        writer.WriteArazzoExtensions(Extensions, specVersion);
         writer.WriteEndObject();
     }
 
@@ -132,8 +145,16 @@ public class ArazzoWorkflow : IArazzoSerializable, IArazzoExtensible
         ArazzoParameterValidator.ValidateSerializationParameters(
             Parameters,
             $"{nameof(ArazzoWorkflow)} '{WorkflowId}'",
-            Steps?.Any(static step => !string.IsNullOrEmpty(step.OperationId) || !string.IsNullOrEmpty(step.OperationPath)) == true,
+            Steps?.Any(static step => step.IsOperationTargeted()) == true,
             "when applied to an operation step");
+
+        foreach (var step in Steps ?? [])
+        {
+            if (ArazzoParameterValidator.GetInheritedQueryLocationError(Parameters, step.Parameters, $"{nameof(ArazzoWorkflow)} '{WorkflowId}' step '{step.StepId}'") is string error)
+            {
+                throw new ArazzoSerializationException(error);
+            }
+        }
     }
 
     private void ValidateActions()

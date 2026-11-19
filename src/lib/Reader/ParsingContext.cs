@@ -4,6 +4,7 @@
 using System.Text.Json.Nodes;
 
 using BinkyLabs.OpenApi.Arazzo.Reader.V1;
+using BinkyLabs.OpenApi.Arazzo.Reader.V1_1;
 using BinkyLabs.OpenApi.Arazzo.Validation;
 
 using Microsoft.OpenApi;
@@ -52,6 +53,7 @@ public class ParsingContext
         Diagnostic = diagnostic;
     }
     private static readonly string[] ArazzoV1Versions = ["1.0.0", "1.0.1"];
+    private const string ArazzoV1_1Version = "1.1.0";
 
     /// <summary>
     /// Initiates the parsing process.  Not thread safe and should only be called once on a parsing context
@@ -69,10 +71,16 @@ public class ParsingContext
 
         switch (inputVersion)
         {
-            case string version when IsArazzoV1Version(version):
+            case string version when IsArazzoV1_0Version(version):
                 VersionService = new ArazzoV1VersionService(Diagnostic);
-                doc = VersionService.LoadDocument(jsonNode, location, this);
                 this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_0;
+                doc = VersionService.LoadDocument(jsonNode, location, this);
+                ValidateRequiredFields(doc, version);
+                break;
+            case string version when IsArazzoV1_1Version(version):
+                VersionService = new ArazzoV1_1VersionService(Diagnostic);
+                this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_1;
+                doc = VersionService.LoadDocument(jsonNode, location, this);
                 ValidateRequiredFields(doc, version);
                 break;
 
@@ -81,6 +89,11 @@ public class ParsingContext
         }
 
         return doc;
+    }
+
+    private static bool IsArazzoV1_1Version(string version)
+    {
+        return ArazzoV1_1Version.Equals(version, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -97,6 +110,12 @@ public class ParsingContext
         {
             case ArazzoSpecVersion.Arazzo1_0:
                 VersionService = new ArazzoV1VersionService(Diagnostic);
+                this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_0;
+                element = this.VersionService.LoadElement<T>(jsonNode, this);
+                break;
+            case ArazzoSpecVersion.Arazzo1_1:
+                VersionService = new ArazzoV1_1VersionService(Diagnostic);
+                this.Diagnostic.SpecificationVersion = ArazzoSpecVersion.Arazzo1_1;
                 element = this.VersionService.LoadElement<T>(jsonNode, this);
                 break;
             default:
@@ -128,7 +147,7 @@ public class ParsingContext
         return version;
     }
 
-    private static bool IsArazzoV1Version(string version)
+    private static bool IsArazzoV1_0Version(string version)
     {
         return ArazzoV1Versions.Any(supportedVersion => supportedVersion.Equals(version, StringComparison.OrdinalIgnoreCase));
     }
@@ -255,7 +274,7 @@ public class ParsingContext
 
     private void ValidateRequiredFields(ArazzoDocument doc, string version)
     {
-        if (IsArazzoV1Version(version) && JsonNode is not null)
+        if ((IsArazzoV1_0Version(version) || IsArazzoV1_1Version(version)) && JsonNode is not null)
         {
             if (doc.Info == null)
             {
@@ -349,12 +368,12 @@ public class ParsingContext
                 var referenceCount = step.CountTargetFields();
                 if (referenceCount > 1)
                 {
-                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' can define only one of operationId, operationPath, or workflowId."));
+                    Diagnostic.Errors.Add(new OpenApiError("", ArazzoStep.GetMultipleTargetFieldsError($"Workflow '{workflow.WorkflowId}' step '{step.StepId}'", Diagnostic.SpecificationVersion)));
                 }
 
                 if (referenceCount == 0)
                 {
-                    Diagnostic.Errors.Add(new OpenApiError("", $"Workflow '{workflow.WorkflowId}' step '{step.StepId}' must define exactly one of operationId, operationPath, or workflowId."));
+                    Diagnostic.Errors.Add(new OpenApiError("", ArazzoStep.GetMissingTargetFieldError($"Workflow '{workflow.WorkflowId}' step '{step.StepId}'", Diagnostic.SpecificationVersion)));
                 }
 
                 if (step.RequestBody is not null && !step.CanHaveRequestBody())
@@ -409,11 +428,16 @@ public class ParsingContext
 
         foreach (var workflow in doc.Workflows)
         {
-            ValidateParameterList(workflow.Parameters, $"Workflow '{workflow.WorkflowId}'", workflow.Steps?.Any(IsOperationTargetedStep) == true);
+            ValidateParameterList(workflow.Parameters, $"Workflow '{workflow.WorkflowId}'", workflow.Steps?.Any(static step => step.IsOperationTargeted()) == true);
 
             foreach (var step in workflow.Steps ?? [])
             {
-                ValidateParameterList(step.Parameters, $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'", IsOperationTargetedStep(step));
+                var elementName = $"Workflow '{workflow.WorkflowId}' step '{step.StepId}'";
+                ValidateParameterList(step.Parameters, elementName, step.IsOperationTargeted());
+                if (ArazzoParameterValidator.GetInheritedQueryLocationError(workflow.Parameters, step.Parameters, elementName) is string error)
+                {
+                    Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));
+                }
             }
         }
     }
@@ -424,8 +448,16 @@ public class ParsingContext
         {
             Diagnostic.Errors.Add(new OpenApiError(string.Empty, error));
         }
-    }
 
-    private static bool IsOperationTargetedStep(ArazzoStep step) =>
-        !string.IsNullOrEmpty(step.OperationId) || !string.IsNullOrEmpty(step.OperationPath);
+        foreach (var error in parameters?
+                                .OfType<ArazzoParameterReference>()
+                                .Select(ArazzoParameterValidator.GetQueryStringValueError)
+                                .Where(x => x is not null)
+                                .Cast<string>()
+                                .Select(x => new OpenApiError(string.Empty, x))
+                                ?? [])
+        {
+            Diagnostic.Errors.Add(error);
+        }
+    }
 }

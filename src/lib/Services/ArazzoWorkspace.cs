@@ -13,10 +13,15 @@ internal class ArazzoWorkspace
     private readonly Dictionary<Uri, IArazzoReferenceable> _componentRegistry = new(new UriWithFragmentEqualityComparer());
     private readonly Dictionary<Uri, IArazzoInput> _inputRegistry = new(new UriWithFragmentEqualityComparer());
     private readonly Dictionary<string, SourceDescriptionRegistration> _sourceDescriptionRegistry = new(StringComparer.Ordinal);
-    private readonly Dictionary<Uri, HashSet<string>> _openApiOperationPointers = new(new UriWithFragmentEqualityComparer());
-    private readonly Dictionary<Uri, Dictionary<string, int>> _openApiOperationIdCounts = new(new UriWithFragmentEqualityComparer());
+    private readonly Dictionary<Uri, OpenApiOperationIndex> _openApiOperationIndexes = new(new UriWithFragmentEqualityComparer());
+    private readonly Dictionary<Uri, ArazzoDocument> _arazzoDocuments = new(new UriWithFragmentEqualityComparer());
+    private readonly Dictionary<BaseArazzoReference, Uri> _inputReferenceBaseUris = new();
 
     internal readonly record struct SourceDescriptionRegistration(Uri Uri, ArazzoDescriptionType? Type);
+    private sealed record OpenApiOperationIndex(
+        IReadOnlyDictionary<string, IReadOnlyList<IOpenApiParameter>> ByPointer,
+        IReadOnlyDictionary<string, OperationIdEntry> ById);
+    private readonly record struct OperationIdEntry(int Count, IReadOnlyList<IOpenApiParameter>? UniqueParameters);
 
     private sealed class UriWithFragmentEqualityComparer : IEqualityComparer<Uri>
     {
@@ -91,14 +96,18 @@ internal class ArazzoWorkspace
             _sourceDescriptionRegistry[pair.Key] = pair.Value;
         }
 
-        foreach (var pair in workspace._openApiOperationPointers)
+        foreach (var pair in workspace._openApiOperationIndexes)
         {
-            _openApiOperationPointers[pair.Key] = new HashSet<string>(pair.Value, StringComparer.Ordinal);
+            _openApiOperationIndexes[pair.Key] = pair.Value;
         }
 
-        foreach (var pair in workspace._openApiOperationIdCounts)
+        foreach (var pair in workspace._arazzoDocuments)
         {
-            _openApiOperationIdCounts[pair.Key] = new Dictionary<string, int>(pair.Value, StringComparer.Ordinal);
+            _arazzoDocuments[pair.Key] = pair.Value;
+        }
+        foreach (var pair in workspace._inputReferenceBaseUris)
+        {
+            _inputReferenceBaseUris[pair.Key] = pair.Value;
         }
     }
 
@@ -118,6 +127,7 @@ internal class ArazzoWorkspace
     {
         ArgumentNullException.ThrowIfNull(document);
 
+        RegisterArazzoDocument(document.BaseUri, document);
         RegisterSourceDescriptions(document);
 
         if (document.Workflows is not null)
@@ -178,50 +188,57 @@ internal class ArazzoWorkspace
         ArgumentNullException.ThrowIfNull(document);
 
         var documentUriWithoutFragment = WithoutFragment(documentUri);
-        var operationPointers = _openApiOperationPointers.GetValueOrDefault(documentUriWithoutFragment);
-        if (operationPointers is null)
-        {
-            operationPointers = new HashSet<string>(StringComparer.Ordinal);
-            _openApiOperationPointers[documentUriWithoutFragment] = operationPointers;
-        }
-
-        var operationIdCounts = _openApiOperationIdCounts.GetValueOrDefault(documentUriWithoutFragment);
-        if (operationIdCounts is null)
-        {
-            operationIdCounts = new Dictionary<string, int>(StringComparer.Ordinal);
-            _openApiOperationIdCounts[documentUriWithoutFragment] = operationIdCounts;
-        }
+        AddDocumentId(documentUriWithoutFragment.AbsoluteUri, documentUriWithoutFragment);
+        var byPointer = new Dictionary<string, IReadOnlyList<IOpenApiParameter>>(StringComparer.Ordinal);
+        var byId = new Dictionary<string, OperationIdEntry>(StringComparer.Ordinal);
 
         foreach (var path in document.Paths ?? [])
         {
             foreach (var operation in path.Value.Operations ?? [])
             {
-                operationPointers.Add(ArazzoStep.BuildOperationPointer(path.Key, operation.Key.Method));
-                if (!string.IsNullOrEmpty(operation.Value.OperationId))
+                var pointer = ArazzoStep.BuildOperationPointer(path.Key, operation.Key.Method);
+                var parameters = (path.Value.Parameters ?? []).Concat(operation.Value.Parameters ?? [])
+                    .GroupBy(static parameter => (parameter.Name, parameter.In))
+                    .Select(static group => group.Last()).ToArray();
+                byPointer[pointer] = parameters;
+                if (operation.Value.OperationId is { Length: > 0 } id)
                 {
-                    operationIdCounts[operation.Value.OperationId] = operationIdCounts.GetValueOrDefault(operation.Value.OperationId) + 1;
+                    byId[id] = byId.TryGetValue(id, out var entry)
+                        ? new(entry.Count + 1, null)
+                        : new(1, parameters);
                 }
             }
         }
+
+        _openApiOperationIndexes[documentUriWithoutFragment] = new(byPointer, byId);
     }
 
     internal bool IsOpenApiDocumentLoaded(Uri documentUri)
     {
-        return _openApiOperationPointers.ContainsKey(WithoutFragment(documentUri));
+        return _openApiOperationIndexes.ContainsKey(WithoutFragment(documentUri));
+    }
+
+    internal IReadOnlyList<IOpenApiParameter>? GetOpenApiOperationParameters(Uri documentUri, string identifier, bool isPointer)
+    {
+        if (!_openApiOperationIndexes.TryGetValue(WithoutFragment(documentUri), out var operations))
+            return null;
+
+        return isPointer
+            ? operations.ByPointer.GetValueOrDefault(NormalizeFragment(identifier))
+            : operations.ById.GetValueOrDefault(identifier).UniqueParameters;
     }
 
     internal bool ContainsOpenApiOperationPointer(Uri documentUri, string pointer)
     {
-        return _openApiOperationPointers.TryGetValue(WithoutFragment(documentUri), out var operationPointers) &&
-            operationPointers.Contains(NormalizeFragment(pointer));
+        return _openApiOperationIndexes.TryGetValue(WithoutFragment(documentUri), out var operations) &&
+            operations.ByPointer.ContainsKey(NormalizeFragment(pointer));
     }
 
     internal int CountOpenApiOperationId(Uri documentUri, string operationId)
     {
-        return _openApiOperationIdCounts.TryGetValue(WithoutFragment(documentUri), out var operationIdCounts) &&
-            operationIdCounts.TryGetValue(operationId, out var count)
-                ? count
-                : 0;
+        return _openApiOperationIndexes.TryGetValue(WithoutFragment(documentUri), out var operations)
+            ? operations.ById.GetValueOrDefault(operationId).Count
+            : 0;
     }
 
     internal void RegisterSourceDescriptions(ArazzoDocument document)
@@ -246,9 +263,61 @@ internal class ArazzoWorkspace
         return _sourceDescriptionRegistry.TryGetValue(name, out registration);
     }
 
-    internal IEnumerable<SourceDescriptionRegistration> GetSourceDescriptions()
+    internal bool TryGetSourceDescription(ArazzoDocument document, string name, out SourceDescriptionRegistration registration)
     {
-        return _sourceDescriptionRegistry.Values;
+        var source = document.SourceDescriptions?.FirstOrDefault(source => source.Name == name && source.Url is not null);
+        if (source?.Url is null)
+        {
+            registration = default;
+            return false;
+        }
+
+        registration = new SourceDescriptionRegistration(new Uri(document.BaseUri, source.Url), source.Type);
+        return true;
+    }
+
+    internal IEnumerable<SourceDescriptionRegistration> GetSourceDescriptions(ArazzoDocument document)
+    {
+        return (document.SourceDescriptions ?? [])
+            .Where(static source => !string.IsNullOrEmpty(source.Name) && source.Url is not null)
+            .Select(source => new SourceDescriptionRegistration(new Uri(document.BaseUri, source.Url!), source.Type));
+    }
+
+    internal void RegisterArazzoDocument(Uri documentUri, ArazzoDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(documentUri);
+        ArgumentNullException.ThrowIfNull(document);
+
+        var retrievalUri = WithoutFragment(documentUri);
+        var canonicalUri = WithoutFragment(document.BaseUri);
+        _arazzoDocuments[retrievalUri] = document;
+        _arazzoDocuments[canonicalUri] = document;
+
+        if (!StringComparer.Ordinal.Equals(retrievalUri.AbsoluteUri, canonicalUri.AbsoluteUri))
+        {
+            foreach (var key in _documentsIdRegistry
+                .Where(pair => StringComparer.Ordinal.Equals(pair.Value.AbsoluteUri, retrievalUri.AbsoluteUri))
+                .Select(static pair => pair.Key).ToArray())
+            {
+                _documentsIdRegistry[key] = canonicalUri;
+            }
+        }
+        _documentsIdRegistry[retrievalUri.AbsoluteUri] = canonicalUri;
+    }
+
+    internal bool TryGetArazzoDocument(Uri documentUri, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out ArazzoDocument? document)
+    {
+        return _arazzoDocuments.TryGetValue(WithoutFragment(documentUri), out document);
+    }
+
+    internal IEnumerable<ArazzoDocument> GetArazzoDocuments()
+    {
+        return _arazzoDocuments.Values.Distinct();
+    }
+
+    internal Uri? GetInputReferenceBaseUri(BaseArazzoReference reference)
+    {
+        return _inputReferenceBaseUris.GetValueOrDefault(reference);
     }
 
     /// <summary>
@@ -310,8 +379,13 @@ internal class ArazzoWorkspace
         ArgumentException.ThrowIfNullOrEmpty(location);
         ArgumentNullException.ThrowIfNull(input);
 
-        RegisterComponent(location, input);
-        RegisterNestedInputs(input, location.Contains('#', StringComparison.Ordinal) ? location : $"{location}#");
+        RegisterInputTree(input, location);
+        var uri = ToLocationUrl(location);
+        if (uri is not null && string.IsNullOrEmpty(uri.Fragment) &&
+            input is not ArazzoInputReference && !string.IsNullOrEmpty(input.Id))
+        {
+            _documentsIdRegistry[uri.AbsoluteUri] = new Uri(uri, input.Id);
+        }
     }
 
     /// <summary>
@@ -386,10 +460,22 @@ internal class ArazzoWorkspace
             return registeredInput;
         }
 
+        var decodedFragment = Uri.UnescapeDataString(uri.Fragment.TrimStart('#'));
+        if (decodedFragment.Length > 0 && !decodedFragment.StartsWith("/", StringComparison.Ordinal))
+        {
+            var anchorUri = new UriBuilder(uri) { Fragment = decodedFragment }.Uri;
+            return _inputRegistry.GetValueOrDefault(anchorUri);
+        }
+
         var pathSegments = uri.Fragment.TrimStart('#').Split(['/'], StringSplitOptions.RemoveEmptyEntries);
         if (pathSegments.Length == 0)
         {
-            return default;
+            return uri.Fragment is "" or "#" ? _inputRegistry.GetValueOrDefault(WithoutFragment(uri)) : null;
+        }
+
+        if (_inputRegistry.TryGetValue(WithoutFragment(uri), out var resource))
+        {
+            return ResolveSubSchema(resource, pathSegments, []);
         }
 
         if (pathSegments.Length >= 3 &&
@@ -501,25 +587,37 @@ internal class ArazzoWorkspace
         return null;
     }
 
-    private void RegisterInputTree(IArazzoInput input, string location)
+    private void RegisterInputTree(IArazzoInput input, string location, Uri? baseUri = null)
     {
         RegisterComponent(location, input);
+        baseUri ??= WithoutFragment(ToLocationUrl(location)!);
 
-        if (input is not ArazzoInputReference && !string.IsNullOrEmpty(input.Id))
+        if (input is ArazzoInputReference reference)
         {
-            RegisterComponent(location: ResolveIdentifierLocation(location, input.Id!), component: input);
+            _inputReferenceBaseUris[reference.Reference] = baseUri;
+            return;
         }
 
-        RegisterNestedInputs(input, location);
+        if (!string.IsNullOrEmpty(input.Id))
+        {
+            baseUri = new Uri(baseUri, input.Id);
+            RegisterComponent(baseUri.AbsoluteUri, input);
+        }
+        if (!string.IsNullOrEmpty(input.Anchor))
+        {
+            RegisterComponent(new UriBuilder(baseUri) { Fragment = input.Anchor }.Uri.AbsoluteUri, input);
+        }
+
+        RegisterNestedInputs(input, location.Contains('#', StringComparison.Ordinal) ? location : $"{location}#", baseUri);
     }
 
-    private void RegisterNestedInputs(IArazzoInput input, string location)
+    private void RegisterNestedInputs(IArazzoInput input, string location, Uri baseUri)
     {
         if (input.Definitions is not null)
         {
             foreach (var pair in input.Definitions)
             {
-                RegisterInputTree(pair.Value, $"{location}/$defs/{pair.Key}");
+                RegisterInputTree(pair.Value, $"{location}/$defs/{pair.Key}", baseUri);
             }
         }
 
@@ -527,7 +625,7 @@ internal class ArazzoWorkspace
         {
             foreach (var pair in input.Properties)
             {
-                RegisterInputTree(pair.Value, $"{location}/{OpenApiConstants.Properties}/{pair.Key}");
+                RegisterInputTree(pair.Value, $"{location}/{OpenApiConstants.Properties}/{pair.Key}", baseUri);
             }
         }
 
@@ -535,17 +633,28 @@ internal class ArazzoWorkspace
         {
             foreach (var pair in input.PatternProperties)
             {
-                RegisterInputTree(pair.Value, $"{location}/{OpenApiConstants.PatternProperties}/{pair.Key}");
+                RegisterInputTree(pair.Value, $"{location}/{OpenApiConstants.PatternProperties}/{pair.Key}", baseUri);
             }
         }
 
-        RegisterNestedInput(input.Items, $"{location}/{OpenApiConstants.Items}");
-        RegisterNestedInput(input.AdditionalProperties, $"{location}/{OpenApiConstants.AdditionalProperties}");
-        RegisterNestedInput(input.UnevaluatedPropertiesSchema, $"{location}/{OpenApiConstants.UnevaluatedProperties}");
-        RegisterNestedInput(input.Not, $"{location}/{OpenApiConstants.Not}");
-        RegisterNestedInputList(input.AllOf, $"{location}/{OpenApiConstants.AllOf}");
-        RegisterNestedInputList(input.AnyOf, $"{location}/{OpenApiConstants.AnyOf}");
-        RegisterNestedInputList(input.OneOf, $"{location}/{OpenApiConstants.OneOf}");
+        foreach (var pair in input.DependentSchemas ?? Enumerable.Empty<KeyValuePair<string, IArazzoInput>>())
+        {
+            RegisterInputTree(pair.Value, $"{location}/dependentSchemas/{pair.Key}", baseUri);
+        }
+
+        RegisterNestedInput(input.Items, $"{location}/{OpenApiConstants.Items}", baseUri);
+        RegisterNestedInput(input.AdditionalProperties, $"{location}/{OpenApiConstants.AdditionalProperties}", baseUri);
+        RegisterNestedInput(input.UnevaluatedPropertiesSchema, $"{location}/{OpenApiConstants.UnevaluatedProperties}", baseUri);
+        RegisterNestedInput(input.Not, $"{location}/{OpenApiConstants.Not}", baseUri);
+        RegisterNestedInput(input.Contains, $"{location}/contains", baseUri);
+        RegisterNestedInput(input.ContentSchema, $"{location}/contentSchema", baseUri);
+        RegisterNestedInput(input.PropertyNames, $"{location}/propertyNames", baseUri);
+        RegisterNestedInput(input.If, $"{location}/if", baseUri);
+        RegisterNestedInput(input.Then, $"{location}/then", baseUri);
+        RegisterNestedInput(input.Else, $"{location}/else", baseUri);
+        RegisterNestedInputList(input.AllOf, $"{location}/{OpenApiConstants.AllOf}", baseUri);
+        RegisterNestedInputList(input.AnyOf, $"{location}/{OpenApiConstants.AnyOf}", baseUri);
+        RegisterNestedInputList(input.OneOf, $"{location}/{OpenApiConstants.OneOf}", baseUri);
     }
 
     private void RegisterNestedWorkflowInput(ArazzoWorkflow workflow, string location)
@@ -558,15 +667,15 @@ internal class ArazzoWorkspace
         }
     }
 
-    private void RegisterNestedInput(IArazzoInput? input, string location)
+    private void RegisterNestedInput(IArazzoInput? input, string location, Uri baseUri)
     {
         if (input is not null)
         {
-            RegisterInputTree(input, location);
+            RegisterInputTree(input, location, baseUri);
         }
     }
 
-    private void RegisterNestedInputList(IList<IArazzoInput>? inputs, string location)
+    private void RegisterNestedInputList(IList<IArazzoInput>? inputs, string location, Uri baseUri)
     {
         if (inputs is null)
         {
@@ -575,23 +684,8 @@ internal class ArazzoWorkspace
 
         for (var index = 0; index < inputs.Count; index++)
         {
-            RegisterInputTree(inputs[index], $"{location}/{index}");
+            RegisterInputTree(inputs[index], $"{location}/{index}", baseUri);
         }
-    }
-
-    private string ResolveIdentifierLocation(string currentLocation, string identifier)
-    {
-        if (Uri.TryCreate(identifier, UriKind.Absolute, out var absoluteIdentifier))
-        {
-            return absoluteIdentifier.AbsoluteUri;
-        }
-
-        if (BaseUrl is not null && Uri.TryCreate(BaseUrl, identifier, out var relativeIdentifier))
-        {
-            return relativeIdentifier.AbsoluteUri;
-        }
-
-        return new Uri(ToLocationUrl(currentLocation)!, identifier).AbsoluteUri;
     }
 
     private Uri? ToLocationUrl(string location)

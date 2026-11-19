@@ -41,6 +41,9 @@ public class ArazzoSuccessActionReference : BaseArazzoReferenceHolder<ArazzoSucc
     public IList<ArazzoCriterion>? Criteria => Target?.Criteria;
 
     /// <inheritdoc />
+    public IList<IArazzoParameter>? Parameters => Target?.Parameters;
+
+    /// <inheritdoc />
     public ArazzoSuccessType? Type => Target?.Type;
 
     /// <inheritdoc />

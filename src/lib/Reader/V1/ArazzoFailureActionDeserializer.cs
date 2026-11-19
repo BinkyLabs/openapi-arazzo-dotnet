@@ -46,16 +46,26 @@ internal static partial class ArazzoV1Deserializer
                 c.Diagnostic.Errors.Add(new OpenApiError($"{c.GetLocation()}/{ArazzoConstants.ArazzoFailureActionRetryLimit}", $"{nameof(ArazzoFailureAction)} retryLimit must be a non-negative integer. Invalid value: '{value}'."));
             }
         } },
-        { ArazzoConstants.ArazzoResultActionCriteria, static (o, v, c) => o.Criteria = v.CreateList(LoadCriterion, c) }
+        { ArazzoConstants.ArazzoResultActionCriteria, static (o, v, c) => o.Criteria = v.CreateList(LoadCriterion, c) },
+        { ArazzoConstants.GetArazzo1_0ExtensionName(ArazzoConstants.ArazzoResultActionParameters), static (o, v, c) => o.Parameters = v.CreateList<IArazzoParameter>(LoadParameter, c) }
     };
 
-    public static readonly PatternFieldMap<ArazzoFailureAction> FailureActionPatternFields = new()
+    public static PatternFieldMap<ArazzoFailureAction> GetFailureActionPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoFailureAction> FailureActionPatternFields = GetFailureActionPatternFields();
 
-    public static IArazzoFailureAction LoadFailureAction(JsonNode node, ParsingContext context)
+    public static IArazzoFailureAction LoadFailureAction(JsonNode node, ParsingContext context) =>
+        LoadFailureActionInternal(node, context, LoadFailureActionObject);
+
+    internal static IArazzoFailureAction LoadFailureActionInternal(JsonNode node, ParsingContext context, Func<JsonNode, ParsingContext, ArazzoFailureAction> loadObject)
     {
+        if (node is JsonObject map && map.ContainsKey(ArazzoConstants.ArazzoReusableObjectReference) &&
+            (map.ContainsKey(ArazzoConstants.ArazzoResultActionName) || map.ContainsKey(ArazzoConstants.ArazzoResultActionType)))
+            throw new ArazzoReaderException("A failure action must be either a Failure Action Object or a Reusable Object, not both.", context);
+
         if (TryGetReferenceObject(node, out _, out var referenceString))
         {
             return CreateLocalReusableReference(
@@ -66,14 +76,19 @@ internal static partial class ArazzoV1Deserializer
                 static (referenceId, hostDocument) => new ArazzoFailureActionReference(referenceId, hostDocument));
         }
 
-        return LoadFailureActionObject(node, context);
+        return loadObject(node, context);
     }
 
     public static ArazzoFailureAction LoadFailureActionObject(JsonNode node, ParsingContext context)
     {
-        var mapNode = node.CheckMapNode("FailureAction", context);
+        return LoadFailureActionObjectInternal(node, context, FailureActionFixedFields, FailureActionPatternFields);
+    }
+
+    public static ArazzoFailureAction LoadFailureActionObjectInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoFailureAction> failureActionFixedFields, PatternFieldMap<ArazzoFailureAction> failureActionPatternFields)
+    {
+        var mapNode = node.CheckMapNode(nameof(ArazzoFailureAction), context);
         var failureAction = new ArazzoFailureAction();
-        mapNode.ParseMap(failureAction, FailureActionFixedFields, FailureActionPatternFields, context);
+        mapNode.ParseMap(failureAction, failureActionFixedFields, failureActionPatternFields, context);
         ArazzoFailureActionValidator.ValidateDeserialization(failureAction, context);
 
         return failureAction;

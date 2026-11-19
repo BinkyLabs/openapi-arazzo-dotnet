@@ -20,7 +20,7 @@ public class ArazzoRuntimeExpressionValidatorTests
     [InlineData("$response.body#/~01")]
     [InlineData("$response.body#/foo/0")]
     [InlineData("$response.body")]
-    [InlineData("$response.headers.Location")]
+    [InlineData("$response.header.Location")]
     [InlineData("$inputs.username")]
     [InlineData("$outputs.bar")]
     [InlineData("$steps.someStepId.outputs.pets#/0/id")]
@@ -30,7 +30,53 @@ public class ArazzoRuntimeExpressionValidatorTests
     [InlineData("$components.successActions.notify")]
     public void IsRuntimeExpression_WithValidExpression_ReturnsTrue(string expression)
     {
-        Assert.True(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression));
+        Assert.True(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression, ArazzoSpecVersion.Arazzo1_0));
+        Assert.True(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression, ArazzoSpecVersion.Arazzo1_1));
+    }
+
+    [Theory]
+    [InlineData("$message.payload#/orderId")]
+    [InlineData("$message.header.correlationId")]
+    [InlineData("$self")]
+    [InlineData("$response.payload#/orderId")]
+    public void IsRuntimeExpression_WithV1_1OnlyExpression_ReturnsVersionSpecificResult(string expression)
+    {
+        Assert.False(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression, ArazzoSpecVersion.Arazzo1_0));
+        Assert.True(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression, ArazzoSpecVersion.Arazzo1_1));
+    }
+
+    [Theory]
+    [InlineData("$steps.first")]
+    [InlineData("$steps.first.outputs")]
+    [InlineData("$inputs.bad name")]
+    [InlineData("$inputs.name#/bad~2")]
+    [InlineData("$workflows.workflow")]
+    [InlineData("$workflows.workflow.steps.first.outputs.id")]
+    [InlineData("$sourceDescriptions.source")]
+    [InlineData("$components.inputs.input")]
+    [InlineData("$response.headers.Location")]
+    [InlineData("$message.payload.orderId")]
+    [InlineData("$self\n")]
+    public void Arazzo1_1_RejectsMalformedGrammarAndLegacyExtensions(string expression)
+    {
+        Assert.False(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression, ArazzoSpecVersion.Arazzo1_1));
+    }
+
+    [Theory]
+    [InlineData("$steps.first.outputs.id#/a~1b/0")]
+    [InlineData("$inputs.user.name#")]
+    [InlineData("$workflows.workflow.inputs.user#/id")]
+    [InlineData("$sourceDescriptions.api.operation.with.dots")]
+    public void Arazzo1_1_AcceptsStructuredReferences(string expression)
+    {
+        Assert.True(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression, ArazzoSpecVersion.Arazzo1_1));
+    }
+
+    [Fact]
+    public void Arazzo1_0_RetainsLegacyExpressionCompatibility()
+    {
+        Assert.True(ArazzoRuntimeExpressionValidator.IsRuntimeExpression("$response.headers.Location", ArazzoSpecVersion.Arazzo1_0));
+        Assert.True(ArazzoRuntimeExpressionValidator.IsRuntimeExpression("$workflows.workflow", ArazzoSpecVersion.Arazzo1_0));
     }
 
     [Theory]
@@ -46,7 +92,8 @@ public class ArazzoRuntimeExpressionValidatorTests
     [InlineData("")]
     public void IsRuntimeExpression_WithInvalidExpression_ReturnsFalse(string expression)
     {
-        Assert.False(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression));
+        Assert.False(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression, ArazzoSpecVersion.Arazzo1_0));
+        Assert.False(ArazzoRuntimeExpressionValidator.IsRuntimeExpression(expression, ArazzoSpecVersion.Arazzo1_1));
     }
 
     [Theory]
@@ -55,7 +102,7 @@ public class ArazzoRuntimeExpressionValidatorTests
     [InlineData("$components.failureActions.retry", ReferenceType.FailureAction)]
     public void IsReusableObjectReference_WithMatchingComponentType_ReturnsTrue(string reference, ReferenceType referenceType)
     {
-        Assert.True(ArazzoReusableObjectReferenceValidator.IsReusableObjectReference(reference, referenceType));
+        Assert.True(ArazzoReusableObjectReferenceValidator.IsReusableObjectReference(reference, ArazzoSpecVersion.Arazzo1_0, referenceType));
     }
 
     [Theory]
@@ -64,7 +111,7 @@ public class ArazzoRuntimeExpressionValidatorTests
     [InlineData("$components.failureActions.retry")]
     public void IsReusableObjectReference_WithReusableComponentReference_ReturnsTrue(string reference)
     {
-        Assert.True(ArazzoReusableObjectReferenceValidator.IsReusableObjectReference(reference));
+        Assert.True(ArazzoReusableObjectReferenceValidator.IsReusableObjectReference(reference, ArazzoSpecVersion.Arazzo1_0));
     }
 
     [Theory]
@@ -75,6 +122,6 @@ public class ArazzoRuntimeExpressionValidatorTests
     [InlineData("external.json#$components.parameters.page", ReferenceType.Parameter)]
     public void IsReusableObjectReference_WithInvalidReference_ReturnsFalse(string reference, ReferenceType? referenceType)
     {
-        Assert.False(ArazzoReusableObjectReferenceValidator.IsReusableObjectReference(reference, referenceType));
+        Assert.False(ArazzoReusableObjectReferenceValidator.IsReusableObjectReference(reference, ArazzoSpecVersion.Arazzo1_0, referenceType));
     }
 }

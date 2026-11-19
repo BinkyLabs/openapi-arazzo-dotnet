@@ -1,0 +1,66 @@
+using System.Text.Json.Nodes;
+
+using BinkyLabs.OpenApi.Arazzo.Validation;
+
+using Microsoft.OpenApi;
+
+namespace BinkyLabs.OpenApi.Arazzo.Reader.V1;
+
+internal static partial class ArazzoV1Deserializer
+{
+    public static readonly FixedFieldMap<ArazzoSelector> SelectorFixedFields = new()
+    {
+        { ArazzoConstants.ArazzoSelectorContext, static (o, v, c) => o.Context = ArazzoRuntimeExpressionValidator.ParseDeserializationExpression(v.GetScalarValue(), c, $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Context)}") },
+        { ArazzoConstants.ArazzoSelectorSelector, static (o, v, c) => o.Selector = v.GetScalarValue() },
+        { ArazzoConstants.ArazzoSelectorType, static (o, v, c) => o.Type = LoadSelectorTypeUnion(v, c) }
+    };
+
+    public static ArazzoSelectorTypeUnion LoadSelectorTypeUnion(JsonNode node, ParsingContext context)
+    {
+        if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+            throw new ArazzoReaderException("Selector types are not supported in Arazzo 1.0.", context);
+        var type = LoadPayloadReplacementTargetSelectorType(node, context);
+        return new() { Type = type.Type, ExpressionType = type.ExpressionType };
+    }
+
+    public static PatternFieldMap<ArazzoSelector> GetSelectorPatternFields() =>
+    new()
+    {
+        { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
+    };
+
+    public static readonly PatternFieldMap<ArazzoSelector> SelectorPatternFields = GetSelectorPatternFields();
+
+    internal static ArazzoSelector LoadSelectorInternal(JsonNode node, ParsingContext context)
+    {
+        var mapNode = node.CheckMapNode(nameof(ArazzoSelector), context);
+        var selector = new ArazzoSelector();
+        mapNode.ParseMap(selector, SelectorFixedFields, SelectorPatternFields, context);
+        ValidateSelectorRequiredFields(selector, context);
+
+        return selector;
+    }
+
+    private static void ValidateSelectorRequiredFields(ArazzoSelector selector, ParsingContext context)
+    {
+        if (selector.Context is null)
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Context)} is a REQUIRED field."));
+        }
+
+        if (selector.Selector is null || selector.Selector.Length == 0 &&
+            !ArazzoSelectorSyntaxValidator.IsJsonPointer(selector.Type?.Type, selector.Type?.ExpressionType))
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Selector)} is a REQUIRED field."));
+        }
+
+        if (selector.Type is null)
+        {
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Type)} is a REQUIRED field."));
+        }
+        if (ArazzoSelectorSyntaxValidator.GetError(selector.Selector,
+            selector.Type?.Type, selector.Type?.ExpressionType,
+            $"{nameof(ArazzoSelector)}.{nameof(ArazzoSelector.Selector)}", context.Diagnostic.SpecificationVersion) is { } error)
+            context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
+    }
+}

@@ -7,6 +7,7 @@ COPY ./tests ./clia/tests
 COPY ./keyfile.snk ./clia/keyfile.snk
 COPY ./README.md ./clia/README.md
 COPY ./BinkyLabs.OpenAPI.Arazzo.slnx ./clia/BinkyLabs.OpenAPI.Arazzo.slnx
+COPY ./Directory.Packages.props ./clia/Directory.Packages.props
 WORKDIR /app/clia
 RUN if [ -z "$version_suffix" ]; then \
     dotnet publish ./src/tool/BinkyLabs.OpenApi.Arazzo.Cli.csproj -c Release -p:TreatWarningsAsErrors=false -f net11.0; \

@@ -40,6 +40,11 @@ internal static class ArazzoResultActionValidator
 
     private static IEnumerable<string> Validate<T>(ArazzoResultAction<T> action) where T : struct, Enum
     {
+        foreach (var error in ArazzoParameterValidator.ValidateActionParameters(action.Parameters, $"{action.GetType().Name} '{action.Name}'"))
+        {
+            yield return error;
+        }
+
         var workflowIdSpecified = !string.IsNullOrEmpty(action.WorkflowId);
         var stepIdSpecified = !string.IsNullOrEmpty(action.StepId);
         if (workflowIdSpecified && stepIdSpecified)

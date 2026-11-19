@@ -14,30 +14,56 @@ internal static partial class ArazzoRuntimeExpressionValidator
     private const string JsonPointerPattern = @"(?:/(?:[^~/]|~[01])*)*";
     private const string HeaderReferencePattern = @"headers?\." + TokenPattern;
     private const string BodyReferencePattern = @"body(?:#" + JsonPointerPattern + ")?";
-    private const string SourcePattern = @"(?:" + HeaderReferencePattern + @"|query\." + NamePattern + @"|path\." + NamePattern + @"|" + BodyReferencePattern + ")";
-    private const string RuntimeExpressionPattern =
-        @"^\$(?:url|method|statusCode|request\." + SourcePattern + @"|response\." + SourcePattern + @"|inputs\." + NamePattern +
+    private const string V1SourcePattern = @"(?:" + HeaderReferencePattern + @"|query\." + NamePattern + @"|path\." + NamePattern + @"|" + BodyReferencePattern + ")";
+    private const string V1RuntimeExpressionPattern =
+        @"^\$(?:url|method|statusCode|request\." + V1SourcePattern + @"|response\." + V1SourcePattern + @"|inputs\." + NamePattern +
         @"|outputs\." + NamePattern + @"|steps\." + NamePattern + @"|workflows\." + NamePattern + @"|sourceDescriptions\." + NamePattern +
         @"|components\.parameters\." + NamePattern + @"|components\." + NamePattern + @")$";
+    private const string IdentifierPattern = @"[A-Za-z0-9._-]+";
+    private const string StrictIdentifierPattern = @"[A-Za-z0-9_-]+";
+    private const string V1_1PointerPattern = @"(?:/(?:[^~/{}]|~[01])*)*";
+    private const string V1_1FragmentPattern = @"(?:#" + V1_1PointerPattern + @")?";
+    private const string V1_1CharacterPattern = @"[^{}\x00-\x1F]";
+    private const string V1_1SourcePattern = @"(?:header\." + TokenPattern + @"|(?:query|path)\." + V1_1CharacterPattern + @"*|(?:body|payload)" + V1_1FragmentPattern + ")";
+    private const string V1_1RuntimeExpressionPattern =
+        @"\A\$(?:url|method|statusCode|(?:request|response|message)\." + V1_1SourcePattern +
+        @"|(?:inputs|outputs)\." + IdentifierPattern + V1_1FragmentPattern +
+        @"|steps\." + StrictIdentifierPattern + @"\.outputs\." + IdentifierPattern + V1_1FragmentPattern +
+        @"|workflows\." + StrictIdentifierPattern + @"\.(?:inputs|outputs)\." + IdentifierPattern + V1_1FragmentPattern +
+        @"|sourceDescriptions\." + StrictIdentifierPattern + @"\." + V1_1CharacterPattern + @"+|components\.(?:parameters|successActions|failureActions)\." + IdentifierPattern + @"|self)\z";
 
-    [GeneratedRegex(RuntimeExpressionPattern, RegexOptions.CultureInvariant)]
-    private static partial Regex RuntimeExpressionRegex();
+    [GeneratedRegex(V1RuntimeExpressionPattern, RegexOptions.CultureInvariant)]
+    private static partial Regex V1RuntimeExpressionRegex();
+
+    [GeneratedRegex(V1_1RuntimeExpressionPattern, RegexOptions.CultureInvariant)]
+    private static partial Regex V1_1RuntimeExpressionRegex();
 
     [GeneratedRegex(@"\{(\$[^{}]+)\}", RegexOptions.CultureInvariant)]
     private static partial Regex BracedRuntimeExpressionRegex();
+
+    internal static IEnumerable<string> GetRuntimeExpressions(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            yield break;
+        if (value.StartsWith("$", StringComparison.Ordinal))
+            yield return value;
+        foreach (Match match in BracedRuntimeExpressionRegex().Matches(value))
+            yield return match.Groups[1].Value;
+    }
 
     /// <summary>
     /// Determines whether the supplied value matches the Arazzo runtime-expression ABNF translated to a regular expression.
     /// See <see href="https://spec.openapis.org/arazzo/v1.0.1.html#runtime-expressions">Runtime Expressions</see>.
     /// </summary>
     /// <param name="expression">The runtime expression to validate.</param>
+    /// <param name="specVersion">The Arazzo specification version whose runtime-expression grammar applies.</param>
     /// <returns><see langword="true"/> when the value matches the runtime-expression grammar; otherwise, <see langword="false"/>.</returns>
-    internal static bool IsRuntimeExpression(string? expression)
+    internal static bool IsRuntimeExpression(string? expression, ArazzoSpecVersion specVersion)
     {
-        return !string.IsNullOrEmpty(expression) && RuntimeExpressionRegex().IsMatch(expression);
+        return !string.IsNullOrEmpty(expression) && GetRuntimeExpressionRegex(specVersion).IsMatch(expression);
     }
 
-    internal static void ValidateSerializationExpressions(IEnumerable<KeyValuePair<string, string>>? expressions, string collectionName)
+    internal static void ValidateSerializationExpressions(IEnumerable<KeyValuePair<string, string>>? expressions, string collectionName, ArazzoSpecVersion specVersion)
     {
         if (expressions is null)
         {
@@ -46,24 +72,24 @@ internal static partial class ArazzoRuntimeExpressionValidator
 
         foreach (var (key, value) in expressions)
         {
-            if (!IsRuntimeExpression(value))
+            if (!IsRuntimeExpression(value, specVersion))
             {
                 throw new ArazzoSerializationException($"Values in {collectionName} must be valid runtime expressions. Invalid value for key '{key}': '{value}'.");
             }
         }
     }
 
-    internal static void ValidateSerializationExpression(string? expression, string elementName)
+    internal static void ValidateSerializationExpression(string? expression, string elementName, ArazzoSpecVersion specVersion)
     {
-        if (!string.IsNullOrEmpty(expression) && !IsRuntimeExpression(expression))
+        if (!string.IsNullOrEmpty(expression) && !IsRuntimeExpression(expression, specVersion))
         {
             throw new ArazzoSerializationException($"{elementName} must be a valid runtime expression. Invalid value: '{expression}'.");
         }
     }
 
-    internal static void ValidateSerializationExpressionStrings(JsonNode? node, string elementName)
+    internal static void ValidateSerializationExpressionStrings(JsonNode? node, string elementName, ArazzoSpecVersion specVersion)
     {
-        foreach (var error in ValidateExpressionStrings(node, elementName))
+        foreach (var error in ValidateExpressionStrings(node, elementName, specVersion))
         {
             throw new ArazzoSerializationException(error);
         }
@@ -78,30 +104,37 @@ internal static partial class ArazzoRuntimeExpressionValidator
 
         foreach (var (key, value) in expressions)
         {
-            if (!IsRuntimeExpression(value))
+            if (!IsRuntimeExpression(value, context.Diagnostic.SpecificationVersion))
             {
                 context.Diagnostic.Errors.Add(new OpenApiError($"{context.GetLocation()}/{EscapePointerSegment(key)}", $"Values in {collectionName} must be valid runtime expressions. Invalid value for key '{key}': '{value}'."));
             }
         }
     }
 
-    internal static void ValidateDeserializationExpression(string? expression, ParsingContext context, string elementName)
+    internal static ArazzoRuntimeExpression? ParseDeserializationExpression(string? expression, ParsingContext context, string elementName)
     {
-        if (!string.IsNullOrEmpty(expression) && !IsRuntimeExpression(expression))
+        if (expression is null || !IsRuntimeExpression(expression, context.Diagnostic.SpecificationVersion))
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), $"{elementName} must be a valid runtime expression. Invalid value: '{expression}'."));
+            return null;
         }
+
+        return new ArazzoRuntimeExpression(expression);
     }
+
+    internal static bool TryGetSelectorContext(JsonObject jsonObject, out JsonNode? selectorContext) =>
+        jsonObject.TryGetPropertyValue(ArazzoConstants.ArazzoSelectorContext, out selectorContext) &&
+        jsonObject.ContainsKey(ArazzoConstants.ArazzoSelectorSelector);
 
     internal static void ValidateDeserializationExpressionStrings(JsonNode? node, ParsingContext context, string elementName)
     {
-        foreach (var error in ValidateExpressionStrings(node, elementName))
+        foreach (var error in ValidateExpressionStrings(node, elementName, context.Diagnostic.SpecificationVersion))
         {
             context.Diagnostic.Errors.Add(new OpenApiError(context.GetLocation(), error));
         }
     }
 
-    private static IEnumerable<string> ValidateExpressionStrings(JsonNode? node, string elementName)
+    private static IEnumerable<string> ValidateExpressionStrings(JsonNode? node, string elementName, ArazzoSpecVersion specVersion)
     {
         if (node is null)
         {
@@ -110,7 +143,7 @@ internal static partial class ArazzoRuntimeExpressionValidator
 
         if (node is JsonValue value && value.TryGetValue<string>(out var stringValue))
         {
-            foreach (var error in ValidateExpressionString(stringValue, elementName))
+            foreach (var error in ValidateExpressionString(stringValue, elementName, specVersion))
             {
                 yield return error;
             }
@@ -121,7 +154,7 @@ internal static partial class ArazzoRuntimeExpressionValidator
         {
             foreach (var item in array)
             {
-                foreach (var error in ValidateExpressionStrings(item, elementName))
+                foreach (var error in ValidateExpressionStrings(item, elementName, specVersion))
                 {
                     yield return error;
                 }
@@ -131,9 +164,27 @@ internal static partial class ArazzoRuntimeExpressionValidator
 
         if (node is JsonObject jsonObject)
         {
+            if (TryGetSelectorContext(jsonObject, out _))
+            {
+                if (specVersion is ArazzoSpecVersion.Arazzo1_0)
+                {
+                    yield return $"{elementName} contains a Selector object, which is not supported in Arazzo 1.0.";
+                }
+                else
+                {
+                    var selectorContext = new ParsingContext(new ArazzoDiagnostic());
+                    selectorContext.ParseFragment<ArazzoSelector>(jsonObject, specVersion);
+                    foreach (var error in selectorContext.Diagnostic.Errors)
+                    {
+                        yield return $"{elementName} contains an invalid Selector object: {error.Message}";
+                    }
+                }
+                yield break;
+            }
+
             foreach (var item in jsonObject.Select(static property => property.Value))
             {
-                foreach (var error in ValidateExpressionStrings(item, elementName))
+                foreach (var error in ValidateExpressionStrings(item, elementName, specVersion))
                 {
                     yield return error;
                 }
@@ -141,9 +192,9 @@ internal static partial class ArazzoRuntimeExpressionValidator
         }
     }
 
-    private static IEnumerable<string> ValidateExpressionString(string value, string elementName)
+    private static IEnumerable<string> ValidateExpressionString(string value, string elementName, ArazzoSpecVersion specVersion)
     {
-        if (value.StartsWith("$", StringComparison.Ordinal) && !IsRuntimeExpression(value))
+        if (value.StartsWith("$", StringComparison.Ordinal) && !IsRuntimeExpression(value, specVersion))
         {
             yield return $"{elementName} contains an invalid runtime expression: '{value}'.";
         }
@@ -151,7 +202,7 @@ internal static partial class ArazzoRuntimeExpressionValidator
         foreach (Match match in BracedRuntimeExpressionRegex().Matches(value))
         {
             var expression = match.Groups[1].Value;
-            if (!IsRuntimeExpression(expression))
+            if (!IsRuntimeExpression(expression, specVersion))
             {
                 yield return $"{elementName} contains an invalid runtime expression: '{expression}'.";
             }
@@ -162,4 +213,7 @@ internal static partial class ArazzoRuntimeExpressionValidator
     {
         return segment.Replace("~", "~0", StringComparison.Ordinal).Replace("/", "~1", StringComparison.Ordinal);
     }
+
+    private static Regex GetRuntimeExpressionRegex(ArazzoSpecVersion specVersion) =>
+        specVersion is ArazzoSpecVersion.Arazzo1_0 ? V1RuntimeExpressionRegex() : V1_1RuntimeExpressionRegex();
 }

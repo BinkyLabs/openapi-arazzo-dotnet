@@ -13,22 +13,52 @@ internal static partial class ArazzoV1Deserializer
         { ArazzoConstants.ArazzoParameterName, static (o, v, c) => o.Name = v.GetScalarValue() },
         { ArazzoConstants.ArazzoParameterIn, static (o, v, c) =>
         {
-            if (!v.GetScalarValue().TryGetEnumFromDisplayName<ParameterLocation>(c, out var _in))
+            var location = v.GetScalarValue();
+            if (!location.TryGetEnumFromDisplayName<ParameterLocation>(c, out var _in))
             {
+                return;
+            }
+            if ("querystring".Equals(location, StringComparison.OrdinalIgnoreCase) && c.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+            {
+                c.Diagnostic.Errors.Add(new OpenApiError(c.GetLocation(), "The value 'querystring' for 'in' is not supported in Arazzo 1.0."));
                 return;
             }
             o.In = _in;
         } },
-        { ArazzoConstants.ArazzoParameterValue, static (o, v, c) => o.Value = v }
+        { ArazzoConstants.ArazzoParameterValue, static (o, v, c) => o.Value = LoadParameterValueUnion(v, c) }
     };
 
-    public static readonly PatternFieldMap<ArazzoParameter> ParameterPatternFields = new()
+    public static ArazzoParameterValueUnion LoadParameterValueUnion(JsonNode node, ParsingContext context)
+    {
+        if (node is JsonObject jsonObject)
+        {
+            if (ArazzoRuntimeExpressionValidator.TryGetSelectorContext(jsonObject, out _))
+            {
+                if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+                    throw new ArazzoReaderException("Selector parameter values are not supported in Arazzo 1.0.", context);
+                return new() { Selector = LoadSelectorInternal(node, context) };
+            }
+            if (context.Diagnostic.SpecificationVersion is ArazzoSpecVersion.Arazzo1_0)
+                return new() { Any = node };
+            throw new ArazzoReaderException("Arazzo 1.1 parameter object values must be Selector Objects.", context);
+        }
+        var value = LoadPayloadReplacementValue(node, context);
+        return new() { Any = value.Any, Expression = value.Expression, Selector = value.Selector };
+    }
+
+    public static PatternFieldMap<ArazzoParameter> GetParameterPatternFields() =>
+    new()
     {
         { s => s.StartsWith(ArazzoConstants.ExtensionFieldNamePrefix, StringComparison.OrdinalIgnoreCase), (o, k, n, c) => o.AddExtension(k, LoadExtension(k, n, c)) }
     };
+    public static readonly PatternFieldMap<ArazzoParameter> ParameterPatternFields = GetParameterPatternFields();
 
     public static IArazzoParameter LoadParameter(JsonNode node, ParsingContext context)
     {
+        if (node is JsonObject map && map.ContainsKey(ArazzoConstants.ArazzoReusableObjectReference) &&
+            (map.ContainsKey(ArazzoConstants.ArazzoParameterName) || map.ContainsKey(ArazzoConstants.ArazzoParameterIn)))
+            throw new ArazzoReaderException("A parameter must be either a Parameter Object or a Reusable Object, not both.", context);
+
         if (TryGetReferenceObject(node, out var jsonObject, out var referenceString))
         {
             var reference = CreateLocalReusableReference(
@@ -40,8 +70,15 @@ internal static partial class ArazzoV1Deserializer
 
             if (jsonObject.TryGetPropertyValue(ArazzoConstants.ArazzoParameterValue, out var valueNode))
             {
-                reference.Value = valueNode?.DeepClone();
-                ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(reference.Value, context, $"{nameof(ArazzoParameterReference)}.{nameof(ArazzoParameterReference.Value)}");
+                if (valueNode is null)
+                {
+                    reference.Value = new() { Any = JsonNullSentinel.JsonNull };
+                }
+                else
+                {
+                    var value = LoadPayloadReplacementValue(valueNode.DeepClone(), context);
+                    reference.Value = new() { Any = value.Any, Expression = value.Expression, Selector = value.Selector };
+                }
             }
 
             return reference;
@@ -52,10 +89,16 @@ internal static partial class ArazzoV1Deserializer
 
     public static ArazzoParameter LoadParameterObject(JsonNode node, ParsingContext context)
     {
-        var mapNode = node.CheckMapNode("Parameter", context);
+        return LoadParameterObjectInternal(node, context, ParameterFixedFields, ParameterPatternFields);
+    }
+
+    public static ArazzoParameter LoadParameterObjectInternal(JsonNode node, ParsingContext context, FixedFieldMap<ArazzoParameter> parameterFixedFields, PatternFieldMap<ArazzoParameter> parameterPatternFields)
+    {
+        var mapNode = node.CheckMapNode(nameof(ArazzoParameter), context);
         var parameter = new ArazzoParameter();
-        mapNode.ParseMap(parameter, ParameterFixedFields, ParameterPatternFields, context);
-        ArazzoRuntimeExpressionValidator.ValidateDeserializationExpressionStrings(parameter.Value, context, $"{nameof(ArazzoParameter)}.{nameof(ArazzoParameter.Value)}");
+        mapNode.ParseMap(parameter, parameterFixedFields, parameterPatternFields, context);
+        if (mapNode.TryGetPropertyValue(ArazzoConstants.ArazzoParameterValue, out var valueNode) && valueNode is null)
+            parameter.Value = new() { Any = JsonNullSentinel.JsonNull };
         ArazzoParameterValidator.ValidateDeserializationRequiredFields(parameter, context);
 
         return parameter;

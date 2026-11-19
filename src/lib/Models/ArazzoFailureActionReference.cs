@@ -41,6 +41,9 @@ public class ArazzoFailureActionReference : BaseArazzoReferenceHolder<ArazzoFail
     public IList<ArazzoCriterion>? Criteria => Target?.Criteria;
 
     /// <inheritdoc />
+    public IList<IArazzoParameter>? Parameters => Target?.Parameters;
+
+    /// <inheritdoc />
     public ArazzoFailureType? Type => Target?.Type;
 
     /// <inheritdoc />
