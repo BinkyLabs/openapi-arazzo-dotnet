@@ -1,5 +1,66 @@
 # Changelog
 
+## [1.0.0](https://github.com/BinkyLabs/openapi-arazzo-dotnet/compare/v1.0.0-preview.4...v1.0.0) (2026-11-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **models:** Parameter interfaces and references now expose ArazzoParameterValueUnion; ArazzoRequestBody.Payload now exposes ArazzoRequestBodyPayloadUnion.
+* **models:** ArazzoCriterion.Context and ArazzoSelector.Context now use ArazzoRuntimeExpression instead of string.
+* adds new fields and models for 1.1 support
+* adds the v1.1 serialization infrastructure
+
+### Features
+
+* adds a union type for the target selector property ([92fb206](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/92fb206e429337a8df9ae613491cfa1b5fd8d1a6))
+* adds new fields and models for 1.1 support ([040550e](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/040550e513b8ac58ef9b5d2054d95e323ca362b0))
+* adds runtime expresion type, and union type for value ([f428170](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/f4281700866ca2b578d3c1b4571de08836b01ba8))
+* adds support for version 1.1 ([3da274d](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/3da274d32f32c941e7b565f5460b7992e9c3fd0c))
+* adds the v1.1 serialization infrastructure ([64a3d0c](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/64a3d0c9703bbd395058ecf4160c01c92020af0c))
+* adds v1.1 deserialization infrastructure ([7d79bb7](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/7d79bb736630d2aa20eda03ed0b39a1f034f6959))
+* **criterion:** model type as a union ([951ec4c](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/951ec4c3aad864cb5479a160e0ac11484e753e45))
+* **dotnet:** add .NET 11 and drop .NET 8/9 support ([1503112](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/1503112bd32fb4f9aa8ff436a29c331a473699bc))
+* **parameter:** model value as a union ([2dec7f1](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/2dec7f14f16593574126a7afba92b26cfd82ade5))
+* **payload:** complete bidirectional value union conversions ([b7b5fe3](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/b7b5fe3cfa9a4fc32e468d6813fbaf822350b771))
+* **reader:** resolve document base URIs using self identifiers ([cf0adc0](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/cf0adc022c0d8a9f67dd5bad88ddb5e225870920))
+* **selector:** model selector type as a union ([d1296ba](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/d1296bacbb44382c20d80ac756cf784466c15e03))
+* **step:** model failure action entries as unions ([6deb9bb](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/6deb9bbfc2bc7760fff55a3af9d56d2888ef24ed))
+* **step:** model outputs with value unions ([87d0476](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/87d04762c1f287348767e7cca73accac60ce4313))
+* **step:** model parameter entries as unions ([d80d50c](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/d80d50cef887b3ed4206011af2ffc69d2b2c9adf))
+* **step:** model success action entries as unions ([fc3c82e](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/fc3c82eafe6201768fe691d2ed9a2168d36ebf4c))
+* switched default version to 1.1.0 for document ([a940c82](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/a940c827fd4491938a1accabe7d6f29492118d91))
+* updates expressions validation to match new 1.1 rules ([553690f](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/553690fdbff114ead697ea1b81dde14c07f053c6))
+* **validation:** validate JSONPath and JSON Pointer grammar ([326c9e9](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/326c9e914c9305fa3359f7d7cc615fa5845553d7))
+* vary serialization based off requested version ([5cdb71d](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/5cdb71d0e103bb5748d6bfefa2bfa38a52a81de3))
+* **workflow:** model failure action entries as unions ([ac2d8e1](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/ac2d8e1b88c44e587ecc3892752f77ed02cff5b8))
+* **workflow:** model outputs with value unions ([c26648e](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/c26648e93dbc6e3e52abf70b964b935369509144))
+* **workflow:** model parameter entries as unions ([29fcca2](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/29fcca2c5bee617162a94071826171bec0f8f049))
+* **workflow:** model success action entries as unions ([bc10634](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/bc1063430ba5017cb36e34214624d1e6333e0adc))
+
+
+### Bug Fixes
+
+* Add deserialization for workflows and components ([c9d779d](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/c9d779d11b2dde925ccf2185cd7f2bce64572e83))
+* add parameter constraint validation ([61715de](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/61715de0e1db56da06b55dc0123b29b5b59bf7e7))
+* adds missing equals string method ([28587ee](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/28587eea23538d0e18ee9a0ab46549d2b4429a60))
+* **arazzo:** address review validation and model feedback ([db0be7b](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/db0be7bc8fe218ded6bcad2711e37df44325700f))
+* **arazzo:** close remaining specification validation gaps ([a6ad24a](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/a6ad24a701872e1cfc9cf8406ab2afafe6c50726))
+* **models:** align union-valued properties across parameter APIs ([f8abe7a](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/f8abe7ab19b333e9f2a0064a857804f1ad1954a0))
+* **models:** type context properties as runtime expressions ([5d3d07a](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/5d3d07a6fdcdee74e2a6588514b769c55f4c2ffa))
+* no exception on defaults ([11fcbb3](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/11fcbb3ca42aa14858c59f8182493ea7d0a2411f))
+* **parameter:** preserve expression values in interface projections ([1a0d62d](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/1a0d62d611564b00e95b4e75c1cf28a4dc76e8e4))
+* **performance:** run benchmarks on supported runtime ([e6ae612](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/e6ae6120e0235b6a8de6a4e7bfff56692f5a5379))
+* **reader:** remove reverse deserializer dependencies ([5632d3e](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/5632d3e648149ca182a4e623c4869c42f684cfc9))
+* Refactor version check for ArazzoCriterionExpressionType ([6392d0e](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/6392d0e0c81b7526a044d876f8373b54610df851))
+* **references:** deduplicate canonical Arazzo document identities ([3bc44a3](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/3bc44a34b433a08ff3981451b3229bb9b095ef4e))
+* **references:** load and validate external Arazzo workflows ([e4a7a73](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/e4a7a731bceef029b86915c94f4ebc5d99cf439e))
+* **references:** resolve JSON Schema anchors within resource scopes ([32e54d9](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/32e54d9d58d822fe1cca62666bc764ce7e494f08))
+* validate minimum criteria requirement ([8228cd0](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/8228cd05cff54864ce1c01c3a8c02aaaa5890f00))
+* **validation:** enforce AsyncAPI step constraints ([12b7a46](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/12b7a46afe4eb15adaa9069f14fd690be44c617d))
+* **validation:** enforce expression type and version compatibility ([a497f59](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/a497f598d74b93d7933588143db92ce8b3b0d4e0))
+* **validation:** recognize nested selectors in structured payloads ([6c21922](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/6c21922b4128b2303aed2764542eaed1485ecceb))
+* **validation:** validate step dependencies and execution ordering ([c2bef60](https://github.com/BinkyLabs/openapi-arazzo-dotnet/commit/c2bef60c2b21dbbc4b853120dae46a615f156348))
+
 ## [1.0.0-preview.4](https://github.com/BinkyLabs/openapi-arazzo-dotnet/compare/v1.0.0-preview.3...v1.0.0-preview.4) (2026-08-25)
 
 
