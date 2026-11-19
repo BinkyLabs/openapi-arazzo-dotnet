@@ -1,19 +1,19 @@
 ```
 
-BenchmarkDotNet v0.15.8, Windows 11 (10.0.26300.9974)
-Snapdragon X 12-core X1E80100 3.40 GHz (Max: 3.42GHz), 1 CPU, 12 logical and 12 physical cores
+BenchmarkDotNet v0.15.8, Linux Ubuntu 26.04.1 LTS (Resolute Raccoon)
+AMD EPYC 7763 2.79GHz, 1 CPU, 4 logical and 2 physical cores
 .NET SDK 11.0.100
-  [Host]   : .NET 10.0.15 (10.0.15, 10.0.1526.53008), Arm64 RyuJIT armv8.0-a
-  ShortRun : .NET 10.0.15 (10.0.15, 10.0.1526.53008), Arm64 RyuJIT armv8.0-a
+  [Host]   : .NET 10.0.15 (10.0.15, 10.0.1526.53008), X64 RyuJIT x86-64-v3
+  ShortRun : .NET 10.0.15 (10.0.15, 10.0.1526.53008), X64 RyuJIT x86-64-v3
 
 Job=ShortRun  IterationCount=3  LaunchCount=1  
 WarmupCount=3  
 
 ```
-| Method         | Mean      | Error      | StdDev    | Gen0     | Gen1    | Allocated |
-|--------------- |----------:|-----------:|----------:|---------:|--------:|----------:|
-| FormalBnplYaml | 411.55 μs | 334.874 μs | 18.356 μs | 126.9531 |  3.9063 | 524.81 KB |
-| FormalBnplJson | 207.48 μs | 464.948 μs | 25.485 μs |  86.9141 |  0.9766 | 355.92 KB |
-| FapiParYaml    | 339.55 μs | 110.410 μs |  6.052 μs | 113.2813 | 15.6250 | 467.77 KB |
-| FapiParJson    | 175.63 μs |  69.839 μs |  3.828 μs |  83.9844 | 16.6016 | 346.41 KB |
-| MinimalJson    |  12.61 μs |   0.083 μs |  0.005 μs |   7.9651 |       - |  32.57 KB |
+| Method         | Mean      | Error     | StdDev    | Gen0    | Gen1   | Allocated |
+|--------------- |----------:|----------:|----------:|--------:|-------:|----------:|
+| FormalBnplYaml | 768.11 μs | 863.66 μs | 47.340 μs | 31.2500 | 7.8125 |  524.7 KB |
+| FormalBnplJson | 454.71 μs | 940.36 μs | 51.544 μs | 21.4844 | 5.8594 | 355.66 KB |
+| FapiParYaml    | 497.10 μs | 566.34 μs | 31.043 μs | 27.3438 | 3.9063 | 466.46 KB |
+| FapiParJson    | 351.58 μs | 544.45 μs | 29.843 μs | 19.5313 | 3.9063 | 346.26 KB |
+| MinimalJson    |  38.87 μs |  94.14 μs |  5.160 μs |  1.9531 |      - |  32.35 KB |
