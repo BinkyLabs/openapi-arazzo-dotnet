@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Validate OpenAPI Arazzo document
-        uses: BinkyLabs/openapi-arazzo-dotnet@v1
+        uses: BinkyLabs/openapi-arazzo-dotnet@88605b643049a74f5c801cb94714e491195ae972 # v1
         with:
           input: 'arazzo/arazzo.yaml'
           warnings-as-errors: 'true'
