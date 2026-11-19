@@ -28,11 +28,12 @@ internal static class ArazzoSelectorSyntaxValidator
     {
         var defaultPointer = version is ArazzoSpecVersion.Arazzo1_0 ||
             body.ContentType?.Split(';', 2)[0].Trim().Equals("application/json", StringComparison.OrdinalIgnoreCase) == true;
-        foreach (var replacement in (body.Replacements ?? []).Where(static replacement => replacement.TargetSelectorType is null))
-        {
-            if (GetError(replacement.Target,
-                defaultPointer, $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Target)}") is { } error)
-                yield return error;
-        }
+        var errors = (body.Replacements ?? [])
+            .Where(static replacement => replacement.TargetSelectorType is null)
+            .Select(replacement => GetError(replacement.Target,
+                defaultPointer, $"{nameof(ArazzoPayloadReplacement)}.{nameof(ArazzoPayloadReplacement.Target)}"))
+            .OfType<string>();
+        foreach (var error in errors)
+            yield return error;
     }
 }
