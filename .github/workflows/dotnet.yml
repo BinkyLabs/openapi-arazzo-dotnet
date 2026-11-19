@@ -31,7 +31,13 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
       - name: Test
-        run: dotnet test --no-build --verbosity normal --configuration Release --coverlet --coverlet-output-format cobertura --report-gh
+        # Coverlet's inferred exclusions can also match first-party dependencies.
+        run: >-
+          dotnet test --no-build --verbosity normal --configuration Release --coverlet
+          --coverlet-include '[BinkyLabs.OpenApi.Arazzo]*'
+          --coverlet-include '[BinkyLabs.OpenApi.Arazzo.Cli]*'
+          --coverlet-exclude '[*.Tests]*'
+          --coverlet-output-format cobertura --report-gh
       - name: Install report generator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
       - name: Pack the project
