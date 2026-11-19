@@ -7,13 +7,35 @@ internal static partial class ArazzoStepDependencyValidator
 {
     private readonly record struct DependencyNode(ArazzoDocument Document, string WorkflowId, string? StepId);
 
-    [GeneratedRegex(@"^\$sourceDescriptions\.(?<source>[^.\s]+)\.(?<workflow>[^.\s]+)$", RegexOptions.CultureInvariant)]
+    private const string DependencyIdentifierPattern = @"[^.\s]+";
+    private const string DependencyWorkflowPattern = "(?<workflow>" + DependencyIdentifierPattern + ")";
+    private const string DependencyStepPattern = @"\.steps\.(?<step>" + DependencyIdentifierPattern + ")";
+    private const string ExternalDependencyWorkflowPattern =
+        @"sourceDescriptions\.(?<source>" + DependencyIdentifierPattern + @")\." + DependencyWorkflowPattern;
+
+    private const string WorkflowDependencyPattern = @"^\$" + ExternalDependencyWorkflowPattern + "$";
+    private const string ExplicitDependencyPattern =
+        @"^\$(?:workflows\." + DependencyWorkflowPattern + DependencyStepPattern +
+        "|" + ExternalDependencyWorkflowPattern + DependencyStepPattern + ")$";
+
+    private const string QuotedStringPattern = """(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')""";
+    private const string OutputIdentifierPattern = """[^.\s{}"'#()[\]=<>!,+*/]+""";
+    private const string OutputStepPattern = @"steps\.(?<step>" + OutputIdentifierPattern + ")";
+    private const string OutputWorkflowPattern = "(?<workflow>" + OutputIdentifierPattern + @")(?:\." + OutputStepPattern + ")?";
+    private const string OutputReferencePattern =
+        QuotedStringPattern + @"|(?<reference>\$(?:" +
+        OutputStepPattern +
+        @"|workflows\." + OutputWorkflowPattern +
+        @"|sourceDescriptions\.(?<source>" + OutputIdentifierPattern + @")\." + OutputWorkflowPattern +
+        @")\.outputs(?=[.#\s)}\]=<>!]|$))";
+
+    [GeneratedRegex(WorkflowDependencyPattern, RegexOptions.CultureInvariant)]
     private static partial Regex WorkflowDependencyRegex();
 
-    [GeneratedRegex(@"^\$(?:workflows\.(?<workflow>[^.\s]+)\.steps\.(?<step>[^.\s]+)|sourceDescriptions\.(?<source>[^.\s]+)\.(?<workflow>[^.\s]+)\.steps\.(?<step>[^.\s]+))$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(ExplicitDependencyPattern, RegexOptions.CultureInvariant)]
     private static partial Regex ExplicitDependencyRegex();
 
-    [GeneratedRegex("""(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(?<reference>\$(?:steps\.(?<step>[^.\s{}"'#()[\]=<>!,+*/]+)|workflows\.(?<workflow>[^.\s{}"'#()[\]=<>!,+*/]+)(?:\.steps\.(?<step>[^.\s{}"'#()[\]=<>!,+*/]+))?|sourceDescriptions\.(?<source>[^.\s{}"'#()[\]=<>!,+*/]+)\.(?<workflow>[^.\s{}"'#()[\]=<>!,+*/]+)(?:\.steps\.(?<step>[^.\s{}"'#()[\]=<>!,+*/]+))?)\.outputs(?=[.#\s)}\]=<>!]|$))""", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(OutputReferencePattern, RegexOptions.CultureInvariant)]
     private static partial Regex OutputReferenceRegex();
 
     internal static IEnumerable<string> Validate(ArazzoDocument document)
